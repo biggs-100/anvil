@@ -148,39 +148,6 @@ Not to replace the CLI. To *visualize* what the CLI already surfaces.
 
 ---
 
-## Phase 14 — Cloud Sync
-
-Not for execution. For **distribution**.
-
-```bash
-# Publish a project profile
-forge publish
-
-# Share with the world
-forge publish --visibility public
-
-# Pull someone else's environment
-forge pull user/project
-```
-
-### What syncs
-
-| Artifact | Syncs? | Notes |
-|----------|--------|-------|
-| `forge.toml` | ✅ | Manifest |
-| `forge.lock` | ✅ | Pinned versions |
-| Profiles | ✅ | Environment profiles |
-| Context metadata | ✅ | Non-sensitive project info |
-| Secrets | ❌ | Never leave the local machine |
-| Cached binaries | ❌ | Re-downloaded from registry |
-
-### Backend
-
-- Simple REST API
-- No user accounts required for public pulls
-- Optional auth for private projects
-- Content-addressed storage (no duplicates across forks)
-
 ---
 
 ## Forge Registry
@@ -350,7 +317,6 @@ Phase 10: Official SDK (Rust → Go → Py → TS) │  Q3-Q4 2026
 Phase 11: MCP Server                         │  Q4 2026
 Phase 12: IDE Integration                    │  Q1 2027
 Phase 13: GUI                                │  Q1 2027
-Phase 14: Cloud Sync                         │  Q2 2027
 Forge Registry                               │  Ongoing
 Public Specifications (FCP, FMS, FRRS)       │  H2 2026
 ```

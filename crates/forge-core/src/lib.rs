@@ -62,7 +62,9 @@ pub use manifest::{ForgeConfig, find_forge_toml, load_config};
 
 // Re-export stable types/functions from registry.rs
 pub use registry::{
-    HybridRegistry, RegistryEntry, normalize_arch, normalize_platform, detect_platform, detect_arch,
+    HybridRegistry, RegistryEntry, FrrsMetadata, FrrsArtifact, RegistryIndex, RegistryIndexEntry,
+    RemoteRegistry,
+    normalize_arch, normalize_platform, detect_platform, detect_arch,
 };
 
 // Re-export stable types/functions from resolver.rs
@@ -97,29 +99,58 @@ pub use lock::{load_lockfile, save_lockfile};
 pub use state::{compute_current_state, save_state};
 
 /// Orchestrates updating the lockfile from forge.toml config.
-pub fn update_lockfile(toml_path: &Path, lockfile_path: &Path) -> Result<Lockfile, String> {
+///
+/// The resolution chain:
+///   1. Flat entries loaded from `metadata_cache.toml` (legacy)
+///   2. FRRS cache directory (`.forge/metadata_cache/`)
+///   3. Remote FRRS registry (HTTP, best-effort pre-fetch)
+///   4. Embedded compiled-in defaults
+///
+/// The remote registry URL is configured via `FORGE_REGISTRY_URL` env var
+/// (default: `https://registry.forge.sh`). Set to empty string to disable
+/// remote fetching entirely (offline mode, REQ-REG-009).
+pub async fn update_lockfile(toml_path: &Path, lockfile_path: &Path) -> Result<Lockfile, String> {
     let config = load_config(toml_path)?;
     let mut lockfile = load_lockfile(lockfile_path).unwrap_or_default();
     let platform = detect_platform();
     let arch = detect_arch();
-    
+
     let workspace_dir = toml_path.parent().unwrap_or(Path::new("."));
     let registry_path = workspace_dir.join(".forge").join("metadata_cache.toml");
-    
-    let registry = if registry_path.exists() {
+    let frrs_cache_dir = workspace_dir.join(".forge").join("metadata_cache");
+
+    // Build base registry from legacy flat file or defaults
+    let mut registry = if registry_path.exists() {
         HybridRegistry::load_from_file(&registry_path)?
     } else {
         HybridRegistry::default_with_internal()
     };
-    
+
+    // Attach FRRS cache directory
+    registry = registry.with_cache_dir(frrs_cache_dir.clone());
+
+    // Configure remote registry via FORGE_REGISTRY_URL env var
+    let registry_url = std::env::var("FORGE_REGISTRY_URL")
+        .unwrap_or_else(|_| "https://registry.forge.sh".to_string());
+
+    if !registry_url.is_empty() {
+        let remote = RemoteRegistry::new(&registry_url, frrs_cache_dir);
+        registry = registry.with_remote(remote);
+    }
+
     let resolver = Resolver::new();
-    
+
     let mut new_runtimes = Vec::new();
-    for (name, version_req) in &config.runtimes {
-        let resolved = resolver.resolve(name, version_req, platform, arch, &registry)?;
+    for (name, _version_req) in &config.runtimes {
+        // Best-effort pre-fetch from remote to populate FRRS cache
+        if registry.remote.is_some() {
+            let _ = registry.refresh_remote(name).await;
+        }
+
+        let resolved = resolver.resolve(name, _version_req, platform, arch, &registry)?;
         new_runtimes.push(resolved);
     }
-    
+
     lockfile.runtimes = new_runtimes;
     save_lockfile(lockfile_path, &lockfile)?;
     if let Ok(cache_dir) = get_cache_dir() {

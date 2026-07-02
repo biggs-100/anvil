@@ -266,7 +266,7 @@ impl Operation for LockOperation {
         }
 
         let is_new = !lockfile_path.exists();
-        let lockfile = crate::update_lockfile(&toml_path, &lockfile_path)?;
+        let lockfile = crate::update_lockfile(&toml_path, &lockfile_path).await?;
         ctx.lockfile = Some(lockfile);
 
         let mut changes = Vec::new();
@@ -920,7 +920,7 @@ impl Operation for RepairOperation {
                 crate::diagnostics::QuickFixAction::RegenerateLockfile => {
                     let toml_path = ctx.workspace_root.join("forge.toml");
                     let lockfile_path = ctx.workspace_root.join("forge.lock");
-                    let _ = crate::update_lockfile(&toml_path, &lockfile_path);
+                    let _ = crate::update_lockfile(&toml_path, &lockfile_path).await;
                 }
                 crate::diagnostics::QuickFixAction::RegenerateShimsCache => {
                     let lockfile_val = ctx.load_lockfile().cloned().unwrap_or_default();

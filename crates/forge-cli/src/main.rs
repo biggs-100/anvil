@@ -123,6 +123,12 @@ enum Commands {
     #[command(about = "Launch terminal dashboard")]
     Tui,
 
+    #[command(about = "Manage remote registry and FRRS metadata cache")]
+    Registry {
+        #[command(subcommand)]
+        subcommand: RegistryCommands,
+    },
+
     #[command(about = "Display active environment configuration and workspace details")]
     Context {
         #[arg(long, default_value = "json")]
@@ -185,6 +191,12 @@ enum SecretCommands {
     Doctor,
 }
 
+
+#[derive(Subcommand)]
+enum RegistryCommands {
+    #[command(about = "Clear FRRS metadata cache and re-fetch from remote registry")]
+    Refresh,
+}
 
 #[derive(Subcommand)]
 enum AiCommands {
@@ -617,6 +629,51 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
                 }
                 other => {
                     return Err(format!("Unsupported format: {}", other));
+                }
+            }
+        }
+        Commands::Registry { subcommand } => {
+            match subcommand {
+                RegistryCommands::Refresh => {
+                    let workspace_root = forge_core::find_forge_toml(&current_dir)
+                        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+                        .unwrap_or_else(|| current_dir.clone());
+
+                    let frrs_cache_dir = workspace_root.join(".forge").join("metadata_cache");
+                    let registry_url = std::env::var("FORGE_REGISTRY_URL")
+                        .unwrap_or_else(|_| "https://registry.forge.sh".to_string());
+
+                    if registry_url.is_empty() {
+                        eprintln!("Error: Remote registry is disabled (FORGE_REGISTRY_URL is empty).");
+                        std::process::exit(1);
+                    }
+
+                    // Clear existing cache directory
+                    if frrs_cache_dir.exists() {
+                        println!("Clearing FRRS metadata cache...");
+                        std::fs::remove_dir_all(&frrs_cache_dir)
+                            .map_err(|e| format!("Failed to clear cache: {}", e))?;
+                    }
+
+                    let remote = forge_core::RemoteRegistry::new(&registry_url, frrs_cache_dir.clone());
+
+                    println!("Fetching registry index from {}...", registry_url);
+                    let index = remote.fetch_index().await
+                        .map_err(|e| format!("Failed to fetch registry index: {}", e))?;
+
+                    let total = index.toolchains.len();
+                    println!("Found {} toolchains in registry. Fetching metadata...", total);
+
+                    for (i, (name, entry)) in index.toolchains.iter().enumerate() {
+                        let latest = &entry.latest_version;
+                        print!("[{}/{}] Fetching {} {} ... ", i + 1, total, name, latest);
+                        match remote.fetch_metadata(name, latest).await {
+                            Ok(_) => println!("OK"),
+                            Err(e) => eprintln!("FAILED: {}", e),
+                        }
+                    }
+
+                    println!("\nRegistry refresh complete.");
                 }
             }
         }
