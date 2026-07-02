@@ -68,24 +68,31 @@ Forge's architecture is organized into **stable core** (frozen at 1.0) and **ext
 | **Observability** | ✅ Stable | Event bus, journal (NDJSON), trace trees, history queries, live event streaming |
 | **Public API (v1)** | ✅ Stable | `Engine` facade — the only entry point for CLI, SDK, and integrations |
 
-### Ecosystem (In Progress)
+### Ecosystem (Complete)
 
-Beyond the core, Forge is designed for extension:
+Beyond the stable core, Forge's ecosystem is fully built:
 
-- **Plugin System** (Phase 9) — trait-based extensions for providers, exporters, diagnostics, and CLI commands
-- **SDK** (Phase 10) — official bindings for Rust, Go, Python, TypeScript
-- **MCP Server** (Phase 11) — full Model Context Protocol implementation
-- **IDE Integration** (Phase 12) — Zed, VS Code, Neovim, JetBrains
-- **GUI** (Phase 13) — visual dashboard for runtime, config, diagnostics, events
-- **Cloud Sync** (Phase 14) — publish and share manifests, locks, and profiles
-- **Forge Registry** — a public registry of toolchains, not packages
-- **Forge Bundle** — single-file project distribution
+| Component | Status | Description |
+|-----------|--------|-------------|
+| **Plugin System** | ✅ Complete | Trait-based extensions for providers, exporters, diagnostics, and CLI commands |
+| **SDK** | ✅ Complete | Official bindings for Rust, Go, Python, TypeScript |
+| **MCP Server** | ✅ Complete | Full Model Context Protocol with resources, tools, prompts, notifications |
+| **IDE Integration** | ✅ Complete | VS Code extension + Neovim plugin (MCP-based) |
+| **TUI** | ✅ Complete | Terminal dashboard with Ratatui (4 views, keyboard-driven) |
+| **Bundle** | ✅ Complete | `forge bundle` — deterministic tar+gzip with SHA-256 verification |
+| **Snapshot** | ✅ Complete | `forge snapshot` — save/restore full environment state |
+| **Policy Engine** | ✅ Complete | Declarative pre-flight rules (network, hashes, health, profiles) |
+| **Explain Everything** | ✅ Complete | 5 explain subcommands (runtime, operation, context, config, profile) |
+| **Benchmark** | ✅ Complete | 5 performance metrics with table and JSON output |
+| **Forge Registry** | ✅ Complete | FRRS open format + remote registry client |
+| **Public Specs** | ✅ Complete | FCP, FMS, FRRS — open, versioned, frozen specifications |
 
 ---
 
 ## CLI Reference
 
 ```text
+# Core lifecycle
 forge init      Initialize forge in the current directory
 forge resolve   Resolve runtime versions
 forge lock      Generate or update forge.lock
@@ -100,17 +107,38 @@ forge plan      Show proposed changes plan
 forge clean     Clean local cache
 forge gc        Garbage collect unused runtimes
 
+# Context & diagnostics
 forge context   Export project context (JSON, Markdown, MCP, agent-adapted)
-forge explain   Deep-dive into a specific runtime
 forge doctor    Run diagnostics and health checks
+forge explain   Explain runtime, operation, context, config, or profile
 forge which     Locate a runtime binary
+
+# Observability
 forge history   Show past operations
 forge trace     Show operation hierarchy and durations
 forge events    Stream live operation events
 
+# Configuration & secrets
 forge env       Manage environment variables
 forge secret    Manage secure credentials
+
+# Distribution
+forge bundle    Package project into a portable .forge archive
+forge restore   Restore a project from a .forge archive
+
+# State management
+forge snapshot  Save current environment state
+forge restore   Restore environment to a previous snapshot
+
+# AI & tooling
 forge ai        AI-agent-specific context and diagnostics
+forge mcp       MCP server (Model Context Protocol) over stdio
+forge jsonrpc   JSON-RPC 2.0 server for SDK integration
+
+# Advanced
+forge tui       Terminal dashboard (Ratatui)
+forge benchmark Performance benchmarks
+forge registry  Refresh remote registry cache
 ```
 
 ---
@@ -137,14 +165,26 @@ cargo test
 cargo run -- help
 ```
 
-Forge is a Rust workspace with four crates:
+Forge is a Rust workspace with six crates:
 
 | Crate | Role |
 |-------|------|
 | `forge-core` | Engine — all core logic, traits, providers, API |
 | `forge-cli` | CLI — command parsing and user-facing interface |
+| `forge-sdk` | Official Rust SDK (typed Engine wrapper) |
+| `forge-tui` | Terminal dashboard (Ratatui) |
 | `forge-drivers` | Standard command runners |
 | `forge-shim` | Runtime shim binary (<5ms overhead) |
+
+### SDKs & Integrations
+
+| Language | Location | Type |
+|----------|----------|------|
+| **Go** | `sdks/go/` | JSON-RPC thin client |
+| **Python** | `sdks/python/` | JSON-RPC thin client |
+| **TypeScript** | `sdks/typescript/` | JSON-RPC thin client |
+| **VS Code** | `extensions/vscode/` | MCP-based extension |
+| **Neovim** | `extensions/neovim/` | MCP-based plugin |
 
 ---
 
