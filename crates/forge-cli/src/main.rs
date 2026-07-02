@@ -6,6 +6,10 @@ use forge_core::operations::{
     InitOperation, ResolveOperation, LockOperation, GcOperation,
     RunOperation, ShellOperation, PlanOperation, ValidateOperation,
 };
+use forge_core::api::v1::OperationSummary;
+use forge_core::context::{ContextEngine, ContextOptions, ForgeContext};
+use forge_core::manifest::ForgeConfig;
+use forge_core::secrets::{ResolvedEnvironment, ValueSource};
 use forge_core::{CliCommand, ContextExporter, AgentAdapter, PluginRegistry, PolicyEngine};
 
 mod jsonrpc;
@@ -65,9 +69,9 @@ enum Commands {
         #[arg(long, default_value = "table")]
         format: String,
     },
-    #[command(about = "Display resolved configuration, cache and shims for a runtime")]
+    #[command(about = "Display resolved configuration, cache and shims for a runtime, or inspect operations, context, config, and profile details")]
     Explain {
-        runtime: String,
+        args: Vec<String>,
     },
     #[command(about = "Show operation hierarchy and durations")]
     Trace {
@@ -319,6 +323,296 @@ fn print_explain_table(exp: &forge_core::api::v1::RuntimeExplanation) {
     }
 }
 
+// ── Explain Subcommand ─────────────────────────────────────────────────
+
+/// Type-safe enum for forge explain subcommands.
+/// Parsed manually from Vec<String> to maintain backward compat
+/// with `forge explain <runtime>` (no subcommand keyword needed).
+#[derive(Debug)]
+enum ExplainSubcommand {
+    Runtime { name: String },
+    Operation { id: String },
+    Context,
+    Config,
+    Profile,
+}
+
+impl ExplainSubcommand {
+    fn parse(args: &[String]) -> Result<Self, String> {
+        match args.first() {
+            Some(s) if s == "operation" || s == "op" => {
+                let id = args.get(1).ok_or_else(|| {
+                    "Usage: forge explain operation <id>".to_string()
+                })?;
+                Ok(Self::Operation { id: id.clone() })
+            }
+            Some(s) if s == "context" || s == "ctx" => Ok(Self::Context),
+            Some(s) if s == "config" || s == "cfg" => Ok(Self::Config),
+            Some(s) if s == "profile" || s == "prof" => Ok(Self::Profile),
+            Some(name) => Ok(Self::Runtime { name: name.clone() }),
+            None => Err(
+                "Missing runtime name or subcommand. Usage: forge explain <runtime> [subcommand]"
+                    .to_string(),
+            ),
+        }
+    }
+}
+
+/// Top-level dispatch for `forge explain ...`.
+/// Parses subcommand from args, then delegates to per-variant handlers.
+async fn handle_explain(current_dir: &Path, args: &[String]) -> Result<(), String> {
+    let subcommand = ExplainSubcommand::parse(args)?;
+    match subcommand {
+        ExplainSubcommand::Runtime { name } => {
+            let engine = forge_core::Engine::new(current_dir.to_path_buf())?;
+            let explanation = engine.explain(&name).await?;
+            print_explain_table(&explanation);
+        }
+        ExplainSubcommand::Operation { id } => {
+            let engine = forge_core::Engine::new(current_dir.to_path_buf())?;
+            explain_operation(&engine, &id).await?;
+        }
+        ExplainSubcommand::Context => {
+            explain_context(current_dir).await?;
+        }
+        ExplainSubcommand::Config => {
+            let engine = forge_core::Engine::new(current_dir.to_path_buf())?;
+            explain_config(&engine, current_dir).await?;
+        }
+        ExplainSubcommand::Profile => {
+            explain_profile(current_dir).await?;
+        }
+    }
+    Ok(())
+}
+
+// ── Explain: Operation handler ─────────────────────────────────────────
+
+async fn explain_operation(engine: &forge_core::Engine, id: &str) -> Result<(), String> {
+    let history = engine.history(None).await?;
+    let op = history
+        .iter()
+        .find(|o| o.id == id)
+        .ok_or_else(|| format!("Operation '{}' not found in history", id))?;
+    let trace = engine.trace(id).await?;
+    print_operation_table(op, &trace);
+    Ok(())
+}
+
+fn print_operation_table(summary: &OperationSummary, trace: &str) {
+    println!("{:<20} | {:<50}", "Property", "Value");
+    println!("{}", "-".repeat(73));
+    println!("{:<20} | {:<50}", "Operation ID", summary.id);
+    println!("{:<20} | {:<50}", "Runtime", summary.runtime);
+    println!("{:<20} | {:<50}", "Duration (ms)", summary.duration_ms.to_string());
+    println!("{:<20} | {:<50}", "Status", summary.status);
+    println!("{}", "-".repeat(73));
+    println!("Event Timeline:");
+    println!("{}", trace);
+}
+
+// ── Explain: Context handler ───────────────────────────────────────────
+
+async fn explain_context(current_dir: &Path) -> Result<(), String> {
+    let mut engine = ContextEngine::new();
+    engine.register(std::sync::Arc::new(forge_core::RuntimeProviderImpl));
+    engine.register(std::sync::Arc::new(forge_core::ConfigurationProviderImpl));
+    engine.register(std::sync::Arc::new(forge_core::DiagnosticsProviderImpl));
+    engine.register(std::sync::Arc::new(forge_core::WorkspaceProviderImpl));
+    engine.register(std::sync::Arc::new(forge_core::EnvironmentProviderImpl));
+    engine.register(std::sync::Arc::new(forge_core::SecretsProviderImpl));
+
+    let cache_dir = forge_core::get_cache_dir()
+        .map_err(|e| format!("Failed to get cache directory: {}", e))?;
+
+    let toml_path = forge_core::find_forge_toml(current_dir);
+    let active_profile = if let Some(ref path) = toml_path {
+        std::env::var("FORGE_PROFILE").ok().or_else(|| {
+            forge_core::load_config(path).ok().and_then(|c| {
+                c.profile.and_then(|p| p.keys().next().cloned())
+            })
+        })
+    } else {
+        None
+    };
+
+    let options = ContextOptions {
+        scopes: Vec::new(),
+        excludes: Vec::new(),
+        workspace_root: current_dir.to_path_buf(),
+        cache_dir,
+        active_profile,
+    };
+
+    let context = engine.query(&options).await?;
+    print_context_table(&context);
+    Ok(())
+}
+
+fn print_context_table(ctx: &ForgeContext) {
+    println!("{:<25} | {:<50}", "Provider", "Status");
+    println!("{}", "-".repeat(78));
+
+    let providers = [
+        ("runtime", &ctx.runtimes),
+        ("configuration", &ctx.config),
+        ("diagnostics", &ctx.diagnostics),
+        ("workspace", &ctx.workspace),
+        ("environment", &ctx.environment),
+        ("secrets", &ctx.secrets_metadata),
+    ];
+
+    for (name, data) in &providers {
+        let has_error = data.get("error").and_then(|v| v.as_str()).is_some();
+        let status = if has_error {
+            format!("Error: {}", data["error"].as_str().unwrap_or("unknown"))
+        } else if data.is_null() {
+            "Skipped".to_string()
+        } else {
+            "Collected".to_string()
+        };
+        println!("{:<25} | {:<50}", name, status);
+    }
+
+    // Show workspace limits
+    if let Some(workspace) = ctx.workspace.as_object() {
+        println!("{}", "-".repeat(78));
+        if let Some(files) = workspace.get("total_files") {
+            println!("{:<25} | {:<50}", "Workspace files", files);
+        }
+        if let Some(depth) = workspace.get("max_depth") {
+            println!("{:<25} | {:<50}", "Workspace max depth", depth);
+        }
+    }
+
+    // Show masked secrets metadata
+    if let Some(secrets) = ctx.secrets_metadata.as_object() {
+        if !secrets.is_empty() {
+            println!("{}", "-".repeat(78));
+            println!("{:<25} | {:<50}", "Secrets", "[MASKED]");
+            for (key, _val) in secrets {
+                println!("{:<25} | {:<50}", format!("  .{}", key), "[MASKED]");
+            }
+        }
+    }
+}
+
+// ── Explain: Config handler ────────────────────────────────────────────
+
+async fn explain_config(engine: &forge_core::Engine, current_dir: &Path) -> Result<(), String> {
+    let resolved = engine.env_resolve(None).await?;
+
+    let toml_path = forge_core::find_forge_toml(current_dir);
+    let has_secret_defs = toml_path.as_ref().and_then(|p| {
+        forge_core::load_config(p).ok().and_then(|c| c.config)
+    });
+
+    print_config_table(&resolved, has_secret_defs.as_ref());
+    Ok(())
+}
+
+fn print_config_table(resolved: &ResolvedEnvironment, config_section: Option<&forge_core::manifest::ConfigSection>) {
+    let secret_keys: std::collections::HashSet<&str> = config_section
+        .map(|cs| {
+            cs.definitions
+                .iter()
+                .filter(|(_, def)| def.secret)
+                .map(|(k, _)| k.as_str())
+                .collect()
+        })
+        .unwrap_or_default();
+
+    println!("{:<25} | {:<25} | {:<50}", "Variable", "Source", "Value");
+    println!("{}", "-".repeat(103));
+
+    // Collect all var keys, preserving order from metadata if available
+    let mut keys: Vec<&String> = resolved.metadata.keys().collect();
+    // Add any vars not in metadata
+    for k in resolved.vars.keys() {
+        if !keys.contains(&k) {
+            keys.push(k);
+        }
+    }
+
+    for key in &keys {
+        let source = resolved.metadata.get(*key).map(|m| match &m.source {
+            ValueSource::CliOverride => "CLI Override",
+            ValueSource::SystemEnv => "System Env",
+            ValueSource::LocalOverride => "Local Override",
+            ValueSource::SecretProvider(_) => "Secret Provider",
+            ValueSource::EnvFile => "Env File",
+            ValueSource::ProfileOverlay(_) => "Profile Overlay",
+            ValueSource::DefaultManifest => "Default",
+        }).unwrap_or("Unknown");
+
+        let value = if secret_keys.contains(key.as_str()) {
+            "[MASKED]".to_string()
+        } else {
+            resolved.vars.get(*key).cloned().unwrap_or_default()
+        };
+
+        println!("{:<25} | {:<25} | {:<50}", *key, source, value);
+    }
+}
+
+// ── Explain: Profile handler ───────────────────────────────────────────
+
+async fn explain_profile(current_dir: &Path) -> Result<(), String> {
+    let toml_path = forge_core::find_forge_toml(current_dir)
+        .ok_or_else(|| "No forge.toml found".to_string())?;
+    let config = forge_core::load_config(&toml_path)?;
+
+    let active_name = get_active_profile(current_dir)
+        .ok_or_else(|| "No active profile found. Set FORGE_PROFILE or add a [profile] section to forge.toml".to_string())?;
+
+    let engine = forge_core::Engine::new(current_dir.to_path_buf())?;
+    let resolved = engine.env_resolve(Some(&active_name)).await?;
+
+    print_profile_table(&active_name, &config, &resolved);
+    Ok(())
+}
+
+fn print_profile_table(active_name: &str, config: &ForgeConfig, resolved: &ResolvedEnvironment) {
+    println!("Active Profile: {}", active_name);
+    println!("{}", "-".repeat(80));
+
+    let profile_vars: HashMap<String, String> = config
+        .profile
+        .as_ref()
+        .and_then(|p| p.get(active_name))
+        .map(|section| {
+            section
+                .env
+                .iter()
+                .map(|(k, v)| (k.clone(), v.to_string()))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    if profile_vars.is_empty() {
+        println!("No profile variables defined for '{}'.", active_name);
+        return;
+    }
+
+    println!("{:<25} | {:<30} | {:<25}", "Variable", "Profile Value", "Override Status");
+    println!("{}", "-".repeat(83));
+
+    for (key, profile_val) in &profile_vars {
+        let _resolved_val = resolved.vars.get(key);
+        let source = resolved.metadata.get(key);
+
+        let status = match source {
+            Some(m) if matches!(m.source, ValueSource::ProfileOverlay(_)) => {
+                "active".to_string()
+            }
+            Some(m) => format!("overridden by {:?}", m.source),
+            None => "active (not resolved)".to_string(),
+        };
+
+        println!("{:<25} | {:<30} | {:<25}", key, profile_val, status);
+    }
+}
+
 async fn run_cli(cli: Cli) -> Result<(), String> {
     let current_dir = std::env::current_dir()
         .map_err(|e| format!("Failed to get current working directory: {}", e))?;
@@ -565,10 +859,8 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
                 print_history_table(&history);
             }
         }
-        Commands::Explain { runtime } => {
-            let engine = forge_core::Engine::new(current_dir.clone())?;
-            let explanation = engine.explain(&runtime).await?;
-            print_explain_table(&explanation);
+        Commands::Explain { args } => {
+            handle_explain(&current_dir, &args).await?;
         }
         Commands::Trace { op_id } => {
             let engine = forge_core::Engine::new(current_dir.clone())?;
@@ -1601,5 +1893,164 @@ mod tests {
             .filter(|c| !BUILTIN_COMMANDS.contains(&c.name()))
             .collect();
         assert!(filtered.is_empty(), "Conflicting commands should be filtered out");
+    }
+
+    // ── Phase 5: Explain tests ──────────────────────────────────────────
+
+    /// 5.6: Backward compat — `forge explain node` parses as Runtime { name: "node" }
+    #[test]
+    fn test_explain_parse_runtime_backward_compat() {
+        let cmd = ExplainSubcommand::parse(&["node".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Runtime { name } if name == "node"));
+        let cmd = ExplainSubcommand::parse(&["python".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Runtime { name } if name == "python"));
+    }
+
+    /// 5.7a: Subcommand `operation` parses correctly
+    #[test]
+    fn test_explain_parse_operation() {
+        let cmd = ExplainSubcommand::parse(&["operation".to_string(), "abc-123".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Operation { id } if id == "abc-123"));
+        // Short alias
+        let cmd = ExplainSubcommand::parse(&["op".to_string(), "xyz".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Operation { id } if id == "xyz"));
+    }
+
+    /// 5.2: Operation with missing ID returns error
+    #[test]
+    fn test_explain_parse_operation_missing_id() {
+        let err = ExplainSubcommand::parse(&["operation".to_string()]).unwrap_err();
+        assert!(err.contains("Usage: forge explain operation"));
+    }
+
+    /// 5.7b: Subcommand `context` parses correctly
+    #[test]
+    fn test_explain_parse_context() {
+        let cmd = ExplainSubcommand::parse(&["context".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Context));
+        let cmd = ExplainSubcommand::parse(&["ctx".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Context));
+    }
+
+    /// 5.7c: Subcommand `config` parses correctly
+    #[test]
+    fn test_explain_parse_config() {
+        let cmd = ExplainSubcommand::parse(&["config".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Config));
+        let cmd = ExplainSubcommand::parse(&["cfg".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Config));
+    }
+
+    /// 5.7d: Subcommand `profile` parses correctly
+    #[test]
+    fn test_explain_parse_profile() {
+        let cmd = ExplainSubcommand::parse(&["profile".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Profile));
+        let cmd = ExplainSubcommand::parse(&["prof".to_string()]).unwrap();
+        assert!(matches!(cmd, ExplainSubcommand::Profile));
+    }
+
+    /// 5.7e: Empty args returns error
+    #[test]
+    fn test_explain_parse_empty() {
+        let err = ExplainSubcommand::parse(&[] as &[String]).unwrap_err();
+        assert!(err.contains("Missing"));
+    }
+
+    /// 5.1: print_operation_table produces formatted output without panicking
+    #[test]
+    fn test_print_operation_table() {
+        let summary = OperationSummary {
+            id: "test-op-1".to_string(),
+            runtime: "node".to_string(),
+            duration_ms: 1234,
+            status: "Success".to_string(),
+        };
+        let trace = "├── Resolve (500ms)\n│   └── Download (300ms)\n└── Extract (200ms)\n".to_string();
+        // Verify it doesn't panic with valid input
+        print_operation_table(&summary, &trace);
+    }
+
+    /// 5.4: print_config_table handles vars with sources and secret masking
+    #[test]
+    fn test_print_config_table() {
+        use forge_core::manifest::ConfigSection;
+        use forge_core::secrets::VarMetadata;
+
+        let mut vars: HashMap<String, String> = HashMap::new();
+        vars.insert("API_KEY".to_string(), "secret-value".to_string());
+        vars.insert("PORT".to_string(), "3000".to_string());
+
+        let mut metadata: HashMap<String, VarMetadata> = HashMap::new();
+        metadata.insert(
+            "API_KEY".to_string(),
+            VarMetadata { key: "API_KEY".to_string(), source: ValueSource::SystemEnv },
+        );
+        metadata.insert(
+            "PORT".to_string(),
+            VarMetadata { key: "PORT".to_string(), source: ValueSource::EnvFile },
+        );
+
+        let resolved = ResolvedEnvironment { vars, metadata };
+
+        let mut definitions = HashMap::new();
+        definitions.insert(
+            "API_KEY".to_string(),
+            forge_core::manifest::ConfigDefinition {
+                val_type: Some("string".to_string()),
+                required: true,
+                default: None,
+                pattern: None,
+                description: Some("API key".to_string()),
+                secret: true,
+            },
+        );
+        let config_section = ConfigSection { definitions };
+        print_config_table(&resolved, Some(&config_section));
+    }
+
+    /// 5.5: print_profile_table renders profile output without panicking
+    #[test]
+    fn test_print_profile_table() {
+        use forge_core::secrets::VarMetadata;
+
+        // Create profile section without needing toml::Value directly
+
+        let config = ForgeConfig {
+            runtimes: HashMap::new(),
+            workspace_id: None,
+            config: None,
+            profile: None, // profile is None for this smoke test
+            policy: None,
+        };
+
+        let mut vars: HashMap<String, String> = HashMap::new();
+        vars.insert("NODE_ENV".to_string(), "development".to_string());
+
+        let mut metadata: HashMap<String, VarMetadata> = HashMap::new();
+        metadata.insert(
+            "NODE_ENV".to_string(),
+            VarMetadata { key: "NODE_ENV".to_string(), source: ValueSource::ProfileOverlay("dev".to_string()) },
+        );
+
+        let resolved = ResolvedEnvironment { vars, metadata };
+        // Call with None profile so it prints "No profile variables defined" path
+        print_profile_table("dev", &config, &resolved);
+    }
+
+    /// 5.3: print_context_table renders provider results without panicking
+    #[test]
+    fn test_print_context_table() {
+        use serde_json::json;
+        let ctx = ForgeContext {
+            schema_version: "1.0.0".to_string(),
+            runtimes: json!({"node": "18.0.0"}),
+            config: json!({"forge.toml": "/test/forge.toml"}),
+            diagnostics: json!({"health": "ok"}),
+            workspace: json!({"total_files": 500, "max_depth": 5}),
+            environment: json!({"PATH": "/usr/bin"}),
+            secrets_metadata: json!({"MY_SECRET": {"source": "keyring"}}),
+        };
+        print_context_table(&ctx);
     }
 }
