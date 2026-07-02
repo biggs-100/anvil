@@ -17,6 +17,7 @@ pub mod diagnostics;
 pub mod context;
 pub mod plugin;
 pub mod state;
+pub mod bundle;
 
 pub use diagnostics::{
     DiagnosticContext, DiagnosticMode, Severity, Explanation, QuickFix, QuickFixAction,
@@ -98,6 +99,12 @@ pub use lock::{load_lockfile, save_lockfile};
 
 // Re-export state management functions
 pub use state::{compute_current_state, save_state};
+
+// Re-export bundle types and functions
+pub use bundle::{
+    Bundle, BundleMetadata, BundleError, BundleChecksums, ChecksumEntry,
+    create_bundle, restore_bundle, verify_checksums,
+};
 
 /// Orchestrates updating the lockfile from forge.toml config.
 ///

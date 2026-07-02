@@ -17,6 +17,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "clean", "gc", "status", "inspect", "repair", "plan",
     "history", "explain", "trace", "events", "setup", "doctor",
     "which", "ai", "env", "secret", "context",
+    "bundle", "restore",
 ];
 
 #[derive(Parser)]
@@ -109,6 +110,17 @@ enum Commands {
     Secret {
         #[command(subcommand)]
         subcommand: SecretCommands,
+    },
+    #[command(about = "Create a portable .forge archive of forge descriptors")]
+    Bundle {
+        #[arg(long, help = "Custom output path (default: <project_dir_name>.forge)")]
+        output: Option<PathBuf>,
+    },
+    #[command(about = "Restore forge descriptors from a .forge archive")]
+    Restore {
+        path: PathBuf,
+        #[arg(long, help = "Overwrite existing files without prompting")]
+        force: bool,
     },
     /// Catch-all for plugin CLI commands
     #[command(external_subcommand)]
@@ -689,6 +701,50 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
         }
         Commands::Which { runtime } => {
             run_which(&current_dir, &runtime)?;
+        }
+        Commands::Bundle { output } => {
+            let workspace_root = forge_core::find_forge_toml(&current_dir)
+                .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+                .unwrap_or_else(|| current_dir.clone());
+
+            let output_path = match output {
+                Some(p) => p,
+                None => {
+                    let dir_name = workspace_root
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| "project".to_string());
+                    workspace_root.join(format!("{}.forge", dir_name))
+                }
+            };
+
+            forge_core::bundle::create_bundle(&workspace_root, &output_path)
+                .map_err(|e| format!("Failed to create bundle: {}", e))?;
+
+            println!("Bundle created: {}", output_path.display());
+        }
+        Commands::Restore { path, force } => {
+            let workspace_root = forge_core::find_forge_toml(&current_dir)
+                .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+                .unwrap_or_else(|| current_dir.clone());
+
+            // Check for existing files unless --force is set
+            if !force {
+                let toml_path = workspace_root.join("forge.toml");
+                if toml_path.exists() {
+                    return Err("forge.toml already exists. Use --force to overwrite.".to_string());
+                }
+            }
+
+            forge_core::bundle::restore_bundle(&path, &workspace_root)
+                .map_err(|e| format!("Failed to restore bundle: {}", e))?;
+
+            println!("Bundle restored successfully from: {}", path.display());
+
+            // Delegate to `forge up` to download/sync runtimes
+            println!("Syncing runtimes...");
+            let engine = forge_core::Engine::new(current_dir.clone())?;
+            engine.sync().await?;
         }
         Commands::PluginCommand(args) => {
             if args.is_empty() {
