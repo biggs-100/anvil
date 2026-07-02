@@ -14,6 +14,7 @@ pub mod operations;
 pub mod api;
 pub mod secrets;
 pub mod diagnostics;
+pub mod policy;
 pub mod context;
 pub mod plugin;
 pub mod state;
@@ -61,6 +62,9 @@ pub use operations::{Plan, Operation, Context, SimplePlan, SyncPlan, RepairPlan}
 
 // Re-export stable types/functions from manifest.rs
 pub use manifest::{ForgeConfig, find_forge_toml, load_config};
+
+// Re-export policy types
+pub use policy::{PolicyConfig, PolicyEngine, PolicyViolation};
 
 // Re-export stable types/functions from registry.rs
 pub use registry::{

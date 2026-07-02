@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::fs;
 use serde::{Serialize, Deserialize};
+use crate::policy::PolicyConfig;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ConfigDefinition {
@@ -38,6 +39,8 @@ pub struct ForgeConfig {
     pub config: Option<ConfigSection>,
     #[serde(default)]
     pub profile: Option<HashMap<String, ProfileSection>>,
+    #[serde(default)]
+    pub policy: Option<PolicyConfig>,
 }
 
 

@@ -6,7 +6,7 @@ use forge_core::operations::{
     InitOperation, ResolveOperation, LockOperation, GcOperation,
     RunOperation, ShellOperation, PlanOperation, ValidateOperation,
 };
-use forge_core::{CliCommand, ContextExporter, AgentAdapter, PluginRegistry};
+use forge_core::{CliCommand, ContextExporter, AgentAdapter, PluginRegistry, PolicyEngine};
 
 mod jsonrpc;
 mod mcp;
@@ -391,10 +391,23 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
             run_operation(LockOperation, &current_dir, &event_bus).await?;
         }
         Commands::Sync => {
+            // ── Policy pre-flight check ────────────────────────
+            if let Some(engine) = build_policy_engine(&current_dir) {
+                let (lockfile_exists, lockfile_has_hashes) = compute_lockfile_state(&current_dir);
+                let violations = engine.check_before_sync(lockfile_exists, lockfile_has_hashes);
+                enforce_policy(violations);
+            }
             let engine = forge_core::Engine::new(current_dir.clone())?;
             engine.sync().await?;
         }
         Commands::Up => {
+            // ── Policy pre-flight check ────────────────────────
+            if let Some(engine) = build_policy_engine(&current_dir) {
+                let (lockfile_exists, lockfile_has_hashes) = compute_lockfile_state(&current_dir);
+                let health_score = compute_health_score(&current_dir, &plugin_health_checks);
+                let violations = engine.check_before_up(lockfile_exists, lockfile_has_hashes, health_score);
+                enforce_policy(violations);
+            }
             println!("Ensuring lockfile is updated...");
             run_operation(LockOperation, &current_dir, &event_bus).await?;
             println!("Syncing runtimes...");
@@ -402,11 +415,35 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
             engine.sync().await?;
         }
         Commands::Run { cmd, args } => {
+            // ── Policy pre-flight check ────────────────────────
+            if let Some(engine) = build_policy_engine(&current_dir) {
+                let health_score = compute_health_score(&current_dir, &plugin_health_checks);
+                let active_profile = get_active_profile(&current_dir);
+                let active_runtimes = get_active_runtimes(&current_dir);
+                let violations = engine.check_before_run(
+                    active_profile.as_deref(),
+                    &active_runtimes,
+                    health_score,
+                );
+                enforce_policy(violations);
+            }
             let engine = forge_core::Engine::new(current_dir.clone())?;
             engine.sync().await?;
             run_operation(RunOperation { cmd, args }, &current_dir, &event_bus).await?;
         }
         Commands::Shell => {
+            // ── Policy pre-flight check ────────────────────────
+            if let Some(engine) = build_policy_engine(&current_dir) {
+                let health_score = compute_health_score(&current_dir, &plugin_health_checks);
+                let active_profile = get_active_profile(&current_dir);
+                let active_runtimes = get_active_runtimes(&current_dir);
+                let violations = engine.check_before_run(
+                    active_profile.as_deref(),
+                    &active_runtimes,
+                    health_score,
+                );
+                enforce_policy(violations);
+            }
             let engine = forge_core::Engine::new(current_dir.clone())?;
             engine.sync().await?;
             run_operation(ShellOperation, &current_dir, &event_bus).await?;
@@ -927,7 +964,86 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
     Ok(())
 }
 
+// ── Policy helpers ─────────────────────────────────────────────────────
 
+/// Build a [`PolicyEngine`] from `forge.toml` if a `[policy]` section exists.
+/// Returns `None` when no `forge.toml` is found or the section is absent.
+fn build_policy_engine(current_dir: &Path) -> Option<PolicyEngine> {
+    let toml_path = forge_core::find_forge_toml(current_dir)?;
+    let config = forge_core::load_config(&toml_path).ok()?;
+    config.policy.as_ref().map(|pc| PolicyEngine::new(pc))
+}
+
+/// Check whether a lockfile exists and whether its entries include hashes.
+fn compute_lockfile_state(current_dir: &Path) -> (bool, bool) {
+    let workspace_root = forge_core::find_forge_toml(current_dir)
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| current_dir.to_path_buf());
+    let lockfile_path = workspace_root.join("forge.lock");
+    if !lockfile_path.exists() {
+        return (false, false);
+    }
+    match forge_core::load_lockfile(&lockfile_path) {
+        Ok(lockfile) => {
+            let has_hashes = lockfile.runtimes.iter().any(|r| !r.sha256.is_empty());
+            (true, has_hashes)
+        }
+        Err(_) => (true, false),
+    }
+}
+
+/// Run a fast diagnostic pass and return the health score (0–100).
+fn compute_health_score(
+    current_dir: &Path,
+    plugin_health_checks: &[std::sync::Arc<dyn forge_core::HealthCheck>],
+) -> u8 {
+    match forge_core::get_cache_dir() {
+        Ok(cache_dir) => {
+            let diag_ctx = forge_core::DiagnosticContext {
+                workspace_root: current_dir.to_path_buf(),
+                cache_dir,
+                mode: forge_core::DiagnosticMode::Fast,
+                active_profile: None,
+            };
+            let report = run_diagnostic_engine(&diag_ctx, plugin_health_checks);
+            report.health_score
+        }
+        Err(_) => 100,
+    }
+}
+
+/// Get the active profile name (from `FORGE_PROFILE` env var or first profile key).
+fn get_active_profile(current_dir: &Path) -> Option<String> {
+    std::env::var("FORGE_PROFILE").ok().or_else(|| {
+        let toml_path = forge_core::find_forge_toml(current_dir)?;
+        forge_core::load_config(&toml_path).ok().and_then(|c| {
+            c.profile.and_then(|p| p.keys().next().cloned())
+        })
+    })
+}
+
+/// Get the list of active runtime names from `forge.toml`.
+fn get_active_runtimes(current_dir: &Path) -> Vec<String> {
+    let toml_path = match forge_core::find_forge_toml(current_dir) {
+        Some(p) => p,
+        None => return Vec::new(),
+    };
+    match forge_core::load_config(&toml_path) {
+        Ok(config) => config.runtimes.into_keys().collect(),
+        Err(_) => Vec::new(),
+    }
+}
+
+/// Print policy violations to stderr and abort the process.
+fn enforce_policy(violations: Vec<forge_core::PolicyViolation>) {
+    if violations.is_empty() {
+        return;
+    }
+    for v in &violations {
+        eprintln!("{}", v);
+    }
+    std::process::exit(1);
+}
 
 fn get_shim_binary_path() -> Result<PathBuf, String> {
     let current_exe = std::env::current_exe()
