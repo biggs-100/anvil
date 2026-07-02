@@ -18,6 +18,7 @@ pub mod context;
 pub mod plugin;
 pub mod state;
 pub mod bundle;
+pub mod snapshot;
 
 pub use diagnostics::{
     DiagnosticContext, DiagnosticMode, Severity, Explanation, QuickFix, QuickFixAction,
@@ -105,6 +106,9 @@ pub use bundle::{
     Bundle, BundleMetadata, BundleError, BundleChecksums, ChecksumEntry,
     create_bundle, restore_bundle, verify_checksums,
 };
+
+// Re-export snapshot types and functions
+pub use snapshot::{SnapshotManager, SnapshotMetadata};
 
 /// Orchestrates updating the lockfile from forge.toml config.
 ///

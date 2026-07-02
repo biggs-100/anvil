@@ -17,7 +17,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "clean", "gc", "status", "inspect", "repair", "plan",
     "history", "explain", "trace", "events", "setup", "doctor",
     "which", "ai", "env", "secret", "context",
-    "bundle", "restore",
+    "bundle", "restore", "snapshot",
 ];
 
 #[derive(Parser)]
@@ -141,6 +141,12 @@ enum Commands {
         subcommand: RegistryCommands,
     },
 
+    #[command(about = "Manage environment snapshots")]
+    Snapshot {
+        #[command(subcommand)]
+        subcommand: SnapshotCommands,
+    },
+
     #[command(about = "Display active environment configuration and workspace details")]
     Context {
         #[arg(long, default_value = "json")]
@@ -216,6 +222,25 @@ enum AiCommands {
     Context,
     #[command(about = "Perform diagnostics check and output remediation instructions")]
     Doctor,
+}
+
+#[derive(Subcommand)]
+enum SnapshotCommands {
+    #[command(about = "Create a new environment snapshot")]
+    Create {
+        #[arg(long, help = "Custom snapshot name (default: auto-generated timestamp)")]
+        name: Option<String>,
+        #[arg(long, help = "Optional description for the snapshot")]
+        description: Option<String>,
+    },
+    #[command(about = "List all saved snapshots")]
+    List,
+    #[command(name = "restore", about = "Restore environment state from a snapshot")]
+    SnapshotRestore {
+        name: String,
+        #[arg(long, help = "Preview what would be restored without modifying files")]
+        dry_run: bool,
+    },
 }
 
 
@@ -745,6 +770,94 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
             println!("Syncing runtimes...");
             let engine = forge_core::Engine::new(current_dir.clone())?;
             engine.sync().await?;
+        }
+        Commands::Snapshot { subcommand } => {
+            let workspace_root = forge_core::find_forge_toml(&current_dir)
+                .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+                .unwrap_or_else(|| current_dir.clone());
+            let cache_dir = forge_core::get_cache_dir()?;
+            let manager = forge_core::SnapshotManager::new(&workspace_root, &cache_dir);
+
+            match subcommand {
+                SnapshotCommands::Create { name, description } => {
+                    // Check forge.toml exists
+                    let toml_path = workspace_root.join("forge.toml");
+                    if !toml_path.exists() {
+                        return Err("forge.toml not found. Run 'forge init' first.".to_string());
+                    }
+
+                    let snapshot_name = manager
+                        .create(name.as_deref(), description.as_deref())
+                        .map_err(|e| format!("Failed to create snapshot: {}", e))?;
+
+                    let snap_dir = workspace_root
+                        .join(".forge")
+                        .join("snapshots")
+                        .join(&snapshot_name);
+                    println!("Snapshot saved: {} ({})", snapshot_name, snap_dir.display());
+                }
+                SnapshotCommands::List => {
+                    let snapshots = manager.list()?;
+                    if snapshots.is_empty() {
+                        println!("No snapshots found");
+                    } else {
+                        println!(
+                            "{:<20} | {:<25} | {:<14} | {}",
+                            "Name", "Created At", "Runtime Count", "Description"
+                        );
+                        println!("{}", "-".repeat(80));
+                        for snap in &snapshots {
+                            let desc = snap
+                                .description
+                                .as_deref()
+                                .unwrap_or("-");
+                            println!(
+                                "{:<20} | {:<25} | {:<14} | {}",
+                                snap.name, snap.created_at, snap.runtime_count, desc
+                            );
+                        }
+                    }
+                }
+                SnapshotCommands::SnapshotRestore { name, dry_run } => {
+                    // File operations (backup + copy) — synchronous
+                    manager
+                        .restore(&name, dry_run)
+                        .map_err(|e| format!("Failed to restore snapshot: {}", e))?;
+
+                    if !dry_run {
+                        // Run forge up: lock + sync
+                        println!("Snapshot '{}' restored. Syncing runtimes...", name);
+                        match run_operation(LockOperation, &current_dir, &event_bus).await {
+                            Ok(_) => {
+                                let engine = forge_core::Engine::new(current_dir.clone())?;
+                                engine.sync().await?;
+                                println!("Snapshot '{}' restored successfully.", name);
+                            }
+                            Err(e) => {
+                                // Restore .bak files on failure
+                                let bak_toml = workspace_root.join("forge.toml.bak");
+                                let bak_lock = workspace_root.join("forge.lock.bak");
+                                if bak_toml.exists() {
+                                    let _ = std::fs::copy(
+                                        &bak_toml,
+                                        workspace_root.join("forge.toml"),
+                                    );
+                                }
+                                if bak_lock.exists() {
+                                    let _ = std::fs::copy(
+                                        &bak_lock,
+                                        workspace_root.join("forge.lock"),
+                                    );
+                                }
+                                return Err(format!(
+                                    "Snapshot restore failed, files reverted: {}",
+                                    e
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
         }
         Commands::PluginCommand(args) => {
             if args.is_empty() {
