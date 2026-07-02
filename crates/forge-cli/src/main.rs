@@ -9,6 +9,7 @@ use forge_core::operations::{
 use forge_core::{CliCommand, ContextExporter, AgentAdapter, PluginRegistry};
 
 mod jsonrpc;
+mod mcp;
 
 /// Built-in command names that take precedence over plugin commands.
 const BUILTIN_COMMANDS: &[&str] = &[
@@ -115,6 +116,9 @@ enum Commands {
 
     #[command(about = "Start JSON-RPC 2.0 server over stdin/stdout for SDK transport")]
     JsonRpc,
+
+    #[command(about = "Start MCP (Model Context Protocol) server over stdin/stdout for AI agent integration")]
+    Mcp,
 
     #[command(about = "Display active environment configuration and workspace details")]
     Context {
@@ -506,6 +510,9 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
         
         Commands::JsonRpc => {
             jsonrpc::serve(current_dir.clone()).await?;
+        }
+        Commands::Mcp => {
+            mcp::serve(current_dir.clone()).await?;
         }
         Commands::Context { format, scope, exclude } => {
             let mut engine = forge_core::ContextEngine::new();
