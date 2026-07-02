@@ -317,8 +317,7 @@ pub async fn serve(current_dir: std::path::PathBuf) -> Result<(), String> {
         notification_loop(notif_rx, notif_write_lock).await;
     });
 
-    let stdin = std::io::stdin();
-    let mut reader = std::io::BufReader::new(stdin.lock());
+    let mut reader = std::io::BufReader::new(std::io::stdin().lock());
     let mut line = String::new();
 
     loop {
@@ -337,28 +336,21 @@ pub async fn serve(current_dir: std::path::PathBuf) -> Result<(), String> {
             continue;
         }
 
-        let engine = Arc::clone(&engine);
-        let lock = Arc::clone(&write_lock);
-        let dir = current_dir.clone();
-        let is_init = Arc::clone(&initialized);
-        let bus = event_bus.clone();
-
-        tokio::spawn(async move {
-            let response = dispatch(&engine, &dir, &raw, &is_init, &bus).await;
-            if let Some(resp) = response {
-                let json = match serde_json::to_string(&resp) {
-                    Ok(s) => s,
-                    Err(e) => format!(
-                        r#"{{"jsonrpc":"2.0","id":null,"error":{{"code":-32603,"message":"Serialization error: {}" }}"#,
-                        e.to_string().replace('"', "'")
-                    ),
-                };
-                let _guard = lock.lock().await;
-                let mut out = std::io::stdout().lock();
-                let _ = writeln!(out, "{}", json);
-                let _ = out.flush();
-            }
-        });
+        // Process requests sequentially (MCP lifecycle requires ordered dispatch)
+        let response = dispatch(&engine, &current_dir, &raw, &initialized, &event_bus).await;
+        if let Some(resp) = response {
+            let json = match serde_json::to_string(&resp) {
+                Ok(s) => s,
+                Err(e) => format!(
+                    r#"{{"jsonrpc":"2.0","id":null,"error":{{"code":-32603,"message":"Serialization error: {}" }}"#,
+                    e.to_string().replace('"', "'")
+                ),
+            };
+            let _guard = write_lock.lock().await;
+            let mut out = std::io::stdout().lock();
+            let _ = writeln!(out, "{}", json);
+            let _ = out.flush();
+        }
     }
 
     Ok(())

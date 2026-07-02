@@ -13,13 +13,19 @@ use std::process::{Command, Stdio};
 
 /// Locate the forge binary using Cargo's env var or fallback.
 ///
-/// Cargo sets `CARGO_BIN_EXE_FORGE_CLI` (uppercase, underscore-separated)
-/// when integration tests run in a workspace that produces the `forge-cli`
-/// binary. The fallback is used when running outside of Cargo (e.g., IDE
-/// test runner).
-fn forge_exe() -> String {
-    std::env::var("CARGO_BIN_EXE_FORGE_CLI")
-        .unwrap_or_else(|_| "forge-cli".to_string())
+/// Returns the path to the forge-cli binary.
+///
+/// Integration tests in the same crate don't get CARGO_BIN_EXE_*,
+/// so we derive the path from the test binary location.
+fn forge_exe() -> std::path::PathBuf {
+    let current_exe = std::env::current_exe().expect("test binary path");
+    // The test binary is in target/debug/deps/forge_cli-<hash>.exe
+    // The forge binary is in target/debug/forge-cli.exe
+    let target_dir = current_exe.parent() // deps/
+        .and_then(|p| p.parent())         // debug/
+        .expect("target directory");
+    let exe_name = if cfg!(windows) { "forge-cli.exe" } else { "forge-cli" };
+    target_dir.join(exe_name)
 }
 
 /// Helper: send a sequence of MCP requests and collect all response lines.
@@ -37,17 +43,20 @@ fn send_mcp_requests(requests: &[&str]) -> Vec<String> {
         .spawn()
         .expect("failed to spawn forge mcp");
 
-    let stdin = child.stdin.as_mut().expect("failed to get stdin");
-    for req in requests {
-        stdin
-            .write_all(req.as_bytes())
-            .expect("failed to write to stdin");
-        stdin
-            .write_all(b"\n")
-            .expect("failed to write newline");
+    {
+        let stdin = child.stdin.as_mut().expect("failed to get stdin");
+        for req in requests {
+            stdin
+                .write_all(req.as_bytes())
+                .expect("failed to write to stdin");
+            stdin
+                .write_all(b"\n")
+                .expect("failed to write newline");
+        }
+        stdin.flush().expect("failed to flush stdin");
     }
-    stdin.flush().expect("failed to flush stdin");
-    let _ = stdin; // Close stdin so child sees EOF
+    // Drop child.stdin by taking it, which closes the pipe
+    drop(child.stdin.take());
 
     let stdout = child.stdout.take().expect("failed to get stdout");
     let reader = BufReader::new(stdout);
@@ -65,7 +74,6 @@ fn send_mcp_requests(requests: &[&str]) -> Vec<String> {
     lines
 }
 
-#[ignore]
 #[test]
 fn test_initialize_handshake() {
     let lines = send_mcp_requests(&[
@@ -85,7 +93,6 @@ fn test_initialize_handshake() {
     assert!(parsed["result"]["server_info"].is_object());
 }
 
-#[ignore]
 #[test]
 fn test_list_tools_returns_six() {
     let lines = send_mcp_requests(&[
@@ -108,7 +115,6 @@ fn test_list_tools_returns_six() {
     assert!(names.contains(&"forge_doctor"));
 }
 
-#[ignore]
 #[test]
 fn test_unknown_method_returns_method_not_found() {
     let lines = send_mcp_requests(&[
@@ -123,7 +129,6 @@ fn test_unknown_method_returns_method_not_found() {
     assert!(parsed["error"]["message"].as_str().unwrap_or("").contains("Method not found"));
 }
 
-#[ignore]
 #[test]
 fn test_list_resources_returns_forge_context() {
     let lines = send_mcp_requests(&[
@@ -139,7 +144,6 @@ fn test_list_resources_returns_forge_context() {
     assert_eq!(resources[0]["uri"], "forge://context/active");
 }
 
-#[ignore]
 #[test]
 fn test_list_prompts_returns_three() {
     let lines = send_mcp_requests(&[
@@ -158,7 +162,6 @@ fn test_list_prompts_returns_three() {
     assert!(names.contains(&"forge:explain"));
 }
 
-#[ignore]
 #[test]
 fn test_read_resource_active_context() {
     let lines = send_mcp_requests(&[

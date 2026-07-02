@@ -18,9 +18,13 @@ use std::time::Duration;
 /// when integration tests run in a workspace that produces the `forge-cli`
 /// binary. The fallback is used when running outside of Cargo (e.g., IDE
 /// test runner).
-fn forge_exe() -> String {
-    std::env::var("CARGO_BIN_EXE_FORGE_CLI")
-        .unwrap_or_else(|_| "forge-cli".to_string())
+fn forge_exe() -> std::path::PathBuf {
+    let current_exe = std::env::current_exe().expect("test binary path");
+    let target_dir = current_exe.parent()
+        .and_then(|p| p.parent())
+        .expect("target directory");
+    let exe_name = if cfg!(windows) { "forge-cli.exe" } else { "forge-cli" };
+    target_dir.join(exe_name)
 }
 
 /// Helper: spawn `forge jsonrpc`, send a request, read one response line.

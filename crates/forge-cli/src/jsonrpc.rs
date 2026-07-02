@@ -70,8 +70,7 @@ pub async fn serve(current_dir: std::path::PathBuf) -> Result<(), String> {
     // Mutex<()> guards stdout — the lock is held only during the sync write.
     let write_lock: Arc<Mutex<()>> = Arc::new(Mutex::new(()));
 
-    let stdin = std::io::stdin();
-    let mut reader = std::io::BufReader::new(stdin.lock());
+    let mut reader = std::io::BufReader::new(std::io::stdin().lock());
     let mut line = String::new();
 
     loop {
@@ -90,28 +89,23 @@ pub async fn serve(current_dir: std::path::PathBuf) -> Result<(), String> {
             continue;
         }
 
-        let engine = Arc::clone(&engine);
-        let lock = Arc::clone(&write_lock);
-        let dir = current_dir.clone();
-
-        tokio::spawn(async move {
-            let response = dispatch(&engine, &dir, &raw).await;
-            if let Some(resp) = response {
-                let json = match serde_json::to_string(&resp) {
-                    Ok(s) => s,
-                    Err(e) => format!(
-                        r#"{{"jsonrpc":"2.0","id":null,"error":{{"code":-32603,"message":{} }}"#,
-                        serde_json::to_string(&format!("Serialization error: {}", e))
-                            .unwrap_or_else(|_| "\"Internal error\"".to_string())
-                    ),
-                };
-                // Acquire write lock, write, drop lock
-                let _guard = lock.lock().await;
-                let mut out = std::io::stdout().lock();
-                let _ = writeln!(out, "{}", json);
-                let _ = out.flush();
-            }
-        });
+        // Process sequentially — simpler and avoids ordering issues
+        let response = dispatch(&engine, &current_dir, &raw).await;
+        if let Some(resp) = response {
+            let json = match serde_json::to_string(&resp) {
+                Ok(s) => s,
+                Err(e) => format!(
+                    r#"{{"jsonrpc":"2.0","id":null,"error":{{"code":-32603,"message":{} }}"#,
+                    serde_json::to_string(&format!("Serialization error: {}", e))
+                        .unwrap_or_else(|_| "\"Internal error\"".to_string())
+                ),
+            };
+            // Acquire write lock, write, drop lock
+            let _guard = write_lock.lock().await;
+            let mut out = std::io::stdout().lock();
+            let _ = writeln!(out, "{}", json);
+            let _ = out.flush();
+        }
     }
 
     Ok(())
