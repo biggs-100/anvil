@@ -4,6 +4,10 @@
 # Local forge state
 .forge/
 
+# SDK build artifacts
+sdks/typescript/node_modules/
+sdks/typescript/dist/
+
 # IDE
 .vscode/
 .idea/

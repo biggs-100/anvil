@@ -814,6 +814,16 @@ name = "forge-drivers"
 version = "0.1.0"
 
 [[package]]
+name = "forge-sdk"
+version = "0.1.0"
+dependencies = [
+ "forge-core",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "forge-shim"
 version = "0.1.0"
 

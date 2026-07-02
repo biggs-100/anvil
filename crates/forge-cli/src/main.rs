@@ -8,6 +8,8 @@ use forge_core::operations::{
 };
 use forge_core::{CliCommand, ContextExporter, AgentAdapter, PluginRegistry};
 
+mod jsonrpc;
+
 /// Built-in command names that take precedence over plugin commands.
 const BUILTIN_COMMANDS: &[&str] = &[
     "init", "resolve", "lock", "sync", "up", "run", "shell",
@@ -110,6 +112,9 @@ enum Commands {
     /// Catch-all for plugin CLI commands
     #[command(external_subcommand)]
     PluginCommand(Vec<String>),
+
+    #[command(about = "Start JSON-RPC 2.0 server over stdin/stdout for SDK transport")]
+    JsonRpc,
 
     #[command(about = "Display active environment configuration and workspace details")]
     Context {
@@ -499,6 +504,9 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
             }
         }
         
+        Commands::JsonRpc => {
+            jsonrpc::serve(current_dir.clone()).await?;
+        }
         Commands::Context { format, scope, exclude } => {
             let mut engine = forge_core::ContextEngine::new();
             engine.register(std::sync::Arc::new(forge_core::RuntimeProviderImpl));

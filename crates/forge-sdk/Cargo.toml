@@ -1,0 +1,15 @@
+[package]
+name = "forge-sdk"
+version = "0.1.0"
+edition = "2021"
+description = "Forge Rust SDK — typed wrapper around the Forge engine"
+
+[dependencies]
+forge-core = { path = "../forge-core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.35", features = ["full"] }
+
+[features]
+default = []
+async = []

@@ -5,4 +5,5 @@ members = [
     "crates/forge-drivers",
     "crates/forge-cli",
     "crates/forge-shim",
+    "crates/forge-sdk",
 ]
