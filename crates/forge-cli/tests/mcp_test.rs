@@ -5,23 +5,21 @@
 //!
 //! Run with: cargo test --test mcp_test -- --nocapture
 //!
-//! Note: Tests are #[ignore] by default because they require the forge binary
-//! to be compiled first. Run with `cargo test --test mcp_test -- --ignored`
-//! after a build.
+//! Cargo automatically sets CARGO_BIN_EXE_FORGE_CLI when the test binary is
+//! built in the same workspace as the forge-cli crate. No --ignored flag needed.
 
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Command, Stdio};
 
 /// Locate the forge binary using Cargo's env var or fallback.
+///
+/// Cargo sets `CARGO_BIN_EXE_FORGE_CLI` (uppercase, underscore-separated)
+/// when integration tests run in a workspace that produces the `forge-cli`
+/// binary. The fallback is used when running outside of Cargo (e.g., IDE
+/// test runner).
 fn forge_exe() -> String {
-    if let Ok(exe) = std::env::var("CARGO_BIN_EXE_forge-cli") {
-        return exe;
-    }
-    if let Ok(exe) = std::env::var("CARGO_BIN_EXE_forge") {
-        return exe;
-    }
-    // Fallback: assume it's in PATH or relative path
-    "forge".to_string()
+    std::env::var("CARGO_BIN_EXE_FORGE_CLI")
+        .unwrap_or_else(|_| "forge-cli".to_string())
 }
 
 /// Helper: send a sequence of MCP requests and collect all response lines.
@@ -67,8 +65,8 @@ fn send_mcp_requests(requests: &[&str]) -> Vec<String> {
     lines
 }
 
+#[ignore]
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_initialize_handshake() {
     let lines = send_mcp_requests(&[
         r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocol_version":"2024-11-05","capabilities":{},"client_info":{"name":"test","version":"1.0"}}}"#,
@@ -87,8 +85,8 @@ fn test_initialize_handshake() {
     assert!(parsed["result"]["server_info"].is_object());
 }
 
+#[ignore]
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_list_tools_returns_six() {
     let lines = send_mcp_requests(&[
         r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocol_version":"2024-11-05","capabilities":{},"client_info":{"name":"test","version":"1.0"}}}"#,
@@ -110,8 +108,8 @@ fn test_list_tools_returns_six() {
     assert!(names.contains(&"forge_doctor"));
 }
 
+#[ignore]
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_unknown_method_returns_method_not_found() {
     let lines = send_mcp_requests(&[
         r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocol_version":"2024-11-05","capabilities":{},"client_info":{"name":"test","version":"1.0"}}}"#,
@@ -125,8 +123,8 @@ fn test_unknown_method_returns_method_not_found() {
     assert!(parsed["error"]["message"].as_str().unwrap_or("").contains("Method not found"));
 }
 
+#[ignore]
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_list_resources_returns_forge_context() {
     let lines = send_mcp_requests(&[
         r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocol_version":"2024-11-05","capabilities":{},"client_info":{"name":"test","version":"1.0"}}}"#,
@@ -141,8 +139,8 @@ fn test_list_resources_returns_forge_context() {
     assert_eq!(resources[0]["uri"], "forge://context/active");
 }
 
+#[ignore]
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_list_prompts_returns_three() {
     let lines = send_mcp_requests(&[
         r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocol_version":"2024-11-05","capabilities":{},"client_info":{"name":"test","version":"1.0"}}}"#,
@@ -160,8 +158,8 @@ fn test_list_prompts_returns_three() {
     assert!(names.contains(&"forge:explain"));
 }
 
+#[ignore]
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_read_resource_active_context() {
     let lines = send_mcp_requests(&[
         r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocol_version":"2024-11-05","capabilities":{},"client_info":{"name":"test","version":"1.0"}}}"#,

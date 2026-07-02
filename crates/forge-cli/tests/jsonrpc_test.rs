@@ -5,24 +5,22 @@
 //!
 //! Run with: cargo test --test jsonrpc_test -- --nocapture
 //!
-//! Note: Tests are #[ignore] by default because they require the forge binary
-//! to be compiled first. Run with `cargo test --test jsonrpc_test -- --ignored`
-//! after a build.
+//! Cargo automatically sets CARGO_BIN_EXE_FORGE_CLI when the test binary is
+//! built in the same workspace as the forge-cli crate. No --ignored flag needed.
 
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
 /// Locate the forge binary using Cargo's env var or fallback.
+///
+/// Cargo sets `CARGO_BIN_EXE_FORGE_CLI` (uppercase, underscore-separated)
+/// when integration tests run in a workspace that produces the `forge-cli`
+/// binary. The fallback is used when running outside of Cargo (e.g., IDE
+/// test runner).
 fn forge_exe() -> String {
-    if let Ok(exe) = std::env::var("CARGO_BIN_EXE_forge-cli") {
-        return exe;
-    }
-    if let Ok(exe) = std::env::var("CARGO_BIN_EXE_forge") {
-        return exe;
-    }
-    // Fallback: assume it's in PATH or relative path
-    "forge".to_string()
+    std::env::var("CARGO_BIN_EXE_FORGE_CLI")
+        .unwrap_or_else(|_| "forge-cli".to_string())
 }
 
 /// Helper: spawn `forge jsonrpc`, send a request, read one response line.
@@ -56,7 +54,6 @@ fn send_request(request: &str) -> String {
 }
 
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_engine_status_request() {
     let request = r#"{"jsonrpc":"2.0","id":1,"method":"engine.status","params":{}}"#;
     let response = send_request(request);
@@ -79,7 +76,6 @@ fn test_engine_status_request() {
 }
 
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_parse_error_response() {
     let response = send_request("not valid json");
 
@@ -94,7 +90,6 @@ fn test_parse_error_response() {
 }
 
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_method_not_found() {
     let request = r#"{"jsonrpc":"2.0","id":2,"method":"nonexistent","params":{}}"#;
     let response = send_request(request);
@@ -107,7 +102,6 @@ fn test_method_not_found() {
 }
 
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
 fn test_notification_no_response() {
     // Notification requests (without id) must not produce a response
     let request = r#"{"jsonrpc":"2.0","method":"engine.status","params":{}}"#;
@@ -149,7 +143,7 @@ fn test_notification_no_response() {
 }
 
 #[test]
-#[ignore = "requires compiled forge binary (cargo build)"]
+#[cfg(not(target_os = "windows"))]
 fn test_subprocess_lifecycle_error() {
     /// When the forge subprocess dies mid-request, the client should
     /// detect the connection error (EOF or broken pipe).

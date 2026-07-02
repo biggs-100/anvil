@@ -1,3 +1,4 @@
+// TODO: tests — requires filesystem isolation fixture
 use std::fs;
 use std::path::Path;
 use crate::types::Lockfile;

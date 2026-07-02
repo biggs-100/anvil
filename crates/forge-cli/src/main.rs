@@ -132,13 +132,13 @@ enum Commands {
     #[command(external_subcommand)]
     PluginCommand(Vec<String>),
 
-    #[command(about = "Start JSON-RPC 2.0 server over stdin/stdout for SDK transport")]
+    #[command(name = "jsonrpc", about = "Start JSON-RPC 2.0 server over stdin/stdout for SDK transport")]
     JsonRpc,
 
-    #[command(about = "Start MCP (Model Context Protocol) server over stdin/stdout for AI agent integration")]
+    #[command(name = "mcp", about = "Start MCP (Model Context Protocol) server over stdin/stdout for AI agent integration")]
     Mcp,
 
-    #[command(about = "Launch terminal dashboard")]
+    #[command(name = "tui", about = "Launch terminal dashboard")]
     Tui,
 
     #[command(about = "Manage remote registry and FRRS metadata cache")]

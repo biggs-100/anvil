@@ -1,3 +1,4 @@
+// TODO: tests — requires mocking OS process APIs
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::process::Command;

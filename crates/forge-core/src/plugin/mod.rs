@@ -1,3 +1,4 @@
+// TODO: tests — registry.rs has unit tests; plugin lifecycle needs e2e
 pub mod registry;
 
 pub use registry::PluginRegistry;

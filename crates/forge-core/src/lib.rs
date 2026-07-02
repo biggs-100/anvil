@@ -1,3 +1,4 @@
+// TODO: tests — re-export facade; test coverage in submodules
 use std::path::Path;
 
 pub mod types;
