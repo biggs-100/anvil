@@ -71,6 +71,7 @@ pub use registry::{
 pub use resolver::{
     RuntimeProvider, Resolver, resolve_from_registry, resolve_runtime_lock,
     NodeProvider, PythonProvider, BunProvider, GoProvider, RustProvider,
+    LlvmProvider, JdkProvider,
     DoctorIssue, resolve_environment, validate_environment, interpolate_value,
 };
 

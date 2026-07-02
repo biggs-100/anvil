@@ -82,6 +82,22 @@ impl RuntimeProvider for RustProvider {
     }
 }
 
+pub struct LlvmProvider;
+impl RuntimeProvider for LlvmProvider {
+    fn name(&self) -> &str { "llvm" }
+    fn resolve(&self, version_req: &str, platform: &str, arch: &str, registry: &HybridRegistry) -> Result<RuntimeLock, String> {
+        resolve_from_registry(self.name(), version_req, platform, arch, registry)
+    }
+}
+
+pub struct JdkProvider;
+impl RuntimeProvider for JdkProvider {
+    fn name(&self) -> &str { "jdk" }
+    fn resolve(&self, version_req: &str, platform: &str, arch: &str, registry: &HybridRegistry) -> Result<RuntimeLock, String> {
+        resolve_from_registry(self.name(), version_req, platform, arch, registry)
+    }
+}
+
 pub struct Resolver {
     pub providers: HashMap<String, Box<dyn RuntimeProvider>>,
     /// Plugin runtime providers checked as fallback after built-in.
@@ -97,6 +113,8 @@ impl Resolver {
         providers.insert("bun".to_string(), Box::new(BunProvider));
         providers.insert("go".to_string(), Box::new(GoProvider));
         providers.insert("rust".to_string(), Box::new(RustProvider));
+        providers.insert("llvm".to_string(), Box::new(LlvmProvider));
+        providers.insert("jdk".to_string(), Box::new(JdkProvider));
         Self {
             providers,
             plugin_providers: Vec::new(),
@@ -682,6 +700,80 @@ mod resolver_tests {
 
         let type_issue = issues.iter().find(|i| i.id.contains("type")).unwrap();
         assert_eq!(type_issue.id, "config::type::MAX_CONNECTIONS");
+    }
+
+    // ── New Runtime Providers ─────────────────────────────────
+
+    #[test]
+    fn test_llvm_provider_name() {
+        let provider = LlvmProvider;
+        assert_eq!(provider.name(), "llvm");
+    }
+
+    #[test]
+    fn test_jdk_provider_name() {
+        let provider = JdkProvider;
+        assert_eq!(provider.name(), "jdk");
+    }
+
+    #[test]
+    fn test_llvm_registry_resolve_all_platforms() {
+        use crate::registry::HybridRegistry;
+        let registry = HybridRegistry::default_with_internal();
+
+        let cases = vec![
+            ("windows", "x86_64", "18.1.0"),
+            ("macos", "x86_64", "18.1.0"),
+            ("macos", "aarch64", "18.1.0"),
+            ("linux", "x86_64", "18.1.0"),
+            ("linux", "aarch64", "18.1.0"),
+        ];
+        for (platform, arch, version) in cases {
+            let result = registry.resolve("llvm", version, platform, arch);
+            assert!(result.is_ok(), "llvm {} {}/{} should resolve", version, platform, arch);
+            let entry = result.unwrap();
+            assert_eq!(entry.name, "llvm");
+            assert_eq!(entry.version, version);
+        }
+    }
+
+    #[test]
+    fn test_jdk_registry_resolve_all_platforms() {
+        use crate::registry::HybridRegistry;
+        let registry = HybridRegistry::default_with_internal();
+
+        let cases = vec![
+            ("windows", "x86_64", "21.0.2"),
+            ("macos", "x86_64", "21.0.2"),
+            ("macos", "aarch64", "21.0.2"),
+            ("linux", "x86_64", "21.0.2"),
+            ("linux", "aarch64", "21.0.2"),
+        ];
+        for (platform, arch, version) in cases {
+            let result = registry.resolve("jdk", version, platform, arch);
+            assert!(result.is_ok(), "jdk {} {}/{} should resolve", version, platform, arch);
+            let entry = result.unwrap();
+            assert_eq!(entry.name, "jdk");
+            assert_eq!(entry.version, version);
+        }
+    }
+
+    #[test]
+    fn test_default_with_internal_contains_llvm_and_jdk() {
+        use crate::registry::HybridRegistry;
+        let registry = HybridRegistry::default_with_internal();
+        let llvm_entries: Vec<_> = registry.runtimes.iter().filter(|e| e.name == "llvm").collect();
+        let jdk_entries: Vec<_> = registry.runtimes.iter().filter(|e| e.name == "jdk").collect();
+        assert!(!llvm_entries.is_empty(), "default_with_internal() should contain llvm entries");
+        assert!(!jdk_entries.is_empty(), "default_with_internal() should contain jdk entries");
+    }
+
+    #[test]
+    fn test_resolve_nonexistent_runtime_returns_error() {
+        use crate::registry::HybridRegistry;
+        let registry = HybridRegistry::default_with_internal();
+        let result = registry.resolve("nonexistent-runtime", "1.0.0", "linux", "x86_64");
+        assert!(result.is_err(), "resolve of nonexistent runtime should return Err");
     }
 }
 
