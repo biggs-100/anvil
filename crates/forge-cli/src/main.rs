@@ -120,6 +120,9 @@ enum Commands {
     #[command(about = "Start MCP (Model Context Protocol) server over stdin/stdout for AI agent integration")]
     Mcp,
 
+    #[command(about = "Launch terminal dashboard")]
+    Tui,
+
     #[command(about = "Display active environment configuration and workspace details")]
     Context {
         #[arg(long, default_value = "json")]
@@ -513,6 +516,17 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
         }
         Commands::Mcp => {
             mcp::serve(current_dir.clone()).await?;
+        }
+        Commands::Tui => {
+            let engine = forge_core::Engine::new(current_dir.clone())?;
+            let cache_dir = forge_core::get_cache_dir()?;
+            let diag_ctx = forge_core::DiagnosticContext {
+                workspace_root: current_dir.clone(),
+                cache_dir,
+                mode: forge_core::DiagnosticMode::Deep,
+                active_profile: None,
+            };
+            forge_tui::App::run(engine, diag_ctx, plugin_health_checks).await?;
         }
         Commands::Context { format, scope, exclude } => {
             let mut engine = forge_core::ContextEngine::new();

@@ -11,4 +11,5 @@ serde_json = "1.0"
 tokio = { version = "1.35", features = ["full"] }
 forge-core = { path = "../forge-core" }
 forge-drivers = { path = "../forge-drivers" }
+forge-tui = { path = "../forge-tui" }
 dirs = "5.0"
