@@ -24,6 +24,7 @@ Last updated: 2026-07-02
 
 | Skill | Trigger / description | Scope | Path |
 | --- | --- | --- | --- |
+| `agents-md-generator` | Trigger: AGENTS.md, agents.md, agents-md, skill index, generate agents. Scan project skill directories and generate or update AGENTS.md with a skill index table, SDD workflow config, and cost-optimized review rules. | user | `C:\Users\USER\.config\opencode\skills\agents-md-generator\SKILL.md` |
 | `branch-pr` | Create Gentle AI pull requests with issue-first checks. Trigger: creating, opening, or preparing PRs for review. | user | `C:\Users\USER\.config\opencode\skills\branch-pr\SKILL.md` |
 | `chained-pr` | Trigger: PRs over 400 lines, stacked PRs, review slices. Split oversized changes into chained PRs that protect review focus. | user | `C:\Users\USER\.config\opencode\skills\chained-pr\SKILL.md` |
 | `cognitive-doc-design` | Design docs that reduce cognitive load. Trigger: writing guides, READMEs, RFCs, onboarding, architecture, or review-facing docs. | user | `C:\Users\USER\.config\opencode\skills\cognitive-doc-design\SKILL.md` |
