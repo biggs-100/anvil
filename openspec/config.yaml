@@ -1,0 +1,31 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Rust workspace (forge)
+  Architecture: Platform for reproducible development environments (context platform)
+  Core frozen at 1.0: Runtime Engine, Lifecycle, Operations, Configuration, Secrets, Diagnostics, Context Engine, Observability, Public API
+  Testing: Standard Rust tests (cargo test)
+  Style: Clean architecture, trait-based providers, facade pattern (Engine API)
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

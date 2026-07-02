@@ -1,0 +1,8 @@
+[package]
+name = "forge-shim"
+version = "0.1.0"
+edition = "2021"
+description = "Forge runtime shim — transparent binary forwarding with environment isolation"
+
+[dependencies]
+# No external dependencies to keep overhead minimal (<5ms)
