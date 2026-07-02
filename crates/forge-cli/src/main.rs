@@ -12,6 +12,7 @@ use forge_core::manifest::ForgeConfig;
 use forge_core::secrets::{ResolvedEnvironment, ValueSource};
 use forge_core::{CliCommand, ContextExporter, AgentAdapter, PluginRegistry, PolicyEngine};
 
+mod benchmark;
 mod jsonrpc;
 mod mcp;
 
@@ -22,6 +23,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "history", "explain", "trace", "events", "setup", "doctor",
     "which", "ai", "env", "secret", "context",
     "bundle", "restore", "snapshot",
+    "benchmark",
 ];
 
 #[derive(Parser)]
@@ -149,6 +151,14 @@ enum Commands {
     Snapshot {
         #[command(subcommand)]
         subcommand: SnapshotCommands,
+    },
+
+    #[command(about = "Run engine benchmarks and report performance metrics")]
+    Benchmark {
+        #[arg(long, help = "Format output as JSON")]
+        json: bool,
+        #[arg(long, help = "Compare results with previous run (future)" )]
+        compare: bool,
     },
 
     #[command(about = "Display active environment configuration and workspace details")]
@@ -905,6 +915,9 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
                 active_profile: None,
             };
             forge_tui::App::run(engine, diag_ctx, plugin_health_checks).await?;
+        }
+        Commands::Benchmark { json, compare } => {
+            benchmark::run_benchmarks(&current_dir, json, compare).await?;
         }
         Commands::Context { format, scope, exclude } => {
             let mut engine = forge_core::ContextEngine::new();
