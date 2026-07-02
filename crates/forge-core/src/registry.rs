@@ -145,7 +145,10 @@ impl RemoteRegistry {
     }
 
     /// Fetch `metadata.toml` from `{base_url}/{name}/{version}/metadata.toml`.
+    /// Also fetches the companion `metadata.toml.asc` detached GPG signature
+    /// and verifies it against the embedded (and env-supplied) trusted keys.
     /// On success the result is also saved to the local cache.
+    /// On signature failure, falls back to cached metadata (if available).
     pub async fn fetch_metadata(&self, name: &str, version: &str) -> Result<FrrsMetadata, String> {
         let url = format!("{}/{}/{}/metadata.toml", self.base_url, name, version);
         let response = self
@@ -169,6 +172,33 @@ impl RemoteRegistry {
             .await
             .map_err(|e| format!("Failed to read response body: {}", e))?;
 
+        // Attempt GPG signature verification
+        let verification_ok = self.verify_metadata_signature(name, version, &text).await;
+
+        if !verification_ok {
+            // Signature invalid or missing — fall back to cache
+            if let Some(cached) = self.load_cached(name, version) {
+                eprintln!(
+                    "[forge] Warning: Signature verification failed for {}/{}, \
+                     using cached metadata",
+                    name, version
+                );
+                return Ok(cached);
+            }
+            // No cached data available — return the verification error
+            // but only if strict mode is on, otherwise serve the data anyway
+            if std::env::var("FORGE_GPG_STRICT").as_deref() == Ok("1") {
+                return Err(format!(
+                    "GPG signature verification failed for {}/{} and no cached metadata available",
+                    name, version
+                ));
+            }
+            eprintln!(
+                "[forge] Warning: Serving {}/{} without valid GPG signature (lenient mode)",
+                name, version
+            );
+        }
+
         let metadata: FrrsMetadata =
             toml::from_str(&text).map_err(|e| format!("Failed to parse metadata.toml for {}/{}: {}", name, version, e))?;
 
@@ -178,6 +208,77 @@ impl RemoteRegistry {
         }
 
         Ok(metadata)
+    }
+
+    /// Attempt to fetch and verify the detached GPG signature for a metadata
+    /// fetch. Returns `true` if verification succeeded (or GPG is simply
+    /// unavailable in lenient mode), `false` on failure.
+    async fn verify_metadata_signature(
+        &self,
+        name: &str,
+        version: &str,
+        metadata_text: &str,
+    ) -> bool {
+        let sig_url = format!(
+            "{}/{}/{}/metadata.toml.asc",
+            self.base_url, name, version
+        );
+
+        let sig_response = match self.client.get(&sig_url).send().await {
+            Ok(resp) if resp.status().is_success() => resp,
+            Ok(resp) => {
+                eprintln!(
+                    "[forge] Warning: Signature file metadata.toml.asc for {}/{} \
+                     returned HTTP {}",
+                    name,
+                    version,
+                    resp.status()
+                );
+                return false;
+            }
+            Err(e) => {
+                eprintln!(
+                    "[forge] Warning: Failed to fetch signature for {}/{}: {}",
+                    name, version, e
+                );
+                return false;
+            }
+        };
+
+        let sig_bytes = match sig_response.bytes().await {
+            Ok(b) => b.to_vec(),
+            Err(e) => {
+                eprintln!(
+                    "[forge] Warning: Failed to read signature body for {}/{}: {}",
+                    name, version, e
+                );
+                return false;
+            }
+        };
+
+        // Collect additional keys from FORGE_TRUSTED_KEYS env var
+        let additional_keys = crate::gpg::parse_trusted_keys_env();
+
+        match crate::gpg::verify_gpg_signature(
+            metadata_text.as_bytes(),
+            &sig_bytes,
+            &additional_keys,
+        ) {
+            Ok(key_id) => {
+                eprintln!(
+                    "[forge] Info: GPG signature verified for {}/{} (key: {})",
+                    name, version, key_id
+                );
+                true
+            }
+            Err(e) => {
+                eprintln!(
+                    "[forge] Warning: GPG verification failed for {}/{}: {}",
+                    name, version, e
+                );
+                false
+            }
+        }
     }
 
     /// Load cached metadata for `name`/`version` from the local

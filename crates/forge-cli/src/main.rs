@@ -12,6 +12,7 @@ use forge_core::manifest::ForgeConfig;
 use forge_core::secrets::{ResolvedEnvironment, ValueSource};
 use forge_core::{CliCommand, ContextExporter, AgentAdapter, PluginRegistry, PolicyEngine};
 
+mod audit;
 mod benchmark;
 mod jsonrpc;
 mod mcp;
@@ -21,7 +22,7 @@ const BUILTIN_COMMANDS: &[&str] = &[
     "init", "resolve", "lock", "sync", "up", "run", "shell",
     "clean", "gc", "status", "inspect", "repair", "plan",
     "history", "explain", "trace", "events", "setup", "doctor",
-    "which", "ai", "env", "secret", "context",
+    "which", "ai", "env", "secret", "context", "audit",
     "bundle", "restore", "snapshot",
     "benchmark",
 ];
@@ -70,6 +71,11 @@ enum Commands {
         limit: Option<usize>,
         #[arg(long, default_value = "table")]
         format: String,
+    },
+    #[command(about = "Show audit log of download and verification operations")]
+    Audit {
+        #[arg(long, help = "Output as JSON array")]
+        json: bool,
     },
     #[command(about = "Display resolved configuration, cache and shims for a runtime, or inspect operations, context, config, and profile details")]
     Explain {
@@ -867,6 +873,17 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
                 println!("{}", serde_json::to_string_pretty(&history).unwrap());
             } else {
                 print_history_table(&history);
+            }
+        }
+        Commands::Audit { json } => {
+            let workspace_root = forge_core::find_forge_toml(&current_dir)
+                .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+                .unwrap_or_else(|| current_dir.clone());
+            let entries = audit::read_audit_log(&workspace_root)?;
+            if json {
+                audit::print_audit_json(&entries);
+            } else {
+                audit::print_audit_table(&entries);
             }
         }
         Commands::Explain { args } => {

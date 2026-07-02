@@ -460,6 +460,7 @@ async fn test_trace_ascii_formatting() {
         phase: "Inspect".to_string(),
         status: forge_core::types::EventStatus::Started,
         message: None,
+        ..Default::default()
     }).unwrap();
 
     event_bus.publish(forge_core::types::Event {
@@ -469,6 +470,7 @@ async fn test_trace_ascii_formatting() {
         phase: "Inspect".to_string(),
         status: forge_core::types::EventStatus::Finished,
         message: None,
+        ..Default::default()
     }).unwrap();
 
     event_bus.publish(forge_core::types::Event {
@@ -478,6 +480,7 @@ async fn test_trace_ascii_formatting() {
         phase: "Download".to_string(),
         status: forge_core::types::EventStatus::Started,
         message: None,
+        ..Default::default()
     }).unwrap();
 
     event_bus.publish(forge_core::types::Event {
@@ -487,6 +490,7 @@ async fn test_trace_ascii_formatting() {
         phase: "Download".to_string(),
         status: forge_core::types::EventStatus::Finished,
         message: None,
+        ..Default::default()
     }).unwrap();
 
     // wait for background writes
@@ -524,6 +528,7 @@ async fn test_events_live_tailing() {
         phase: "LivePhase".to_string(),
         status: forge_core::types::EventStatus::Started,
         message: Some("Live message".to_string()),
+        ..Default::default()
     };
     event_bus.publish(event.clone()).unwrap();
 

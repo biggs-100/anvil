@@ -229,7 +229,7 @@ impl Engine {
             None => return Err(format!("Runtime '{}' is not configured in forge.toml", runtime)),
         };
 
-        diagnostics.push(format!("Configured version requirement: {}", version_req));
+        diagnostics.push(format!("Configured version requirement: {}", version_req.version()));
 
         let lock_path = self.workspace_root.join("forge.lock");
         if !lock_path.exists() {

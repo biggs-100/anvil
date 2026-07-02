@@ -1,6 +1,7 @@
 // TODO: tests — re-export facade; test coverage in submodules
 use std::path::Path;
 
+pub mod gpg;
 pub mod types;
 pub mod manifest;
 pub mod registry;
@@ -62,10 +63,15 @@ pub use plugin::{
 pub use operations::{Plan, Operation, Context, SimplePlan, SyncPlan, RepairPlan};
 
 // Re-export stable types/functions from manifest.rs
-pub use manifest::{ForgeConfig, find_forge_toml, load_config};
+pub use manifest::{ForgeConfig, RuntimeEntry, find_forge_toml, load_config};
 
 // Re-export policy types
 pub use policy::{PolicyConfig, PolicyEngine, PolicyViolation};
+
+// Re-export GPG functions
+pub use gpg::{
+    verify_gpg_signature, parse_trusted_keys_env, EMBEDDED_PUBLIC_KEY,
+};
 
 // Re-export stable types/functions from registry.rs
 pub use registry::{
@@ -158,13 +164,19 @@ pub async fn update_lockfile(toml_path: &Path, lockfile_path: &Path) -> Result<L
     let resolver = Resolver::new();
 
     let mut new_runtimes = Vec::new();
-    for (name, _version_req) in &config.runtimes {
+    for (name, runtime_entry) in &config.runtimes {
         // Best-effort pre-fetch from remote to populate FRRS cache
         if registry.remote.is_some() {
             let _ = registry.refresh_remote(name).await;
         }
 
-        let resolved = resolver.resolve(name, _version_req, platform, arch, &registry)?;
+        let mut resolved = resolver.resolve(name, runtime_entry.version(), platform, arch, &registry)?;
+
+        // If the manifest specifies a sha256 pin, override the lockfile sha256
+        if let Some(pin_sha256) = runtime_entry.sha256() {
+            resolved.sha256 = pin_sha256.to_string();
+        }
+
         new_runtimes.push(resolved);
     }
 

@@ -427,10 +427,10 @@ impl App {
                 if let Some(locked) = lf.runtimes.iter().find(|r| r.name == name) {
                     (locked.version.clone(), "Locked".to_string())
                 } else {
-                    (version_req.clone(), "Unlocked".to_string())
+                    (version_req.version().to_string(), "Unlocked".to_string())
                 }
             } else {
-                (version_req.clone(), "Missing".to_string())
+                (version_req.version().to_string(), "Missing".to_string())
             };
 
             // Check cache

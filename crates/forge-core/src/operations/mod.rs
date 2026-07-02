@@ -228,7 +228,7 @@ impl Operation for ResolveOperation {
 
         let mut diagnostics = Vec::new();
         for (name, req) in &config.runtimes {
-            let resolved = resolver.resolve(name, req, platform, arch, &registry)?;
+            let resolved = resolver.resolve(name, req.version(), platform, arch, &registry)?;
             diagnostics.push(format!("Resolved {} v{} -> {}", name, resolved.version, resolved.url));
         }
 
@@ -808,6 +808,7 @@ impl Operation for RepairOperation {
             phase: "Inspect".to_string(),
             status: EventStatus::Started,
             message: Some("Phase 1: Inspecting cache and directory layout".to_string()),
+            ..Default::default()
         };
         let _ = ctx.event_bus.publish(inspect_event);
 
@@ -821,6 +822,7 @@ impl Operation for RepairOperation {
             phase: "Diagnose".to_string(),
             status: EventStatus::Progress(20),
             message: Some(format!("Phase 2: Diagnosed {} broken/missing runtimes", broken.len())),
+            ..Default::default()
         };
         let _ = ctx.event_bus.publish(diag_event);
 
@@ -832,6 +834,7 @@ impl Operation for RepairOperation {
             phase: "Plan".to_string(),
             status: EventStatus::Progress(40),
             message: Some(format!("Phase 3: Formulating Repair Plan for {:?}", broken)),
+            ..Default::default()
         };
         let _ = ctx.event_bus.publish(plan_event);
 
@@ -856,6 +859,7 @@ impl Operation for RepairOperation {
                     phase: "Repairing".to_string(),
                     status: EventStatus::Progress(60),
                     message: Some(format!("Phase 4: Running clean staging-promotion for {}", name)),
+                    ..Default::default()
                 };
                 let _ = ctx.event_bus.publish(repair_event);
 
@@ -878,6 +882,7 @@ impl Operation for RepairOperation {
             phase: "Verify".to_string(),
             status: EventStatus::Progress(90),
             message: Some("Phase 5: Verifying installation integrity".to_string()),
+            ..Default::default()
         };
         let _ = ctx.event_bus.publish(verify_event);
 
@@ -899,6 +904,7 @@ impl Operation for RepairOperation {
                 phase: "Verify".to_string(),
                 status: EventStatus::Finished,
                 message: Some("All runtimes verified successfully".to_string()),
+                ..Default::default()
             };
             let _ = ctx.event_bus.publish(verify_finished_event);
             OperationStatus::Success
@@ -910,6 +916,7 @@ impl Operation for RepairOperation {
                 phase: "Verify".to_string(),
                 status: EventStatus::Failed("Verification failed".to_string()),
                 message: Some("Repair verification phase failed".to_string()),
+                ..Default::default()
             };
             let _ = ctx.event_bus.publish(verify_failed_event);
             OperationStatus::Failure

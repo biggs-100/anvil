@@ -337,6 +337,7 @@ pub async fn install_runtime_transactional(
             phase: "Download".to_string(),
             status: crate::types::EventStatus::Started,
             message: Some(format!("Downloading {} v{}", lock.name, lock.version)),
+            ..Default::default()
         });
     }
 
@@ -401,6 +402,7 @@ pub async fn install_runtime_transactional(
             phase: "Extract".to_string(),
             status: crate::types::EventStatus::Progress(50),
             message: Some(format!("Extracting {} v{}", lock.name, lock.version)),
+            ..Default::default()
         });
     }
 
@@ -461,6 +463,7 @@ pub async fn install_runtime_transactional(
             phase: "Commit".to_string(),
             status: crate::types::EventStatus::Finished,
             message: Some(format!("Successfully installed {} v{}", lock.name, lock.version)),
+            ..Default::default()
         });
     }
 

@@ -529,7 +529,7 @@ impl HealthCheck for LockCheck {
             let mut out_of_sync = false;
             for (name, version_req) in &config.runtimes {
                 if let Some(lock) = lockfile.runtimes.iter().find(|r| &r.name == name) {
-                    if let Ok(req) = semver::VersionReq::parse(version_req) {
+                    if let Ok(req) = semver::VersionReq::parse(version_req.version()) {
                         if let Ok(ver) = semver::Version::parse(&lock.version) {
                             if !req.matches(&ver) {
                                 out_of_sync = true;

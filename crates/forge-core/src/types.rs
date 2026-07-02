@@ -107,15 +107,16 @@ pub struct OperationResult {
     pub diagnostics: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub enum EventStatus {
+    #[default]
     Started,
     Progress(u8),
     Finished,
     Failed(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct Event {
     pub timestamp: String,
     pub operation_id: String,
@@ -123,11 +124,71 @@ pub struct Event {
     pub phase: String,
     pub status: EventStatus,
     pub message: Option<String>,
+    /// Optional audit fields populated by the publisher.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub download_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_size: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verified: Option<bool>,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_event_optional_fields_roundtrip() {
+        // Full event with all audit fields
+        let event = Event {
+            timestamp: "2026-07-01T09:24:30-05:00".to_string(),
+            operation_id: "op-test-audit".to_string(),
+            runtime: "node".to_string(),
+            phase: "Download".to_string(),
+            status: EventStatus::Finished,
+            message: Some("Downloaded node v20.11.0".to_string()),
+            download_url: Some("https://nodejs.org/dist/v20.11.0/node-v20.11.0-win-x64.zip".to_string()),
+            file_size: Some(1048576),
+            sha256: Some("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".to_string()),
+            verified: Some(true),
+        };
+
+
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("download_url"));
+        assert!(json.contains("file_size"));
+        assert!(json.contains("sha256"));
+        assert!(json.contains("verified"));
+
+        let deserialized: Event = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.download_url, event.download_url);
+        assert_eq!(deserialized.file_size, event.file_size);
+        assert_eq!(deserialized.sha256, event.sha256);
+        assert_eq!(deserialized.verified, event.verified);
+
+        // Legacy event (without audit fields) deserializes with defaults
+        let legacy_json = r#"{
+            "timestamp": "2026-07-01T09:24:30-05:00",
+            "operation_id": "op-legacy",
+            "runtime": "python",
+            "phase": "Sync",
+            "status": "Started",
+            "message": null
+        }"#;
+        let legacy: Event = serde_json::from_str(legacy_json).unwrap();
+        assert_eq!(legacy.operation_id, "op-legacy");
+        assert_eq!(legacy.download_url, None);
+        assert_eq!(legacy.file_size, None);
+        assert_eq!(legacy.sha256, None);
+        assert_eq!(legacy.verified, None);
+
+        // Serializing legacy event back should NOT include audit fields
+        let re_json = serde_json::to_string(&legacy).unwrap();
+        assert!(!re_json.contains("download_url"));
+        assert!(!re_json.contains("file_size"));
+    }
 
     #[test]
     fn test_lifecycle_transitions() {

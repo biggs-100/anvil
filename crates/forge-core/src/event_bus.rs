@@ -97,6 +97,7 @@ mod tests {
             phase: "TestPhase".to_string(),
             status: crate::types::EventStatus::Started,
             message: Some("hello".to_string()),
+            ..Default::default()
         };
 
         event_bus.publish(event.clone()).unwrap();
@@ -132,6 +133,7 @@ mod tests {
                     phase: "TestPhase".to_string(),
                     status: crate::types::EventStatus::Finished,
                     message: None,
+                    ..Default::default()
                 };
                 eb.publish(event).unwrap();
             });
