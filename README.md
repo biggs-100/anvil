@@ -119,9 +119,11 @@ forge ai        AI-agent-specific context and diagnostics
 
 Forge is more than an implementation. It defines three open specifications:
 
-1. **Forge Context Protocol (FCP)** — A versioned, schema-stable protocol for sharing development context between Forge, IDEs, tools, and AI agents.
-2. **Forge Manifest Specification (FMS)** — The formal spec for `forge.toml`, `forge.lock`, profiles, variable precedence, and project structure.
-3. **Forge Runtime Registry Specification (FRRS)** — An open format for describing runtimes, artifacts, hashes, platforms, signatures, and mirrors.
+| Spec | Description | Document |
+|------|-------------|----------|
+| **FCP** | Forge Context Protocol v1 — JSON-RPC protocol for extracting dev environment context | [`docs/specs/fcp-spec.md`](docs/specs/fcp-spec.md) |
+| **FMS** | Forge Manifest Specification v1 — forge.toml, forge.lock, profiles, precedence | [`docs/specs/fms-spec.md`](docs/specs/fms-spec.md) |
+| **FRRS** | Forge Runtime Registry Specification — open format for toolchain metadata | `openspec/specs/frrs-spec/spec.md` |
 
 These specifications are designed to enable interoperability without reimplementing the core.
 
