@@ -1,5 +1,8 @@
 # Forge
 
+[![CI](https://github.com/biggs-100/forge/actions/workflows/ci.yml/badge.svg)](https://github.com/biggs-100/forge/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **Create, run, inspect, and share reproducible development environments — for humans, tools, and AI agents.**
 
 Forge is a platform that treats development environments as first-class, reproducible artifacts. Not a package manager. Not a container runtime. A **context platform** that manages runtimes, configuration, secrets, diagnostics, and environment state through a unified engine and a stable public API.
@@ -23,8 +26,14 @@ Forge solves this by providing:
 ## Quick Start
 
 ```bash
-# Install (one binary)
-curl -fsSL https://forge.sh/install | sh
+# Install from source (Rust required)
+cargo install --git https://github.com/biggs-100/forge.git forge-cli
+
+# Or clone and build
+git clone https://github.com/biggs-100/forge.git
+cd forge
+cargo build --release
+./target/release/forge-cli --help
 
 # Initialize in your project
 cd my-project
@@ -86,6 +95,7 @@ Beyond the stable core, Forge's ecosystem is fully built:
 | **Benchmark** | ✅ Complete | 5 performance metrics with table and JSON output |
 | **Forge Registry** | ✅ Complete | FRRS open format + remote registry client |
 | **Public Specs** | ✅ Complete | FCP, FMS, FRRS — open, versioned, frozen specifications |
+| **Supply Chain Security** | ✅ Complete | GPG registry signing, pin-by-hash, forge audit, SHA-256 verification |
 
 ---
 
@@ -110,8 +120,11 @@ forge gc        Garbage collect unused runtimes
 # Context & diagnostics
 forge context   Export project context (JSON, Markdown, MCP, agent-adapted)
 forge doctor    Run diagnostics and health checks
-forge explain   Explain runtime, operation, context, config, or profile
+forge explain   Explain subcommands: runtime, operation, context, config, profile
 forge which     Locate a runtime binary
+
+# Supply chain security
+forge audit     Show download/install history with checksums
 
 # Observability
 forge history   Show past operations
@@ -123,12 +136,13 @@ forge env       Manage environment variables
 forge secret    Manage secure credentials
 
 # Distribution
-forge bundle    Package project into a portable .forge archive
-forge restore   Restore a project from a .forge archive
+forge bundle           Package project into a portable .forge archive
+forge bundle restore   Restore a project from a .forge archive
 
 # State management
-forge snapshot  Save current environment state
-forge restore   Restore environment to a previous snapshot
+forge snapshot                Save current environment state
+forge snapshot list           List available snapshots
+forge snapshot restore        Restore environment from a snapshot
 
 # AI & tooling
 forge ai        AI-agent-specific context and diagnostics
