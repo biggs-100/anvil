@@ -8,6 +8,10 @@
 sdks/typescript/node_modules/
 sdks/typescript/dist/
 
+# IDE extension build artifacts
+extensions/vscode/node_modules/
+extensions/vscode/dist/
+
 # IDE
 .vscode/
 .idea/
