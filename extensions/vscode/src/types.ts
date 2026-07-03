@@ -1,7 +1,7 @@
 /**
- * TypeScript interfaces mirroring the MCP types from forge's `crates/forge-cli/src/mcp.rs`.
+ * TypeScript interfaces mirroring the MCP types from anvil's `crates/anvil-cli/src/mcp.rs`.
  *
- * These represent the JSON-RPC 2.0 wire format that the forge MCP server speaks
+ * These represent the JSON-RPC 2.0 wire format that the anvil MCP server speaks
  * over line-delimited stdin/stdout.
  */
 
@@ -76,26 +76,26 @@ export interface ToolDescription {
   input_schema: unknown;
 }
 
-/** Notification from forge event bus (forge/warning, forge/error, forge/state_changed). */
-export interface ForgeWarningNotification {
-  method: "forge/warning";
+/** Notification from anvil event bus (anvil/warning, anvil/error, anvil/state_changed). */
+export interface AnvilWarningNotification {
+  method: "anvil/warning";
   params: { finding: string; severity: "WARNING" };
 }
 
-export interface ForgeErrorNotification {
-  method: "forge/error";
+export interface AnvilErrorNotification {
+  method: "anvil/error";
   params: { operation: string; error: string };
 }
 
-export interface ForgeStateChangedNotification {
-  method: "forge/state_changed";
+export interface AnvilStateChangedNotification {
+  method: "anvil/state_changed";
   params: { old_state: string; new_state: string };
 }
 
-export type ForgeNotification =
-  | ForgeWarningNotification
-  | ForgeErrorNotification
-  | ForgeStateChangedNotification;
+export type AnvilNotification =
+  | AnvilWarningNotification
+  | AnvilErrorNotification
+  | AnvilStateChangedNotification;
 
 /** MCP client connection states. */
 export type McpClientState =

@@ -20,22 +20,22 @@
 **Build**: ✅ Passed
 
 ```text
-cargo build --package forge-core
+cargo build --package anvil-core
 Finished dev profile [unoptimized + debuginfo]
 ```
 
-**Tests (forge-core)**: ✅ 39 passed / 0 failed / 0 skipped
+**Tests (anvil-core)**: ✅ 39 passed / 0 failed / 0 skipped
 
 ```text
-cargo test --package forge-core
+cargo test --package anvil-core
 39 passed, 0 failed (was 37 — added config level 2.5 + exporter duplicate tests)
 10 integration tests passed
 ```
 
-**Tests (forge-cli)**: ✅ 7 passed / 0 failed / 0 skipped
+**Tests (anvil-cli)**: ✅ 7 passed / 0 failed / 0 skipped
 
 ```text
-cargo test --package forge-cli
+cargo test --package anvil-cli
 4 unit tests passed (builtin_precedence test updated for explicit rejection)
 3 context CLI tests passed
 ```
@@ -126,7 +126,7 @@ cargo test --package forge-cli
 | Plugin operation dispatch | ❌ Not implemented | No operations() query, no add_operation in sink |
 | CLI plugin command loading | ✅ Implemented | `PluginCommand(args)` catch-all, CliCommand drain from registry |
 | Built-in precedence for CLI commands | ✅ Implemented | Built-in command names checked at startup; conflicting plugin commands rejected with explicit warning |
-| Public re-exports | ✅ Implemented | `lib.rs` re-exports Plugin, CliCommand, PluginRegistry, PluginError, ExtensionSink, FORGE_PLUGIN_API_VERSION |
+| Public re-exports | ✅ Implemented | `lib.rs` re-exports Plugin, CliCommand, PluginRegistry, PluginError, ExtensionSink, ANVIL_PLUGIN_API_VERSION |
 
 ## Coherence (Design)
 

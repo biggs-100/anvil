@@ -1,4 +1,4 @@
-# Apply Progress: Forge Bootstrap
+# Apply Progress: Anvil Bootstrap
 
 ## Completed Tasks
 - [x] Phase 1: Workspace & Configuration (1.1, 1.2, 1.3)
@@ -8,12 +8,12 @@
 
 ## Created/Modified Files
 - `Cargo.toml` (Created) - Workspace definition
-- `crates/forge-core/Cargo.toml` (Created) - Core dependencies
-- `crates/forge-core/src/lib.rs` (Created) - Manifest & Env parsers, Lockfile logic, concurrent Tokio downloader, zip/tar.gz extractors, Command spawners
-- `crates/forge-drivers/Cargo.toml` (Created) - Drivers dependencies
-- `crates/forge-drivers/src/lib.rs` (Created) - Package manager execution drivers (Winget, Brew, Apt, Pacman)
-- `crates/forge-cli/Cargo.toml` (Created) - CLI dependencies
-- `crates/forge-cli/src/main.rs` (Created) - CLI clap parser and diagnostics (AI Context, AI Doctor)
+- `crates/anvil-core/Cargo.toml` (Created) - Core dependencies
+- `crates/anvil-core/src/lib.rs` (Created) - Manifest & Env parsers, Lockfile logic, concurrent Tokio downloader, zip/tar.gz extractors, Command spawners
+- `crates/anvil-drivers/Cargo.toml` (Created) - Drivers dependencies
+- `crates/anvil-drivers/src/lib.rs` (Created) - Package manager execution drivers (Winget, Brew, Apt, Pacman)
+- `crates/anvil-cli/Cargo.toml` (Created) - CLI dependencies
+- `crates/anvil-cli/src/main.rs` (Created) - CLI clap parser and diagnostics (AI Context, AI Doctor)
 - `openspec/changes/forge-bootstrap/tasks.md` (Modified) - Updated all tasks to completed
 
 ## Workload Mode & Delivery Strategy

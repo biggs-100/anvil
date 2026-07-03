@@ -29,7 +29,7 @@ To design `forge` effectively, we must evaluate existing tools across three key 
 ### Approaches
 
 #### 1. Nix & Devcontainer Wrapper
-`forge` acts as an orchestration layer wrapping Nix (for Linux/macOS) and Devcontainers/Docker (for Windows). It translates a project-level `forge.toml` file into Nix expressions or `.devcontainer/devcontainer.json` files, hiding their complexity behind unified commands.
+`forge` acts as an orchestration layer wrapping Nix (for Linux/macOS) and Devcontainers/Docker (for Windows). It translates a project-level `anvil.toml` file into Nix expressions or `.devcontainer/devcontainer.json` files, hiding their complexity behind unified commands.
 - **Pros:**
   - Guarantees 100% hermetic reproducibility of the dev environment.
   - Reuses mature ecosystems (Nixpkgs and Devcontainers).
@@ -57,8 +57,8 @@ To design `forge` effectively, we must evaluate existing tools across three key 
 Building `forge` in Rust provides several structural advantages:
 1. **Single Binary Distribution:** Distributing `forge` as a single statically linked binary ensures that both humans and AI agents can install it instantly without python/node runtime bootstrapping issues.
 2. **Deterministic Shell Activation:** To alter the active environment, `forge` can implement:
-   - **Shell Hook (`forge hook`)**: Generates shell-specific code (Bash, Zsh, Fish, PowerShell) to dynamically modify the environment on directory change (`cd`).
-   - **Execution Wrapping (`forge run -- <cmd>`)**: Spawns a child process with a custom environment map. This is highly reliable for AI agent scripts.
+   - **Shell Hook (`anvil hook`)**: Generates shell-specific code (Bash, Zsh, Fish, PowerShell) to dynamically modify the environment on directory change (`cd`).
+   - **Execution Wrapping (`anvil run -- <cmd>`)**: Spawns a child process with a custom environment map. This is highly reliable for AI agent scripts.
 3. **Structured Outputs:** The CLI must support a global `--json` flag to return structured machine-readable outputs for every command, minimizing text-parsing issues for LLM-based agents.
 4. **Concurrent Resolution:** Using `tokio` allows asynchronous downloading and extraction of multiple toolchains simultaneously.
 
@@ -68,11 +68,11 @@ Building `forge` in Rust provides several structural advantages:
 
 `forge` is designed with AI agents as first-class citizens, implemented through two primary commands:
 
-#### 1. `forge ai context`
+#### 1. `anvil ai context`
 Provides a concise, structured data envelope describing the active workspace's state. When an agent enters a repository, it runs this command to immediately ingest:
 - **Runtimes & Tooling:** Currently active versions (e.g. Node 20.11, Python 3.12).
 - **Project Structure:** Major framework signatures (e.g. Next.js, Cargo workspace).
-- **Commands & Scripts:** Available developer tasks (defined in `forge.toml` or package managers) and their run commands.
+- **Commands & Scripts:** Available developer tasks (defined in `anvil.toml` or package managers) and their run commands.
 - **Environment Variables:** Necessary variables configured or missing.
 
 *Example Output:*
@@ -96,8 +96,8 @@ Provides a concise, structured data envelope describing the active workspace's s
 }
 ```
 
-#### 2. `forge ai doctor`
-An automated diagnostic and remediation utility. When an agent encounters a build/test failure or boots up a new project workspace, it calls `forge ai doctor`.
+#### 2. `anvil ai doctor`
+An automated diagnostic and remediation utility. When an agent encounters a build/test failure or boots up a new project workspace, it calls `anvil ai doctor`.
 - **Diagnostics:** Checks if the correct toolchain version is installed, active env vars are set, dependencies are installed, and necessary services are running.
 - **Remediation Plan:** Instead of reporting text errors that an agent must guess how to fix, it returns a list of issues along with explicit, pre-authorized shell commands to fix them.
 
@@ -111,7 +111,7 @@ An automated diagnostic and remediation utility. When an agent encounters a buil
       "severity": "critical",
       "tool": "node",
       "message": "Node.js v20.11.0 is required but not installed.",
-      "remediation": "forge install node@20.11.0"
+      "remediation": "anvil install node@20.11.0"
     },
     {
       "id": "missing_env_var",
@@ -129,7 +129,7 @@ This enables the agent to parse the JSON and autonomously execute the remediatio
 ### Recommendation
 **Approach 2 (Native Rust Polyglot Manager + OS Fallbacks)** is the recommended path. 
 - **Rationale:** AI agents and developers on Windows face major hurdles when forced to run heavy VM/Nix layers. A native, lightweight Rust CLI ensures immediate startup speed and low cognitive friction. 
-- **Agent Integration Plan:** First-class agent context (`forge ai context`) and diagnostic repair APIs (`forge ai doctor`) should be built directly into the core CLI domain model, outputting strict JSON schemas.
+- **Agent Integration Plan:** First-class agent context (`anvil ai context`) and diagnostic repair APIs (`anvil ai doctor`) should be built directly into the core CLI domain model, outputting strict JSON schemas.
 
 ---
 
@@ -141,4 +141,4 @@ This enables the agent to parse the JSON and autonomously execute the remediatio
 ---
 
 ### Ready for Proposal
-**Yes**. The orchestrator should proceed to the `sdd-propose` phase to draft the implementation proposal, define the `forge.toml` schema, and detail the CLI interface.
+**Yes**. The orchestrator should proceed to the `sdd-propose` phase to draft the implementation proposal, define the `anvil.toml` schema, and detail the CLI interface.

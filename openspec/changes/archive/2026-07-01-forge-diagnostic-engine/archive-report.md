@@ -1,4 +1,4 @@
-# Archive Report: Forge Diagnostic Engine
+# Archive Report: Anvil Diagnostic Engine
 
 - **Change Name:** forge-diagnostic-engine
 - **Archive Date:** 2026-07-01
@@ -14,19 +14,19 @@ The `forge-diagnostic-engine` change has been successfully implemented, verified
 All tasks in `tasks.md` have been verified as complete (`- [x]`):
 
 - **Phase 1: Diagnostic Concurrency Engine & Models (PR 1)**
-  - Create `crates/forge-core/src/diagnostics/mod.rs` defining models: `HealthCheck` trait, `Finding`, `Severity`, `Explanation`, `QuickFixAction`, and `DiagnosticReport`.
+  - Create `crates/anvil-core/src/diagnostics/mod.rs` defining models: `HealthCheck` trait, `Finding`, `Severity`, `Explanation`, `QuickFixAction`, and `DiagnosticReport`.
   - Implement tokio-based concurrent DAG scheduler resolving check dependencies and short-circuiting downstream checks if upstream fails with `CRITICAL`.
-  - Export `diagnostics` module in `crates/forge-core/src/lib.rs`.
-  - Write unit tests in `crates/forge-core/src/diagnostics/mod.rs` verifying HealthScore math rules and short-circuiting execution flow.
+  - Export `diagnostics` module in `crates/anvil-core/src/lib.rs`.
+  - Write unit tests in `crates/anvil-core/src/diagnostics/mod.rs` verifying HealthScore math rules and short-circuiting execution flow.
 - **Phase 2: 11 Concrete Health Checks (PR 2)**
-  - Implement 11 checks: `ManifestCheck`, `LockCheck`, `RuntimeCheck`, `HashCheck`, `SecretCheck`, `EnvironmentCheck`, `PathCheck`, `ShimCheck`, `CacheCheck`, `ProviderCheck`, and `ProfileCheck` in `crates/forge-core/src/diagnostics/mod.rs`.
+  - Implement 11 checks: `ManifestCheck`, `LockCheck`, `RuntimeCheck`, `HashCheck`, `SecretCheck`, `EnvironmentCheck`, `PathCheck`, `ShimCheck`, `CacheCheck`, `ProviderCheck`, and `ProfileCheck` in `crates/anvil-core/src/diagnostics/mod.rs`.
   - Configure checks to abort downstream dependants (e.g., lock, runtime, env checks depend on `ManifestCheck`).
-  - Write unit tests in `crates/forge-core/src/diagnostics/mod.rs` verifying check operations against mocked files.
+  - Write unit tests in `crates/anvil-core/src/diagnostics/mod.rs` verifying check operations against mocked files.
 - **Phase 3: Repair Planner, CLI & AI Doctor (PR 3)**
-  - Implement `RepairPlanner` converting findings to `RepairPlan` in `crates/forge-core/src/operations/mod.rs`.
-  - Implement a custom `serde::Serialize` wrapper in `crates/forge-core/src/diagnostics/mod.rs` to dynamically mask sensitive environment values (e.g., `SetEnvVar`) with `[MASKED]`.
-  - Map CLI subcommands `doctor` and `ai doctor` in `crates/forge-cli/src/main.rs`.
-  - Write integration tests in `crates/forge-cli/tests/` to verify CLI outputs and AI doctor JSON schema compliance.
+  - Implement `RepairPlanner` converting findings to `RepairPlan` in `crates/anvil-core/src/operations/mod.rs`.
+  - Implement a custom `serde::Serialize` wrapper in `crates/anvil-core/src/diagnostics/mod.rs` to dynamically mask sensitive environment values (e.g., `SetEnvVar`) with `[MASKED]`.
+  - Map CLI subcommands `doctor` and `ai doctor` in `crates/anvil-cli/src/main.rs`.
+  - Write integration tests in `crates/anvil-cli/tests/` to verify CLI outputs and AI doctor JSON schema compliance.
 
 ## Archived Artifacts
 

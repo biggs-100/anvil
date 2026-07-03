@@ -1,9 +1,9 @@
-# Forge Core 1.0 — Architecture Freeze
+# Anvil Core 1.0 — Architecture Freeze
 
 **Status:** Adopted
 **Date:** 2026-07-01
 **Covenant:** No breaking changes to the frozen surface without a major version bump.
-**Scope:** `forge-core` crate and its public API surface.
+**Scope:** `anvil-core` crate and its public API surface.
 
 ---
 
@@ -19,7 +19,7 @@ The freeze is not about stopping development. It is about **creating a trusted f
 
 ### 1. Public API — `Engine` Facade
 
-The `Engine` struct in `crates/forge-core/src/api/v1.rs` is the **sole public entry point**. The following methods are frozen:
+The `Engine` struct in `crates/anvil-core/src/api/v1.rs` is the **sole public entry point**. The following methods are frozen:
 
 | Method | Signature | Purpose |
 |--------|-----------|---------|
@@ -47,7 +47,7 @@ The `Engine` struct in `crates/forge-core/src/api/v1.rs` is the **sole public en
 
 ### 2. Core Types
 
-All types exported from `crates/forge-core/src/types.rs`:
+All types exported from `crates/anvil-core/src/types.rs`:
 
 | Type | Role |
 |------|------|
@@ -66,9 +66,9 @@ All types exported from `crates/forge-core/src/types.rs`:
 | `EventStatus` | Enum: `Started`, `Progress(u8)`, `Finished`, `Failed(String)` |
 | `Event` | Timestamp, operation_id, runtime, phase, status, message |
 
-### 3. Manifest Format — `forge.toml`
+### 3. Manifest Format — `anvil.toml`
 
-Stable sections and fields in `crates/forge-core/src/manifest.rs`:
+Stable sections and fields in `crates/anvil-core/src/manifest.rs`:
 
 ```toml
 [runtimes]        # Map<name, version_req> — required
@@ -86,7 +86,7 @@ workspace_id      # Optional string
     [profile.<name>.env]  # Map<string, value>
 ```
 
-### 4. Lockfile Format — `forge.lock`
+### 4. Lockfile Format — `anvil.lock`
 
 ```toml
 [[runtime]]
@@ -103,19 +103,19 @@ installed = "windows-x86_64"
 reason = "Native build unavailable"
 ```
 
-### 5. FCP Handshake Protocol
+### 5. ACP Handshake Protocol
 
-The handshake schema in `crates/forge-core/src/context/mod.rs`:
+The handshake schema in `crates/anvil-core/src/context/mod.rs`:
 
 - `FcpHandshakeRequest` — JSON-RPC 2.0 request with `HandshakeParams` (version, capabilities)
 - `FcpHandshakeResponse` — JSON-RPC 2.0 response with `HandshakeResult` (version, negotiated capabilities)
 - `HandshakeCapabilities` — lists of supported scopes and exporters
-- `ForgeContext` — schema with `schema_version`, runtimes, config, diagnostics, workspace, environment, secrets_metadata
+- `AnvilContext` — schema with `schema_version`, runtimes, config, diagnostics, workspace, environment, secrets_metadata
 - `ContextOptions` — scopes, excludes, workspace_root, cache_dir, active_profile
 
 ### 6. Journal Format — NDJSON
 
-Events appended as line-delimited JSON to `.forge/journal.jsonl`:
+Events appended as line-delimited JSON to `.anvil/journal.jsonl`:
 
 ```json
 {"timestamp":"2026-07-01T12:00:00Z","operation_id":"op-123","runtime":"node","phase":"download","status":"Finished","message":"Downloaded 12.3 MB"}
@@ -123,7 +123,7 @@ Events appended as line-delimited JSON to `.forge/journal.jsonl`:
 
 ### 7. Diagnostic Protocol
 
-Stable types from `crates/forge-core/src/diagnostics/`:
+Stable types from `crates/anvil-core/src/diagnostics/`:
 
 | Symbol | Role |
 |--------|------|
@@ -140,7 +140,7 @@ Stable types from `crates/forge-core/src/diagnostics/`:
 
 ### 8. Secrets Engine
 
-Stable interfaces and types from `crates/forge-core/src/secrets/`:
+Stable interfaces and types from `crates/anvil-core/src/secrets/`:
 
 | Symbol | Role |
 |--------|------|
@@ -155,7 +155,7 @@ Stable interfaces and types from `crates/forge-core/src/secrets/`:
 
 ### 9. EventBus
 
-From `crates/forge-core/src/event_bus/`:
+From `crates/anvil-core/src/event_bus/`:
 
 | Symbol | Role |
 |--------|------|
@@ -166,7 +166,7 @@ From `crates/forge-core/src/event_bus/`:
 
 ### 10. Operations Trait
 
-From `crates/forge-core/src/operations/`:
+From `crates/anvil-core/src/operations/`:
 
 | Symbol | Role |
 |--------|------|
@@ -180,7 +180,7 @@ From `crates/forge-core/src/operations/`:
 
 ### 11. Context Engine
 
-From `crates/forge-core/src/context/`:
+From `crates/anvil-core/src/context/`:
 
 | Symbol | Role |
 |--------|------|
@@ -194,12 +194,12 @@ From `crates/forge-core/src/context/`:
 
 ### 12. Environment Subsystem
 
-From `crates/forge-core/src/environment/`:
+From `crates/anvil-core/src/environment/`:
 
 | Symbol | Role |
 |--------|------|
 | `RuntimeContextProvider` trait | `workspace_root()`, `runtime_path()` |
-| `find_forge_env` | Locate forge.env in workspace tree |
+| `find_anvil_env` | Locate anvil.env in workspace tree |
 | `parse_env_file` | Parse `KEY=VALUE` lines |
 | `is_secret` | Heuristic: detect secret-like keys |
 | `mask_env_vars` | Replace secret values with `****` |
@@ -207,7 +207,7 @@ From `crates/forge-core/src/environment/`:
 
 ### 13. Registry Types
 
-From `crates/forge-core/src/registry/`:
+From `crates/anvil-core/src/registry/`:
 
 | Symbol | Role |
 |--------|------|
@@ -220,7 +220,7 @@ From `crates/forge-core/src/registry/`:
 
 ### 14. CLI Wire Protocol
 
-The CLI (`forge-cli`) communicates with the core **exclusively** through the `Engine` facade. No CLI command accesses `forge-core` internals directly (except for context commands that use `ContextEngine` directly, which is intentional — the CLI is a consumer of both the Engine API and the Context Engine API).
+The CLI (`anvil-cli`) communicates with the core **exclusively** through the `Engine` facade. No CLI command accesses `anvil-core` internals directly (except for context commands that use `ContextEngine` directly, which is intentional — the CLI is a consumer of both the Engine API and the Context Engine API).
 
 ---
 
@@ -237,14 +237,14 @@ These components are **excluded** from the 1.0 guarantee and may change:
 | IDE integrations | Not yet built |
 | GUI | Not yet built |
 | Cloud Sync protocol | Not yet built |
-| Forge Registry protocol (FRRS) | Not yet built — current `HybridRegistry` is internal-only |
-| Forge Bundle format | Not yet built |
-| Forge Snapshot format | Not yet built |
+| Anvil Registry protocol (ARRS) | Not yet built — current `HybridRegistry` is internal-only |
+| Anvil Bundle format | Not yet built |
+| Anvil Snapshot format | Not yet built |
 | Policy Engine | Not yet built — `[policy]` section not parsed |
-| `forge benchmark` | Not yet built |
+| `anvil benchmark` | Not yet built |
 | Internal test helpers and mocks | Not stable by definition |
-| `crates/forge-drivers/` | Implementation detail of command execution |
-| `crates/forge-shim/` | Utility binary — its CLI interface is stable, internal structure is not |
+| `crates/anvil-drivers/` | Implementation detail of command execution |
+| `crates/anvil-shim/` | Utility binary — its CLI interface is stable, internal structure is not |
 
 ---
 
@@ -256,8 +256,8 @@ These work today but will be removed in a future major version:
 
 | Item | Replacement | Removal Target |
 |------|-------------|----------------|
-| `AiCommands::Context` (CLI) | `forge context --format claude` | Core 2.0 |
-| `AiCommands::Doctor` (CLI) | `forge doctor --json` | Core 2.0 |
+| `AiCommands::Context` (CLI) | `anvil context --format claude` | Core 2.0 |
+| `AiCommands::Doctor` (CLI) | `anvil doctor --json` | Core 2.0 |
 | `Engine::trace_operation` (alias) | `Engine::trace` | Core 2.0 |
 | `RuntimeDetail` type alias | `RuntimeExplanation` | Core 2.0 |
 
@@ -284,7 +284,7 @@ These work today but will be removed in a future major version:
 
 - The frozen surface can only be modified via **architecture decision record** (ADR) with full rationale.
 - Breaking change proposals require review and sign-off.
-- The `forge-core` crate is the authoritative source of truth for what is frozen. This document is a living companion — discrepancies between this document and the code are resolved in favor of the code.
+- The `anvil-core` crate is the authoritative source of truth for what is frozen. This document is a living companion — discrepancies between this document and the code are resolved in favor of the code.
 
 ---
 

@@ -1,6 +1,6 @@
-# Verification Report: forge-shims
+# Verification Report: anvil-shims
 
-- **Change**: `forge-shims`
+- **Change**: `anvil-shims`
 - **Mode**: `openspec`
 - **Final Verdict**: **PASS**
 
@@ -8,30 +8,30 @@
 
 ## 1. Task Completeness
 
-All tasks, including the remediation tasks, in `openspec/changes/forge-shims/tasks.md` are checked off (`- [x]`). Below is the task completeness table:
+All tasks, including the remediation tasks, in `openspec/changes/anvil-shims/tasks.md` are checked off (`- [x]`). Below is the task completeness table:
 
 | Task ID | Description | Status |
 |---|---|---|
 | **Phase 1** | **Crate Setup & multicall shim (PR 1)** | |
-| 1.1 | Create `crates/forge-shim/Cargo.toml` with minimal dependencies. | Completed |
-| 1.2 | Implement name interception (`current_exe()`) and parent directory traversal searching for `.forge/shims.cache` in `crates/forge-shim/src/main.rs`. | Completed |
-| 1.3 | Add custom line-by-line key-value parsing of the cache in `crates/forge-shim/src/main.rs`. | Completed |
-| 1.4 | Implement PATH loop recursion prevention in `crates/forge-shim/src/main.rs` by removing `current_exe()` parent directory from `PATH` before host fallback execution. | Completed |
-| 1.5 | Add `execvp` process image replacement on Unix (`CommandExt::exec()`) and stdio/exit code process forwarding on Windows in `crates/forge-shim/src/main.rs`. | Completed |
-| 1.6 | Write unit tests for traversal, key-value parsing, and PATH filtering under `crates/forge-shim/src/main.rs`. Verify with `cargo test -p forge-shim`. | Completed |
+| 1.1 | Create `crates/anvil-shim/Cargo.toml` with minimal dependencies. | Completed |
+| 1.2 | Implement name interception (`current_exe()`) and parent directory traversal searching for `.anvil/shims.cache` in `crates/anvil-shim/src/main.rs`. | Completed |
+| 1.3 | Add custom line-by-line key-value parsing of the cache in `crates/anvil-shim/src/main.rs`. | Completed |
+| 1.4 | Implement PATH loop recursion prevention in `crates/anvil-shim/src/main.rs` by removing `current_exe()` parent directory from `PATH` before host fallback execution. | Completed |
+| 1.5 | Add `execvp` process image replacement on Unix (`CommandExt::exec()`) and stdio/exit code process forwarding on Windows in `crates/anvil-shim/src/main.rs`. | Completed |
+| 1.6 | Write unit tests for traversal, key-value parsing, and PATH filtering under `crates/anvil-shim/src/main.rs`. Verify with `cargo test -p anvil-shim`. | Completed |
 | **Phase 2** | **Cache Serialization & gitignore Setup (PR 2)** | |
-| 2.1 | Register `crates/forge-shim` in workspace `Cargo.toml`. | Completed |
-| 2.2 | In `crates/forge-core/src/lib.rs`, implement `shims.cache` custom line-by-line key-value serialization. | Completed |
-| 2.3 | Integrate cache serialization trigger in `crates/forge-core/src/lib.rs` upon successful installations or lock updates. | Completed |
-| 2.4 | Add helper in `crates/forge-core/src/lib.rs` to append `.forge/shims.cache` and `.forge/state.json` to `.gitignore` during `forge init`. | Completed |
-| 2.5 | Write unit tests verifying cache serialization and gitignore updates in `crates/forge-core/src/lib.rs`. Verify with `cargo test -p forge-core`. | Completed |
+| 2.1 | Register `crates/anvil-shim` in workspace `Cargo.toml`. | Completed |
+| 2.2 | In `crates/anvil-core/src/lib.rs`, implement `shims.cache` custom line-by-line key-value serialization. | Completed |
+| 2.3 | Integrate cache serialization trigger in `crates/anvil-core/src/lib.rs` upon successful installations or lock updates. | Completed |
+| 2.4 | Add helper in `crates/anvil-core/src/lib.rs` to append `.anvil/shims.cache` and `.anvil/state.json` to `.gitignore` during `anvil init`. | Completed |
+| 2.5 | Write unit tests verifying cache serialization and gitignore updates in `crates/anvil-core/src/lib.rs`. Verify with `cargo test -p anvil-core`. | Completed |
 | **Phase 3** | **CLI Commands & Verification (PR 3)** | |
-| 3.1 | Implement command `forge setup` in `crates/forge-cli/src/main.rs` to copy `forge-shim` executable to `~/.forge/bin` under different runtime aliases (e.g. node, python). | Completed |
-| 3.2 | Implement PATH verification logic in `forge doctor` command under `crates/forge-cli/src/main.rs` to check if `~/.forge/bin` is in the environment `PATH`. | Completed |
-| 3.3 | Implement `forge which <runtime>` CLI command under `crates/forge-cli/src/main.rs` to resolve runtime paths. | Completed |
-| 3.4 | Write integration tests under `tests/` or `crates/forge-cli/` simulating shell forwarding, args propagation, and exit status matching. Verify with `cargo test -p forge-cli`. | Completed |
+| 3.1 | Implement command `anvil setup` in `crates/anvil-cli/src/main.rs` to copy `anvil-shim` executable to `~/.anvil/bin` under different runtime aliases (e.g. node, python). | Completed |
+| 3.2 | Implement PATH verification logic in `anvil doctor` command under `crates/anvil-cli/src/main.rs` to check if `~/.anvil/bin` is in the environment `PATH`. | Completed |
+| 3.3 | Implement `anvil which <runtime>` CLI command under `crates/anvil-cli/src/main.rs` to resolve runtime paths. | Completed |
+| 3.4 | Write integration tests under `tests/` or `crates/anvil-cli/` simulating shell forwarding, args propagation, and exit status matching. Verify with `cargo test -p anvil-cli`. | Completed |
 | **Remediation** | **Verification Fixes** | |
-| R.1 | Add --uninstall flag and logic to `forge setup` and write integration tests. | Completed |
+| R.1 | Add --uninstall flag and logic to `anvil setup` and write integration tests. | Completed |
 | R.2 | Validate version header signature in `read_shims_cache` and write unit/integration tests for invalidation. | Completed |
 
 ---
@@ -50,7 +50,7 @@ test tests::test_shim_args_and_exit_code_propagation ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
 
-     Running unittests src\lib.rs (target\debug\deps\forge_core-79ae310d16b364e7.exe)
+     Running unittests src\lib.rs (target\debug\deps\anvil_core-79ae310d16b364e7.exe)
 
 running 10 tests
 test tests::test_is_secret ... ok
@@ -83,7 +83,7 @@ test tests::test_cache_invalidation_incorrect_header ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
-   Doc-tests forge_core
+   Doc-tests anvil_core
 
 running 0 tests
 
@@ -105,30 +105,30 @@ We map the requirements/scenarios from the target specifications to implementati
 | Specification & Requirement | Scenario | Code Reference | Covering Test(s) / Evidence | Status |
 |---|---|---|---|---|
 | **1. Multicall Shim** (`multicall-shim/spec.md`) | | | | |
-| Binary Resolution | Executable Name Interception | `crates/forge-shim/src/main.rs:L13-19` | `test_shim_args_and_exit_code_propagation` (in `forge-cli` tests) | **PASS** |
-| Cache Upward Search | Search Project Root | `crates/forge-shim/src/main.rs:L56-70` | `test_find_shims_cache_traversal` (in `forge-shim` tests) | **PASS** |
-| Unix Process Replacement | Unix Execution | `crates/forge-shim/src/main.rs:L152-159` | Compiles with `#[cfg(unix)]` / static verification | **PASS** |
-| Windows Process Forwarding | Windows Execution | `crates/forge-shim/src/main.rs:L160-180` | `test_shim_args_and_exit_code_propagation` (in `forge-cli` tests) | **PASS** |
-| PATH Loop Prevention | Strip Shim Directory from PATH | `crates/forge-shim/src/main.rs:L21-25`, `L97-109` | `test_filter_path` (in `forge-shim` tests) | **PASS** |
+| Binary Resolution | Executable Name Interception | `crates/anvil-shim/src/main.rs:L13-19` | `test_shim_args_and_exit_code_propagation` (in `anvil-cli` tests) | **PASS** |
+| Cache Upward Search | Search Project Root | `crates/anvil-shim/src/main.rs:L56-70` | `test_find_shims_cache_traversal` (in `anvil-shim` tests) | **PASS** |
+| Unix Process Replacement | Unix Execution | `crates/anvil-shim/src/main.rs:L152-159` | Compiles with `#[cfg(unix)]` / static verification | **PASS** |
+| Windows Process Forwarding | Windows Execution | `crates/anvil-shim/src/main.rs:L160-180` | `test_shim_args_and_exit_code_propagation` (in `anvil-cli` tests) | **PASS** |
+| PATH Loop Prevention | Strip Shim Directory from PATH | `crates/anvil-shim/src/main.rs:L21-25`, `L97-109` | `test_filter_path` (in `anvil-shim` tests) | **PASS** |
 | **2. Shims Installer** (`shims-installer/spec.md`) | | | | |
-| Setup Installation | Copy Shim Aliases | `crates/forge-cli/src/main.rs:L323-358` | `test_setup_and_uninstall_shims` (in `forge-cli` tests) | **PASS** |
-| Uninstall Cleanup | Remove Shims Directory | `crates/forge-cli/src/main.rs:L360-386` | `test_setup_and_uninstall_shims` (in `forge-cli` tests) | **PASS** |
-| Doctor Path Validation | Missing PATH Warning | `crates/forge-cli/src/main.rs:L388-418` | `cargo run --bin forge-cli -- doctor` | **PASS** |
+| Setup Installation | Copy Shim Aliases | `crates/anvil-cli/src/main.rs:L323-358` | `test_setup_and_uninstall_shims` (in `anvil-cli` tests) | **PASS** |
+| Uninstall Cleanup | Remove Shims Directory | `crates/anvil-cli/src/main.rs:L360-386` | `test_setup_and_uninstall_shims` (in `anvil-cli` tests) | **PASS** |
+| Doctor Path Validation | Missing PATH Warning | `crates/anvil-cli/src/main.rs:L388-418` | `cargo run --bin anvil-cli -- doctor` | **PASS** |
 | **3. Shims Cache Manager** (`shims-cache-manager/spec.md`) | | | | |
-| Key-Value Cache Layout | Parse Key-Value Layout | `crates/forge-shim/src/main.rs:L80-95` | `test_parse_cache_content` (in `forge-shim`), `test_shims_cache_serialization` (in `forge-core`) | **PASS** |
-| Validation Signature | Version Header Invalidation | `crates/forge-shim/src/main.rs:L72-78`, `crates/forge-core/src/lib.rs:L928-931` | `test_cache_invalidation_incorrect_header` (in `forge-shim`) | **PASS** |
-| Gitignore Integration | Add Cache to Gitignore | `crates/forge-core/src/lib.rs:L955-980` | `test_append_to_gitignore` (in `forge-core` tests) | **PASS** |
+| Key-Value Cache Layout | Parse Key-Value Layout | `crates/anvil-shim/src/main.rs:L80-95` | `test_parse_cache_content` (in `anvil-shim`), `test_shims_cache_serialization` (in `anvil-core`) | **PASS** |
+| Validation Signature | Version Header Invalidation | `crates/anvil-shim/src/main.rs:L72-78`, `crates/anvil-core/src/lib.rs:L928-931` | `test_cache_invalidation_incorrect_header` (in `anvil-shim`) | **PASS** |
+| Gitignore Integration | Add Cache to Gitignore | `crates/anvil-core/src/lib.rs:L955-980` | `test_append_to_gitignore` (in `anvil-core` tests) | **PASS** |
 | **4. Observability Which** (`observability-which/spec.md`) | | | | |
-| Resolution Diagnostic Info | Display Resolved Toolchain Info | `crates/forge-cli/src/main.rs:L480-584` | `cargo run --bin forge-cli -- which node` | **PASS** |
-| Missing Resolution Diagnostics | Toolchain Not Found | `crates/forge-cli/src/main.rs:L579-583` | `cargo run --bin forge-cli -- which missing-tool` | **PASS** |
+| Resolution Diagnostic Info | Display Resolved Toolchain Info | `crates/anvil-cli/src/main.rs:L480-584` | `cargo run --bin anvil-cli -- which node` | **PASS** |
+| Missing Resolution Diagnostics | Toolchain Not Found | `crates/anvil-cli/src/main.rs:L579-583` | `cargo run --bin anvil-cli -- which missing-tool` | **PASS** |
 
 ---
 
 ## 4. Correctness and Design Coherence Checks
 
-- **Design Coherence**: The implemented multi-call binary architecture aligns with the design guidelines. Crate division (`forge-shim` for lightweight interception and redirection; `forge-core` for serialization and logic; `forge-cli` for user command interfacing) minimizes execution latency and separates concerns.
+- **Design Coherence**: The implemented multi-call binary architecture aligns with the design guidelines. Crate division (`anvil-shim` for lightweight interception and redirection; `anvil-core` for serialization and logic; `anvil-cli` for user command interfacing) minimizes execution latency and separates concerns.
 - **Cache Redirection**: redacting/stripping the shim binary's directory path from the target subprocess `PATH` env var effectively prevents execution loops.
-- **Remediation Success**: Implementing `--uninstall` on `forge setup` cleans up the shims directory cleanly. Enforcing version header checks on `read_shims_cache` validates cache files, preventing reading of corrupted or invalid configurations.
+- **Remediation Success**: Implementing `--uninstall` on `anvil setup` cleans up the shims directory cleanly. Enforcing version header checks on `read_shims_cache` validates cache files, preventing reading of corrupted or invalid configurations.
 
 ---
 
@@ -141,4 +141,4 @@ We map the requirements/scenarios from the target specifications to implementati
 - *None.*
 
 ### SUGGESTIONS
-1. **Automated CLI command test invocation**: In the future, we could include integration tests for `doctor` and `which` CLI commands in `crates/forge-cli/src/main.rs` using stdin/stdout asserting helpers like `assert_cmd` to fully automate CLI output format checks.
+1. **Automated CLI command test invocation**: In the future, we could include integration tests for `doctor` and `which` CLI commands in `crates/anvil-cli/src/main.rs` using stdin/stdout asserting helpers like `assert_cmd` to fully automate CLI output format checks.

@@ -1,19 +1,19 @@
 /**
- * @forge/sdk — TypeScript SDK for Forge environments.
+ * @anvil/sdk — TypeScript SDK for Anvil environments.
  *
  * @example
  * ```typescript
- * import { Forge } from '@forge/sdk';
+ * import { Anvil } from '@anvil/sdk';
  *
- * const client = new Forge();
+ * const client = new Anvil();
  * const status = await client.status();
  * console.log(status.state);
  * client.disconnect();
  * ```
  */
 
-export { Forge } from './client';
-export { ForgeError } from './types';
+export { Anvil } from './client';
+export { AnvilError } from './types';
 export type {
   StatusInfo,
   SyncReport,

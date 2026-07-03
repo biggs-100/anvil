@@ -9,11 +9,11 @@ Define the formal RFC-0011 specification for the environment lifecycle, comprisi
 ### Requirement: State Definitions and Invariants
 The system MUST support and track exactly 10 distinct environment states:
 1. **UNINITIALIZED**: No project configuration or metadata exists.
-2. **INITIALIZED**: Project configuration (e.g. `forge.toml`) exists.
+2. **INITIALIZED**: Project configuration (e.g. `anvil.toml`) exists.
 3. **RESOLVED**: Target toolchain versions mapped and resolved against remote providers.
-4. **LOCKED**: Lockfile (`forge.lock`) exists with resolved versions and SHA-256 hashes.
-5. **SYNCED**: All locked toolchains downloaded, verified, and staged in `.forge/staging`.
-6. **READY**: Staged runtimes committed to `.forge/runtimes` and `.forge/shims.cache` regenerated.
+4. **LOCKED**: Lockfile (`anvil.lock`) exists with resolved versions and SHA-256 hashes.
+5. **SYNCED**: All locked toolchains downloaded, verified, and staged in `.anvil/staging`.
+6. **READY**: Staged runtimes committed to `.anvil/runtimes` and `.anvil/shims.cache` regenerated.
 7. **ACTIVE**: Current shell/session paths prepended with the active environment's shims.
 8. **DIRTY**: Local runtimes or shims altered or mutated outside the system control.
 9. **OUTDATED**: Configuration or lockfile updated, mismatching the current READY runtimes.
@@ -42,7 +42,7 @@ The system MUST transition between states only via valid CLI operations or direc
 
 #### Scenario: Detection of Outdated State
 - GIVEN the system is in a READY state
-- WHEN the `forge.toml` configuration is modified to request a different Python version
+- WHEN the `anvil.toml` configuration is modified to request a different Python version
 - THEN the system MUST transition to the OUTDATED state on the next check.
 
 #### Scenario: Recovery from Broken State

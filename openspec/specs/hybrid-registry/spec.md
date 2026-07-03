@@ -8,20 +8,20 @@ Coordinate runtime resolution using an offline-first metadata cache and a fallba
 
 | Requirement ID | Description | Strength |
 |---|---|---|
-| REQ-REG-001 | The registry MUST consult `.forge/metadata_cache.toml` first for version and coordinate metadata. | MUST |
+| REQ-REG-001 | The registry MUST consult `.anvil/metadata_cache.toml` first for version and coordinate metadata. | MUST |
 | REQ-REG-002 | The registry MUST fail resolution immediately if an exact uncached version is requested while offline. | MUST |
 | REQ-REG-003 | The registry MUST resolve loose version ranges (e.g. "^20") to the latest matching cached version if offline. | MUST |
-| REQ-REG-004 | The system MUST include a `RemoteRegistry` struct that fetches FRRS metadata from a URL. | MUST |
-| REQ-REG-005 | `HybridRegistry` MUST chain resolution: local cache → remote FRRS registry → embedded defaults. | MUST |
-| REQ-REG-006 | The system MUST cache remote responses locally in `.forge/metadata_cache/`. | MUST |
+| REQ-REG-004 | The system MUST include a `RemoteRegistry` struct that fetches ARRS metadata from a URL. | MUST |
+| REQ-REG-005 | `HybridRegistry` MUST chain resolution: local cache → remote ARRS registry → embedded defaults. | MUST |
+| REQ-REG-006 | The system MUST cache remote responses locally in `.anvil/metadata_cache/`. | MUST |
 | REQ-REG-007 | The system MUST fall back to cached data when the remote registry is unreachable. | MUST |
-| REQ-REG-008 | The system MUST support a configurable registry URL (default: `https://registry.forge.sh`). | MUST |
+| REQ-REG-008 | The system MUST support a configurable registry URL (default: `https://registry.anvil.dev`). | MUST |
 | REQ-REG-009 | The system SHOULD provide an offline mode that skips remote fetching entirely. | SHOULD |
 
 ### Requirement: Exact Version Offline Constraint
 
 #### Scenario: Offline Exact Version Missing
-- GIVEN the network is offline and Node "20.11.0" is not in `.forge/metadata_cache.toml`
+- GIVEN the network is offline and Node "20.11.0" is not in `.anvil/metadata_cache.toml`
 - WHEN resolving Node version "20.11.0"
 - THEN the system MUST fail with a network/offline resolution error.
 
@@ -34,7 +34,7 @@ Coordinate runtime resolution using an offline-first metadata cache and a fallba
 
 ### Requirement: RemoteRegistry
 
-A `RemoteRegistry` struct SHALL be introduced to perform HTTP GET requests against a configured base URL, requesting `{base_url}/{name}/{version}/metadata.toml`, parsing the response into FRRS metadata.
+A `RemoteRegistry` struct SHALL be introduced to perform HTTP GET requests against a configured base URL, requesting `{base_url}/{name}/{version}/metadata.toml`, parsing the response into ARRS metadata.
 
 #### Scenario: Fetch Remote Registry on Cache Miss
 - GIVEN the local cache has no entry for Python 3.13.0 and the remote registry is reachable
@@ -43,7 +43,7 @@ A `RemoteRegistry` struct SHALL be introduced to perform HTTP GET requests again
 
 ### Requirement: Hybrid Resolution Chain
 
-`HybridRegistry::resolve()` SHALL iterate: (1) local metadata cache, (2) remote FRRS registry, (3) embedded compiled-in defaults (via `default_with_internal()`).
+`HybridRegistry::resolve()` SHALL iterate: (1) local metadata cache, (2) remote ARRS registry, (3) embedded compiled-in defaults (via `default_with_internal()`).
 
 #### Scenario: Serve from Cache on Network Failure
 - GIVEN Python 3.13.0 was previously fetched and cached, and the network is now offline
@@ -57,10 +57,10 @@ A `RemoteRegistry` struct SHALL be introduced to perform HTTP GET requests again
 
 ### Requirement: Registry URL Configuration
 
-The registry URL SHALL be configurable via `forge.toml` or environment variable, defaulting to `https://registry.forge.sh`.
+The registry URL SHALL be configurable via `anvil.toml` or environment variable, defaulting to `https://registry.anvil.dev`.
 
 #### Scenario: Configure Custom Registry URL
-- GIVEN `registry.url = "https://internal-mirror.corp/forge"` in `forge.toml`
+- GIVEN `registry.url = "https://internal-mirror.corp/anvil"` in `anvil.toml`
 - WHEN resolving any runtime
 - THEN `RemoteRegistry` MUST use the configured URL as its base
 

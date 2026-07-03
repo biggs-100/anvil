@@ -1,11 +1,11 @@
 ## Exploration: forge-runtimes-real
 
 ### Current State
-The `crates/forge-core/src/lib.rs` file contains a mock runtime resolution framework (`resolve_runtime_lock`). While it constructs placeholder templates for Node.js, Bun, Go, Python, and Rust, it uses hardcoded mock sizes and a dummy SHA-256 hash (`e3b0c442...` which represents an empty SHA-256 hash). The URLs mapped are partially incorrect or incomplete for certain platform/arch combinations (especially Windows Arm64 and Python standalone releases).
+The `crates/anvil-core/src/lib.rs` file contains a mock runtime resolution framework (`resolve_runtime_lock`). While it constructs placeholder templates for Node.js, Bun, Go, Python, and Rust, it uses hardcoded mock sizes and a dummy SHA-256 hash (`e3b0c442...` which represents an empty SHA-256 hash). The URLs mapped are partially incorrect or incomplete for certain platform/arch combinations (especially Windows Arm64 and Python standalone releases).
 
 ### Affected Areas
-- `crates/forge-core/src/lib.rs` — Needs modifications to `resolve_runtime_lock` to dynamically construct URLs, fetch/verify metadata, and handle actual runtime archives.
-- `crates/forge-core/Cargo.toml` — Might need new dependencies like `xz2` or `lzma-rs` to decompress `.tar.xz` files if we use `.tar.xz` archives (particularly for Rust).
+- `crates/anvil-core/src/lib.rs` — Needs modifications to `resolve_runtime_lock` to dynamically construct URLs, fetch/verify metadata, and handle actual runtime archives.
+- `crates/anvil-core/Cargo.toml` — Might need new dependencies like `xz2` or `lzma-rs` to decompress `.tar.xz` files if we use `.tar.xz` archives (particularly for Rust).
 
 ### Approaches
 1. **Dynamic Remote Querying (API-First)** — Query official remote JSON/TOML metadata endpoints (e.g., `nodejs.org/dist/index.json`, `go.dev/dl/?mode=json`, `channel-rust-stable.toml`) to resolve versions and fetch sizes/SHA-256 hashes dynamically.
@@ -18,13 +18,13 @@ The `crates/forge-core/src/lib.rs` file contains a mock runtime resolution frame
    - Cons: Requires a CLI update to support newly released runtime versions; maintenance overhead to keep versions updated.
    - Effort: Low
 
-3. **Hybrid Registry (Local Registry with Remote Fallback)** — Attempt resolution via a local embedded registry of common stable versions first. If a version is missing or loose, fetch from remote APIs and cache the resolved metadata under `.forge/metadata_cache.toml`.
+3. **Hybrid Registry (Local Registry with Remote Fallback)** — Attempt resolution via a local embedded registry of common stable versions first. If a version is missing or loose, fetch from remote APIs and cache the resolved metadata under `.anvil/metadata_cache.toml`.
    - Pros: Combines offline performance for standard versions with the flexibility to resolve new versions dynamically.
    - Cons: Increased implementation complexity; handles multiple failure modes (network offline, parse errors).
    - Effort: High
 
 ### Recommendation
-We recommend the **Hybrid Registry (Option 3)**. It provides a robust, developer-friendly experience by ensuring that common stable toolchain versions (e.g., LTS versions of Node, Go, Bun) resolve instantly and work offline if already cached, while still allowing the installation of newer or arbitrary versions on demand. To mitigate the missing `.tar.xz` support in `forge-core` for Rust standalone toolchains, we recommend adding the `xz2` crate to decompress `.tar.xz` archives, as this is the standard package format for Rust.
+We recommend the **Hybrid Registry (Option 3)**. It provides a robust, developer-friendly experience by ensuring that common stable toolchain versions (e.g., LTS versions of Node, Go, Bun) resolve instantly and work offline if already cached, while still allowing the installation of newer or arbitrary versions on demand. To mitigate the missing `.tar.xz` support in `anvil-core` for Rust standalone toolchains, we recommend adding the `xz2` crate to decompress `.tar.xz` archives, as this is the standard package format for Rust.
 
 ### Risks
 - **Network Dependency and Rate-Limiting**: Remote APIs (like GitHub's Release API) are subject to rate limiting and temporary downtime. Caching resolved coordinates locally is critical to mitigate this.

@@ -2,13 +2,13 @@
 
 ## Intent
 
-Forge resolves, downloads, and syncs runtimes, but has no portable distribution format. Users cannot share a pinned environment without cloning the repo. Add `forge bundle` / `forge restore` for a self-verifying `.forge` archive of descriptors — no runtime binaries.
+Forge resolves, downloads, and syncs runtimes, but has no portable distribution format. Users cannot share a pinned environment without cloning the repo. Add `anvil bundle` / `anvil restore` for a self-verifying `.forge` archive of descriptors — no runtime binaries.
 
 ## Scope
 
 ### In Scope
-- `forge bundle` — produce `project.forge` from current workspace
-- `forge restore` — recreate environment from `project.forge`
+- `anvil bundle` — produce `project.forge` from current workspace
+- `anvil restore` — recreate environment from `project.forge`
 - `.forge` archive format (deterministic internal structure)
 - SHA-256 checksum verification
 - Context metadata (non-sensitive)
@@ -27,9 +27,9 @@ None — existing specs unchanged.
 
 ## Approach
 
-Add `bundle` and `restore` CLI subcommands via clap. Core logic in `forge-core` under a new `bundle` module:
-1. **Bundle**: Read `forge.toml` + `forge.lock`, collect metadata, compute SHA-256 checksums, write deterministic tar+gzip archive as `project.forge`.
-2. **Restore**: Extract archive, verify checksums, write manifest+lockfile, delegate to `forge up`.
+Add `bundle` and `restore` CLI subcommands via clap. Core logic in `anvil-core` under a new `bundle` module:
+1. **Bundle**: Read `anvil.toml` + `anvil.lock`, collect metadata, compute SHA-256 checksums, write deterministic tar+gzip archive as `project.forge`.
+2. **Restore**: Extract archive, verify checksums, write manifest+lockfile, delegate to `anvil up`.
 
 Use `tar` + `flate2` crates (stable, cross-platform). Sort entries by filename for deterministic output.
 
@@ -37,9 +37,9 @@ Use `tar` + `flate2` crates (stable, cross-platform). Sort entries by filename f
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `crates/forge-cli/src/main.rs` | Modified | Add `Bundle`, `Restore` subcommands |
-| `crates/forge-core/src/bundle/` | New | Core bundle/restore logic |
-| `crates/forge-core/Cargo.toml` | Modified | Add `tar`, `flate2`, `sha2` |
+| `crates/anvil-cli/src/main.rs` | Modified | Add `Bundle`, `Restore` subcommands |
+| `crates/anvil-core/src/bundle/` | New | Core bundle/restore logic |
+| `crates/anvil-core/Cargo.toml` | Modified | Add `tar`, `flate2`, `sha2` |
 
 ## Risks
 
@@ -51,7 +51,7 @@ Use `tar` + `flate2` crates (stable, cross-platform). Sort entries by filename f
 
 ## Rollback Plan
 
-`forge bundle` writes only the output file — delete it. `forge restore` writes manifest+lockfile — `git checkout` or manual delete; runtimes recoverable via `forge up`.
+`anvil bundle` writes only the output file — delete it. `anvil restore` writes manifest+lockfile — `git checkout` or manual delete; runtimes recoverable via `anvil up`.
 
 ## Dependencies
 
@@ -59,8 +59,8 @@ Use `tar` + `flate2` crates (stable, cross-platform). Sort entries by filename f
 
 ## Success Criteria
 
-- [ ] `forge bundle` produces a `.forge` archive from any valid workspace
-- [ ] `forge restore project.forge` recreates manifest+lock and delegates to `forge up`
+- [ ] `anvil bundle` produces a `.forge` archive from any valid workspace
+- [ ] `anvil restore project.forge` recreates manifest+lock and delegates to `anvil up`
 - [ ] Deterministic: same workspace → identical archive
 - [ ] Checksum verification fails with clear error on tampered archive
 - [ ] Secrets never included in bundle

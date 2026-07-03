@@ -1,8 +1,8 @@
-# Design: Modularize Forge Core Runtime Engine
+# Design: Modularize Anvil Core Runtime Engine
 
 ## Technical Approach
 
-Deconstruct the monolithic `crates/forge-core/src/lib.rs` into eight separate domain modules. Primitives are isolated in `types.rs` to prevent circular dependencies. An extensible, registration-based provider interface replaces hardcoded match structures in version resolution. Unit tests are nested within their respective modules, and cross-module integration tests are consolidated in a unified integration test suite.
+Deconstruct the monolithic `crates/anvil-core/src/lib.rs` into eight separate domain modules. Primitives are isolated in `types.rs` to prevent circular dependencies. An extensible, registration-based provider interface replaces hardcoded match structures in version resolution. Unit tests are nested within their respective modules, and cross-module integration tests are consolidated in a unified integration test suite.
 
 ## Architecture Decisions
 
@@ -42,7 +42,7 @@ Sibling coupling is restricted:
 ## Data Flow
 
 ```
-Manifest (toml) ──> ForgeConfig ──> Resolver (via Provider Map)
+Manifest (toml) ──> AnvilConfig ──> Resolver (via Provider Map)
                                            │
                                            ▼
 Lockfile (locks) <─────────────────── RuntimeLock
@@ -58,16 +58,16 @@ Launcher <── Environment <── Bin Paths <── Shims Cache
 
 | File | Action | Description |
 |------|--------|-------------|
-| `crates/forge-core/src/lib.rs` | Modify | Facade exposing modules and re-exporting stable interfaces (`Resolver`, `Installer`, `Manifest`, `Lockfile`, etc.). |
-| `crates/forge-core/src/types.rs` | Create | Domain enums/structs: `RuntimeId`, `RuntimeVersion`, `Platform`, `Architecture`, `Hash`, `EmulationLog`, `RuntimeLock`. |
-| `crates/forge-core/src/manifest.rs` | Create | Manifest loader: `ForgeConfig`, `find_forge_toml`, `load_config`. |
-| `crates/forge-core/src/resolver.rs` | Create | Decoupled resolver engine: `Resolver` registry, `RuntimeProvider` trait, and provider structs (`Node`, `Python`, `Bun`, `Go`, `Rust`). |
-| `crates/forge-core/src/installer.rs` | Create | Runtime installation: `Extractor` trait, `Zip`/`TarGz`/`TarXz` decompressors, `Downloader`, `check_path_traversal`, `install_runtimes`. |
-| `crates/forge-core/src/registry.rs` | Create | Offline registry metadata: `HybridRegistry`, `RegistryEntry`, platform/architecture normalization and detection. |
-| `crates/forge-core/src/cache.rs` | Create | Cache management: path helpers, shims map generation, signature/write helper, `.gitignore` sync. |
-| `crates/forge-core/src/environment.rs` | Create | Environment builder: PATH calculation, `.env` file parsing, secret masking. |
-| `crates/forge-core/src/launcher.rs` | Create | Execution: process spawning, Unix execvp/Windows forwarding, signal routing. |
-| `crates/forge-core/tests/integration.rs` | Create | Unified integration tests. |
+| `crates/anvil-core/src/lib.rs` | Modify | Facade exposing modules and re-exporting stable interfaces (`Resolver`, `Installer`, `Manifest`, `Lockfile`, etc.). |
+| `crates/anvil-core/src/types.rs` | Create | Domain enums/structs: `RuntimeId`, `RuntimeVersion`, `Platform`, `Architecture`, `Hash`, `EmulationLog`, `RuntimeLock`. |
+| `crates/anvil-core/src/manifest.rs` | Create | Manifest loader: `ForgeConfig`, `find_forge_toml`, `load_config`. |
+| `crates/anvil-core/src/resolver.rs` | Create | Decoupled resolver engine: `Resolver` registry, `RuntimeProvider` trait, and provider structs (`Node`, `Python`, `Bun`, `Go`, `Rust`). |
+| `crates/anvil-core/src/installer.rs` | Create | Runtime installation: `Extractor` trait, `Zip`/`TarGz`/`TarXz` decompressors, `Downloader`, `check_path_traversal`, `install_runtimes`. |
+| `crates/anvil-core/src/registry.rs` | Create | Offline registry metadata: `HybridRegistry`, `RegistryEntry`, platform/architecture normalization and detection. |
+| `crates/anvil-core/src/cache.rs` | Create | Cache management: path helpers, shims map generation, signature/write helper, `.gitignore` sync. |
+| `crates/anvil-core/src/environment.rs` | Create | Environment builder: PATH calculation, `.env` file parsing, secret masking. |
+| `crates/anvil-core/src/launcher.rs` | Create | Execution: process spawning, Unix execvp/Windows forwarding, signal routing. |
+| `crates/anvil-core/tests/integration.rs` | Create | Unified integration tests. |
 
 ## Interfaces / Contracts
 
@@ -107,11 +107,11 @@ impl Resolver {
 | Layer | What to Test | Approach |
 |-------|-------------|----------|
 | Unit | Module-specific functions (e.g. `is_secret`, `ZipSlip`, `semver` matching) | Internal `mod tests` block at the bottom of each source file. |
-| Integration | Cross-module compatibility, downloads, extraction, environment builder and process spawning | Consolidated integration tests in `crates/forge-core/tests/integration.rs`. |
+| Integration | Cross-module compatibility, downloads, extraction, environment builder and process spawning | Consolidated integration tests in `crates/anvil-core/tests/integration.rs`. |
 
 ## Migration / Rollout
 
-No migration required. Backward compatibility is preserved using `pub use` facade re-exports in `lib.rs`, ensuring downstream crates (`forge-cli` and `forge-shim`) compile cleanly without API changes.
+No migration required. Backward compatibility is preserved using `pub use` facade re-exports in `lib.rs`, ensuring downstream crates (`anvil-cli` and `anvil-shim`) compile cleanly without API changes.
 
 ## Open Questions
 

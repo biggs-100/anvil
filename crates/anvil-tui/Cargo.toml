@@ -1,0 +1,11 @@
+[package]
+name = "anvil-tui"
+version = "0.1.0"
+edition = "2021"
+description = "Anvil TUI — terminal dashboard for anvil environments"
+
+[dependencies]
+anvil-core = { path = "../anvil-core" }
+ratatui = "0.28"
+crossterm = "0.28"
+tokio = { version = "1.35", features = ["full"] }

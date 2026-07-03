@@ -23,13 +23,13 @@ No warnings or errors.
 **Tests**: ✅ 100 passed / ❌ 0 failed / ⚠️ 11 ignored
 ```
 cargo test → 100 passed, 0 failed, 11 ignored
-  - forge-cli unit: 37 passed (incl. 26 mcp.rs unit tests)
-  - forge-core unit: 40 passed
+  - anvil-cli unit: 37 passed (incl. 26 mcp.rs unit tests)
+  - anvil-core unit: 40 passed
   - integration.rs: 10 passed
   - context_cli_tests: 3 passed
-  - forge-sdk: 5 passed
-  - forge-shim: 4 passed
-  - forge-drivers: 1 passed
+  - anvil-sdk: 5 passed
+  - anvil-shim: 4 passed
+  - anvil-drivers: 1 passed
   - jsonrpc_test: 5 ignored (require compiled binary)
   - mcp_test: 6 ignored (require compiled binary)
 ```
@@ -79,7 +79,7 @@ cargo test → 100 passed, 0 failed, 11 ignored
 | Background task for notifications | ✅ Yes | `tokio::spawn` for `notification_loop()` via `EventBus.subscribe()` broadcast receiver |
 | One task per request concurrency | ✅ Yes | `tokio::spawn` per message inside `serve()` loop, consistent with jsonrpc.rs |
 | Inline McpExporter for resources | ✅ Yes | `handle_read_resource()` calls `McpExporter.export()` inline, no caching |
-| File: create mcp.rs | ✅ Yes | Exists at `crates/forge-cli/src/mcp.rs` (1342 lines, design estimated ~450) |
+| File: create mcp.rs | ✅ Yes | Exists at `crates/anvil-cli/src/mcp.rs` (1342 lines, design estimated ~450) |
 | File: modify main.rs | ✅ Yes | `mod mcp;` at line 12, `Mcp` variant at line 121, dispatch at line 514 |
 
 ### Issues Found
@@ -95,7 +95,7 @@ cargo test → 100 passed, 0 failed, 11 ignored
 
 **SUGGESTION**:
 - Resolve the 4 incomplete integration test tasks (8.3-8.5, 8.8).
-- Consider making integration tests use a helper that builds the binary first, or use `CARGO_BIN_EXE_forge-cli` env var which is already supported in the test helper.
+- Consider making integration tests use a helper that builds the binary first, or use `CARGO_BIN_EXE_anvil-cli` env var which is already supported in the test helper.
 - Add a unit test for the dispatch layer's error handling (unknown method → MethodNotFound).
 - Add unit tests for scenario-specific handler logic: forge_run output parsing, forge_doctor mode routing, notification_loop state change/error emission.
 

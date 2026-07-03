@@ -1,4 +1,4 @@
-# Tasks: Forge IDE Integration
+# Tasks: Anvil IDE Integration
 
 ## Review Workload Forecast
 
@@ -28,12 +28,12 @@ _Solo dev, not in production — single PR with size exception pre-authorized._
 
 ## Phase 1: VS Code MCP Client
 
-- [x] 1.1 Create `extensions/vscode/src/mcpClient.ts` — spawn `forge mcp` via child_process, line-buffered JSON-RPC parser, pending request Map, notification dispatch
+- [x] 1.1 Create `extensions/vscode/src/mcpClient.ts` — spawn `anvil mcp` via child_process, line-buffered JSON-RPC parser, pending request Map, notification dispatch
 - [x] 1.2 Implement `connect()` (init handshake), `sendRequest()` (promise-based), `disconnect()` (SIGTERM → 3s → SIGKILL), `getState()`
 
 ## Phase 2: VS Code UI
 
-- [x] 2.1 Create `extensions/vscode/package.json` — 4 commands, activation on `forge.toml`, @types/vscode devDep
+- [x] 2.1 Create `extensions/vscode/package.json` — 4 commands, activation on `anvil.toml`, @types/vscode devDep
 - [x] 2.2 Create `extensions/vscode/tsconfig.json` — strict, Node 18+ target
 - [x] 2.3 Create `extensions/vscode/.vscodeignore` — VSIX packaging filter
 - [x] 2.4 Create `extensions/vscode/src/statusBar.ts` — StatusBarItem with 3 states: connected (health), disconnected (red), not-found
@@ -47,7 +47,7 @@ _Solo dev, not in production — single PR with size exception pre-authorized._
 
 ## Phase 4: Neovim UI
 
-- [x] 4.1 Create `extensions/neovim/lua/forge/init.lua` — module entry: 4 user commands, BufRead autocmd for forge.toml, VimLeave cleanup
+- [x] 4.1 Create `extensions/neovim/lua/forge/init.lua` — module entry: 4 user commands, BufRead autocmd for anvil.toml, VimLeave cleanup
 - [x] 4.2 Create `extensions/neovim/lua/forge/ui.lua` — float windows (status/explain), quickfix (doctor), terminal (run), Telescope picker
 - [x] 4.3 Create `extensions/neovim/lua/forge/health.lua` — :checkhealth forge: verify binary, Neovim version, job state
 

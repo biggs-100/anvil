@@ -36,32 +36,32 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Build
-        run: cargo build --release --bin forge-cli
+        run: cargo build --release --bin anvil
 
       - name: Package (Unix)
         if: matrix.os != 'windows-latest'
         run: |
-          mkdir -p dist/forge
-          cp target/release/forge-cli dist/forge/forge
-          cp README.md LICENSE dist/forge/
+          mkdir -p dist/anvil
+          cp target/release/anvil dist/anvil/anvil
+          cp README.md LICENSE dist/anvil/
           cd dist
-          tar czf forge-${{ matrix.target }}.tar.gz forge/
+          tar czf anvil-${{ matrix.target }}.tar.gz anvil/
 
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          mkdir dist\forge
-          copy target\release\forge-cli.exe dist\forge\forge.exe
-          copy README.md dist\forge\
-          copy LICENSE dist\forge\
+          mkdir dist\anvil
+          copy target\release\anvil.exe dist\anvil\anvil.exe
+          copy README.md dist\anvil\
+          copy LICENSE dist\anvil\
           cd dist
-          Compress-Archive -Path forge -DestinationPath forge-${{ matrix.target }}.zip
+          Compress-Archive -Path anvil -DestinationPath anvil-${{ matrix.target }}.zip
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: forge-${{ matrix.target }}
-          path: dist/forge-*
+          name: anvil-${{ matrix.target }}
+          path: dist/anvil-*
 
   release:
     needs: build
@@ -69,11 +69,11 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: forge-*
+          pattern: anvil-*
           merge-multiple: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: forge-*
+          files: anvil-*
           generate_release_notes: true

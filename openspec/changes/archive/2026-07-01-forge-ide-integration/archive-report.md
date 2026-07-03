@@ -38,7 +38,7 @@
 
 ## Scope Notes
 
-- All changes were in `extensions/` — no forge-cli or forge-core modifications
+- All changes were in `extensions/` — no anvil-cli or anvil-core modifications
 - Files created: 14 source files across `extensions/vscode/` and `extensions/neovim/`
 - Two new capability domains: `ide-vscode` and `ide-neovim`
 

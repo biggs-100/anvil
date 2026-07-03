@@ -3,7 +3,7 @@ Chained PRs recommended: No
 Chain strategy: size-exception
 400-line budget risk: High
 
-# Tasks: Forge Bootstrap
+# Tasks: Anvil Bootstrap
 
 ## Review Workload Forecast
 
@@ -27,24 +27,24 @@ Chain strategy: size-exception
 
 ## Phase 1: Workspace & Configuration (PR 1)
 
-- [x] 1.1 Create workspace root `Cargo.toml` and crates: `crates/forge-cli`, `crates/forge-core`, `crates/forge-drivers`. Verify workspace compile via `cargo check`.
-- [x] 1.2 Define `forge.toml` manifest structs with `serde` / `toml` in `crates/forge-core/src/lib.rs`. Test tool version parser.
-- [x] 1.3 Implement `forge.env` parser in `crates/forge-core/src/lib.rs`. Verify masking helper function on secret credentials.
+- [x] 1.1 Create workspace root `Cargo.toml` and crates: `crates/anvil-cli`, `crates/anvil-core`, `crates/anvil-drivers`. Verify workspace compile via `cargo check`.
+- [x] 1.2 Define `anvil.toml` manifest structs with `serde` / `toml` in `crates/anvil-core/src/lib.rs`. Test tool version parser.
+- [x] 1.3 Implement `anvil.env` parser in `crates/anvil-core/src/lib.rs`. Verify masking helper function on secret credentials.
 
 ## Phase 2: Runtime Downloader & Cache (PR 2)
 
-- [x] 2.1 Set up global cache path (`~/.forge/runtimes/`) and lockfile generator structs (`forge.lock`) in `crates/forge-core/src/lib.rs`. Test lockfile serializer.
-- [x] 2.2 Implement concurrent downloader using `tokio` and `reqwest` in `crates/forge-core/src/lib.rs`. Verify file deletion on SHA-256 mismatch.
-- [x] 2.3 Implement zip/tar.gz extraction in `crates/forge-core/src/lib.rs` (using `zip` and `tar`). Verify target extraction structure.
+- [x] 2.1 Set up global cache path (`~/.anvil/runtimes/`) and lockfile generator structs (`anvil.lock`) in `crates/anvil-core/src/lib.rs`. Test lockfile serializer.
+- [x] 2.2 Implement concurrent downloader using `tokio` and `reqwest` in `crates/anvil-core/src/lib.rs`. Verify file deletion on SHA-256 mismatch.
+- [x] 2.3 Implement zip/tar.gz extraction in `crates/anvil-core/src/lib.rs` (using `zip` and `tar`). Verify target extraction structure.
 
 ## Phase 3: Spawning & System Drivers (PR 3)
 
-- [x] 3.1 Implement environment activation and path prepending engine in `crates/forge-core/src/lib.rs`. Test priority ordering.
-- [x] 3.2 Implement subprocess spawning wrapped runner for `run` / `shell` in `crates/forge-core/src/lib.rs`. Verify host environment isolation.
-- [x] 3.3 Implement `winget`/`brew`/`apt`/`pacman` execution wrappers in `crates/forge-drivers/src/lib.rs`. Test driver exit code propagation.
+- [x] 3.1 Implement environment activation and path prepending engine in `crates/anvil-core/src/lib.rs`. Test priority ordering.
+- [x] 3.2 Implement subprocess spawning wrapped runner for `run` / `shell` in `crates/anvil-core/src/lib.rs`. Verify host environment isolation.
+- [x] 3.3 Implement `winget`/`brew`/`apt`/`pacman` execution wrappers in `crates/anvil-drivers/src/lib.rs`. Test driver exit code propagation.
 
 ## Phase 4: CLI Interface & AI Diagnostics (PR 4)
 
-- [x] 4.1 Implement command CLI flags with Clap in `crates/forge-cli/src/main.rs`. Test parser with `run`, `shell`, `ai` subcommands.
-- [x] 4.2 Implement `forge ai context` command displaying JSON map with masked secrets. Verify redaction formats.
-- [x] 4.3 Implement `forge ai doctor` diagnostic checks command with severity and remediation instructions. Verify output schema.
+- [x] 4.1 Implement command CLI flags with Clap in `crates/anvil-cli/src/main.rs`. Test parser with `run`, `shell`, `ai` subcommands.
+- [x] 4.2 Implement `anvil ai context` command displaying JSON map with masked secrets. Verify redaction formats.
+- [x] 4.3 Implement `anvil ai doctor` diagnostic checks command with severity and remediation instructions. Verify output schema.

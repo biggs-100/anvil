@@ -1,8 +1,8 @@
-# Design: Forge MCP Server
+# Design: Anvil MCP Server
 
 ## Technical Approach
 
-Add a `forge mcp` subcommand running an MCP (Model Context Protocol) stdio server in `forge-cli`, mirroring the existing `jsonrpc.rs` pattern. One new file (`mcp.rs`) with its own message types (no shared extraction — protocols differ in shape and lifecycle). Uses `McpExporter` for the `forge://context/active` resource and delegates all 6 tools to the existing `Engine` facade. Notifications subscribe to `EventBus` via a background task. Zero changes to `forge-core`.
+Add a `anvil mcp` subcommand running an MCP (Model Context Protocol) stdio server in `anvil-cli`, mirroring the existing `jsonrpc.rs` pattern. One new file (`mcp.rs`) with its own message types (no shared extraction — protocols differ in shape and lifecycle). Uses `McpExporter` for the `forge://context/active` resource and delegates all 6 tools to the existing `Engine` facade. Notifications subscribe to `EventBus` via a background task. Zero changes to `anvil-core`.
 
 ## Architecture Decisions
 
@@ -40,8 +40,8 @@ MCP Lifecycle:
 
 | File | Action | Description |
 |------|--------|-------------|
-| `crates/forge-cli/src/mcp.rs` | Create | MCP server: message types, dispatch, handlers, notifications (~450 LOC) |
-| `crates/forge-cli/src/main.rs` | Modify | Add `mod mcp;`, add `Mcp` variant to `Commands` enum, wire to `mcp::serve()` |
+| `crates/anvil-cli/src/mcp.rs` | Create | MCP server: message types, dispatch, handlers, notifications (~450 LOC) |
+| `crates/anvil-cli/src/main.rs` | Modify | Add `mod mcp;`, add `Mcp` variant to `Commands` enum, wire to `mcp::serve()` |
 
 ## Interfaces / Contracts
 
@@ -97,7 +97,7 @@ struct PromptMessage { role: String, content: PromptContent }
 
 ## Migration / Rollout
 
-No migration required. Additive to forge-cli — existing `jsonrpc` and CLI commands unchanged. Single commit: add `mcp.rs`, wire `main.rs`. Rollback by reverting.
+No migration required. Additive to anvil-cli — existing `jsonrpc` and CLI commands unchanged. Single commit: add `mcp.rs`, wire `main.rs`. Rollback by reverting.
 
 ## Open Questions
 

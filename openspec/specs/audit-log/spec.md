@@ -2,31 +2,31 @@
 
 ## Purpose
 
-The `forge audit` command SHALL display a history of download and verification operations from the existing journal (`journal.jsonl`), providing users with visibility into what forge has fetched, from where, and whether verification succeeded.
+The `anvil audit` command SHALL display a history of download and verification operations from the existing journal (`journal.jsonl`), providing users with visibility into what anvil has fetched, from where, and whether verification succeeded.
 
 ## Requirements
 
 ### Requirement: Audit Command
 
-Forge MUST provide a `forge audit` subcommand that reads the operation journal and displays download/sync/install history.
+Anvil MUST provide a `anvil audit` subcommand that reads the operation journal and displays download/sync/install history.
 
-- GIVEN the user runs `forge audit` after at least one sync or install operation
-- THEN forge SHALL display a table with columns: timestamp, runtime, version, operation, URL, file size, SHA-256, and verification status
+- GIVEN the user runs `anvil audit` after at least one sync or install operation
+- THEN anvil SHALL display a table with columns: timestamp, runtime, version, operation, URL, file size, SHA-256, and verification status
 
-- GIVEN the user runs `forge audit` and the journal is empty or missing
-- THEN forge SHALL display a message indicating no operations recorded
+- GIVEN the user runs `anvil audit` and the journal is empty or missing
+- THEN anvil SHALL display a message indicating no operations recorded
 - AND SHALL exit with code 0
 
 ### Requirement: JSON Output
 
-The `forge audit` command MUST support a `--json` flag that outputs machine-readable JSON.
+The `anvil audit` command MUST support a `--json` flag that outputs machine-readable JSON.
 
-- GIVEN the user runs `forge audit --json`
-- THEN forge SHALL output a valid JSON array of operation records
+- GIVEN the user runs `anvil audit --json`
+- THEN anvil SHALL output a valid JSON array of operation records
 - AND each record SHALL contain: timestamp, runtime, version, operation, url, size_bytes, sha256, verified
 
-- GIVEN the user runs `forge audit --json` and the journal is empty
-- THEN forge SHALL output `[]`
+- GIVEN the user runs `anvil audit --json` and the journal is empty
+- THEN anvil SHALL output `[]`
 
 ### Requirement: Verification Status
 
@@ -45,7 +45,7 @@ Each audit entry MUST display a verification status field indicating whether the
 
 Audit entries SHOULD include the source registry URL that provided the metadata or artifact.
 
-- GIVEN an operation fetched from `https://registry.forge.sh`
+- GIVEN an operation fetched from `https://registry.anvil.dev`
 - WHEN displayed in the audit log
 - THEN the URL column SHALL include the full registry URL
 

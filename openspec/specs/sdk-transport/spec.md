@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the JSON-RPC 2.0 transport protocol over stdin/stdout used by all Forge SDKs. Forge operates as a server process that reads JSON-RPC requests from stdin and writes responses to stdout, enabling language-agnostic programmatic access.
+Defines the JSON-RPC 2.0 transport protocol over stdin/stdout used by all Anvil SDKs. Anvil operates as a server process that reads JSON-RPC requests from stdin and writes responses to stdout, enabling language-agnostic programmatic access.
 
 ## Requirements
 
@@ -12,16 +12,16 @@ The system MUST implement JSON-RPC 2.0 over newline-delimited stdin/stdout. Each
 
 #### Scenario: Successful request-response roundtrip
 
-- GIVEN forge is running in `--jsonrpc` mode
+- GIVEN anvil is running in `--jsonrpc` mode
 - WHEN a valid JSON-RPC request `{"jsonrpc":"2.0","id":1,"method":"status","params":{}}\n` is written to stdin
-- THEN forge MUST write a JSON-RPC response to stdout with matching `id` and a `result` field
+- THEN anvil MUST write a JSON-RPC response to stdout with matching `id` and a `result` field
 - AND the response MUST be followed by a newline
 
 #### Scenario: Parse error returns error response
 
-- GIVEN forge is running in `--jsonrpc` mode
+- GIVEN anvil is running in `--jsonrpc` mode
 - WHEN malformed JSON is written to stdin (e.g., `not json\n`)
-- THEN forge MUST write `{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}\n` to stdout
+- THEN anvil MUST write `{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}\n` to stdout
 
 ### Requirement: Error Codes
 
@@ -29,9 +29,9 @@ The system MUST use these JSON-RPC error codes: `-32700` Parse error, `-32600` I
 
 #### Scenario: Unknown method returns method-not-found
 
-- GIVEN forge is running in `--jsonrpc` mode
+- GIVEN anvil is running in `--jsonrpc` mode
 - WHEN a request with method `"nonexistent"` is written to stdin
-- THEN forge MUST respond with error code `-32601` and message `"Method not found"`
+- THEN anvil MUST respond with error code `-32601` and message `"Method not found"`
 
 ### Requirement: Request Format
 
@@ -39,9 +39,9 @@ Requests MUST use the format `{"jsonrpc":"2.0","id":<number>,"method":"<name>","
 
 #### Scenario: Notification request yields no response
 
-- GIVEN forge is running in `--jsonrpc` mode
+- GIVEN anvil is running in `--jsonrpc` mode
 - WHEN a request without an `id` field is written to stdin
-- THEN forge MUST NOT write any response to stdout
+- THEN anvil MUST NOT write any response to stdout
 
 ### Requirement: Concurrent Requests
 
@@ -49,9 +49,9 @@ The system MUST support concurrent (pipelined) requests. Responses MAY arrive ou
 
 #### Scenario: Out-of-order responses for pipelined requests
 
-- GIVEN forge is running in `--jsonrpc` mode
+- GIVEN anvil is running in `--jsonrpc` mode
 - WHEN requests with `id: 1` (slow operation) and `id: 2` (fast operation) are written to stdin without waiting for responses
-- THEN forge MAY write the response for `id: 2` before the response for `id: 1`
+- THEN anvil MAY write the response for `id: 2` before the response for `id: 1`
 
 ### Requirement: Stream Flushing
 
@@ -63,6 +63,6 @@ The system SHOULD exit cleanly with exit code 0 when stdin reaches EOF.
 
 #### Scenario: EOF shuts down server
 
-- GIVEN forge is running in `--jsonrpc` mode
+- GIVEN anvil is running in `--jsonrpc` mode
 - WHEN stdin is closed (EOF)
-- THEN forge MUST exit with exit code 0 within 1 second
+- THEN anvil MUST exit with exit code 0 within 1 second

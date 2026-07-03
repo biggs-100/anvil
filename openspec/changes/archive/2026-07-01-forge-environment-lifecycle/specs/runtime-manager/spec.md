@@ -12,7 +12,7 @@ The Runtime Manager MUST delegate download and extraction tasks to the isolated 
 #### Scenario: Toolchain Staging Before Promotion
 - GIVEN Python is missing from the local cache
 - WHEN Python is requested for download
-- THEN the system MUST download, verify, and extract Python to `.forge/staging/<operation_id>/python` and delay commit until final transaction verification.
+- THEN the system MUST download, verify, and extract Python to `.anvil/staging/<operation_id>/python` and delay commit until final transaction verification.
 
 #### Scenario: Parallel Downloads Stage in Isolation
 - GIVEN Bun and Go are requested in parallel
@@ -27,4 +27,4 @@ The Runtime Manager MUST delegate download and extraction tasks to the isolated 
 #### Scenario: Successful Promotion Triggers Shim Regeneration
 - GIVEN a successful transaction commit of multiple runtimes
 - WHEN the promotion phase completes successfully
-- THEN the system MUST regenerate `.forge/shims.cache` with the active paths.
+- THEN the system MUST regenerate `.anvil/shims.cache` with the active paths.

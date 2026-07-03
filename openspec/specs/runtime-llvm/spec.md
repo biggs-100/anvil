@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the LLVM/Clang toolchain provider contract for downloading, verifying, and resolving pre-built LLVM releases from GitHub. Acts as the source of C/C++ compilation tooling for projects using `forge.toml`.
+Define the LLVM/Clang toolchain provider contract for downloading, verifying, and resolving pre-built LLVM releases from GitHub. Acts as the source of C/C++ compilation tooling for projects using `anvil.toml`.
 
 ## Requirements
 
@@ -10,11 +10,11 @@ Define the LLVM/Clang toolchain provider contract for downloading, verifying, an
 |---|---|---|
 | REQ-LLVM-001 | Providers MUST download pre-built LLVM/Clang binaries from `github.com/llvm/llvm-project/releases` | MUST |
 | REQ-LLVM-002 | Providers MUST verify downloaded archives against the published SHA-256 checksum | MUST |
-| REQ-LLVM-003 | Providers MUST expose the runtime name `llvm` for use in `forge.toml` `[runtimes]` | MUST |
+| REQ-LLVM-003 | Providers MUST expose the runtime name `llvm` for use in `anvil.toml` `[runtimes]` | MUST |
 | REQ-LLVM-004 | Providers SHOULD include `clangd` and `lld` alongside `clang`/`clang++` | SHOULD |
 | REQ-LLVM-005 | Providers MUST support Windows x86_64, MacOS x86_64 + aarch64, Linux x86_64 + aarch64 | MUST |
 | REQ-LLVM-006 | Providers MUST accept version strings in semver format (e.g., `"18.1.0"`) | MUST |
-| REQ-LLVM-007 | Providers MUST emit FRRS-compatible `RegistryEntry` metadata for registry persistence | MUST |
+| REQ-LLVM-007 | Providers MUST emit ARRS-compatible `RegistryEntry` metadata for registry persistence | MUST |
 
 ### Requirement: LLVM Version Resolution
 

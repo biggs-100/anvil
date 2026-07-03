@@ -2,7 +2,7 @@
 
 ## Current State
 
-The current runtime engine implementation is centralized entirely within `crates/forge-core/src/lib.rs` (1,297 lines) and `crates/forge-core/src/lock.rs` (106 lines). The single `lib.rs` file mixes:
+The current runtime engine implementation is centralized entirely within `crates/anvil-core/src/lib.rs` (1,297 lines) and `crates/anvil-core/src/lock.rs` (106 lines). The single `lib.rs` file mixes:
 - Manifest Loading & Parsing (`ForgeConfig`, `.env` parsing, secret masking).
 - Runtime Coordinate Resolving (`Provider` trait, tool providers like node/python/bun/go/rust, semver constraints resolution).
 - Downloader & Hashing (`download_runtime`, SHA256 validation).
@@ -19,15 +19,15 @@ This mixing of concerns makes code maintenance, testing, and extensions (like ad
 
 ## Affected Areas
 
-The modular refactoring will touch the files within the `forge-core` and potentially `forge-cli` crates:
-- `crates/forge-core/src/lib.rs` — Will be trimmed to declare submodules and re-export the public API for backward compatibility.
-- `crates/forge-core/src/resolver.rs` — New submodule for version mapping and lockfile generation.
-- `crates/forge-core/src/installer.rs` — New submodule for downloading, SHA-256 verification, and archive extraction.
-- `crates/forge-core/src/registry.rs` — New submodule for `HybridRegistry`, platform detection, and normalize helpers.
-- `crates/forge-core/src/cache.rs` — New submodule for directory state and shim.cache compilation.
-- `crates/forge-core/src/environment.rs` — New submodule for environment variables parsing, masking, and bin path detection.
-- `crates/forge-core/src/launcher.rs` — New submodule for child process spawning and execution.
-- `crates/forge-core/src/manifest.rs` — New submodule for `ForgeConfig` loading and checking.
+The modular refactoring will touch the files within the `anvil-core` and potentially `anvil-cli` crates:
+- `crates/anvil-core/src/lib.rs` — Will be trimmed to declare submodules and re-export the public API for backward compatibility.
+- `crates/anvil-core/src/resolver.rs` — New submodule for version mapping and lockfile generation.
+- `crates/anvil-core/src/installer.rs` — New submodule for downloading, SHA-256 verification, and archive extraction.
+- `crates/anvil-core/src/registry.rs` — New submodule for `HybridRegistry`, platform detection, and normalize helpers.
+- `crates/anvil-core/src/cache.rs` — New submodule for directory state and shim.cache compilation.
+- `crates/anvil-core/src/environment.rs` — New submodule for environment variables parsing, masking, and bin path detection.
+- `crates/anvil-core/src/launcher.rs` — New submodule for child process spawning and execution.
+- `crates/anvil-core/src/manifest.rs` — New submodule for `ForgeConfig` loading and checking.
 
 ---
 
@@ -113,7 +113,7 @@ graph TD
     end
 
     subgraph Core Modules
-        manifest[manifest.rs: ForgeConfig]
+        manifest[manifest.rs: AnvilConfig]
         registry[registry.rs: HybridRegistry, RegistryEntry]
         resolver[resolver.rs: Provider, NodeProvider...]
         installer[installer.rs: Extractor, ZipExtractor...]
@@ -133,8 +133,8 @@ graph TD
 ```
 
 ### Visibility & Exposure
-To ensure all existing code compiling against `forge-core` continues to function:
-1. `crates/forge-core/src/lib.rs` will re-export all items using `pub use` statements.
+To ensure all existing code compiling against `anvil-core` continues to function:
+1. `crates/anvil-core/src/lib.rs` will re-export all items using `pub use` statements.
 2. In `lib.rs`:
    ```rust
    pub mod lock;
@@ -164,7 +164,7 @@ To ensure all existing code compiling against `forge-core` continues to function
 ### Option A: Complete Inline Split
 Separate the large `lib.rs` into new files and re-export them from `lib.rs` immediately. Maintain 100% API compatibility at the crate level.
 - **Pros**:
-  - Code compiles immediately with zero changes to `forge-cli` or `forge-shim`.
+  - Code compiles immediately with zero changes to `anvil-cli` or `anvil-shim`.
   - Minimal impact on consumer code.
   - Keeps tests with their respective submodules.
 - **Cons**:

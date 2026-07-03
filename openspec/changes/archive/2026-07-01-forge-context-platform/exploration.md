@@ -1,35 +1,35 @@
-## Exploration: Runtime Context Platform / Forge Context Protocol (FCP)
+## Exploration: Runtime Context Platform / Anvil Context Protocol (ACP)
 
 ### Current State
-Currently, the `forge` system resolves environment variables, manages secrets, validates configurations, and compiles diagnostic reports across separate, decoupled sub-modules (`diagnostics`, `environment`, `secrets`, `resolver`, etc.). There is no unified mechanism to aggregate all of this system state into a queryable "context payload" for external developer agents (e.g. Claude Code, Gemini CLI, Aider). External AI tools must run several different commands (`forge status`, `forge doctor`, `forge explain`, `forge secret list`) and parse standard outputs, which increases latency, complexity, and context window token consumption.
+Currently, the `forge` system resolves environment variables, manages secrets, validates configurations, and compiles diagnostic reports across separate, decoupled sub-modules (`diagnostics`, `environment`, `secrets`, `resolver`, etc.). There is no unified mechanism to aggregate all of this system state into a queryable "context payload" for external developer agents (e.g. Claude Code, Gemini CLI, Aider). External AI tools must run several different commands (`anvil status`, `anvil doctor`, `anvil explain`, `anvil secret list`) and parse standard outputs, which increases latency, complexity, and context window token consumption.
 
 ### Affected Areas
-- `crates/forge-core/src/lib.rs` — Will re-export the context engine, providers, schemas, and exporters.
-- `crates/forge-core/src/context/mod.rs` — **New file** containing the core trait definitions (`ContextProvider`, `ContextExporter`, `AgentAdapter`), the `ContextEngine`, the six concrete providers, filters/exclusions, handshake payloads, and security rules.
-- `crates/forge-cli/src/main.rs` — CLI expansion to add a `forge context` subcommand supporting format formatting, scope filtering, and exclusions.
+- `crates/anvil-core/src/lib.rs` — Will re-export the context engine, providers, schemas, and exporters.
+- `crates/anvil-core/src/context/mod.rs` — **New file** containing the core trait definitions (`ContextProvider`, `ContextExporter`, `AgentAdapter`), the `ContextEngine`, the six concrete providers, filters/exclusions, handshake payloads, and security rules.
+- `crates/anvil-cli/src/main.rs` — CLI expansion to add a `anvil context` subcommand supporting format formatting, scope filtering, and exclusions.
 
 ### Approaches
 
 1. **Monolithic Ad-Hoc CLI Exporter**
-   - *Description*: Gather diagnostics, env, config, and runtimes inside the CLI layer (`forge-cli`) using simple stdout printing, without defining formal trait contracts or schemas in `forge-core`.
+   - *Description*: Gather diagnostics, env, config, and runtimes inside the CLI layer (`anvil-cli`) using simple stdout printing, without defining formal trait contracts or schemas in `anvil-core`.
    - *Pros*: Quick implementation; avoids creating new traits in the core crate.
    - *Cons*: Couples logic to CLI; cannot be used programmatically via API/daemon/MCP; lacks clean secret sanitization at the core layer; lacks semantic versioning for the schema.
    - *Effort*: Low
 
-2. **Extensible Forge Context Protocol (FCP) Core & Adapter Design (RFC-0014)**
+2. **Extensible Anvil Context Protocol (ACP) Core & Adapter Design (RFC-0014)**
    - *Description*: Define formal trait contracts for `ContextProvider`, `ContextExporter`, and `AgentAdapter` managed by a central `ContextEngine`. Standardize a SemVer-validated `ForgeContext` schema, implement robust scope/exclusion token optimization, build a capability negotiation handshake, and enforce strict sovereign security rules to prevent secrets leakage.
    - *Pros*: Decoupled and reusable; supports JSON, Markdown, and MCP backends; safe-by-default secret protection; easy configuration of filters/exclusions to save token window space.
    - *Cons*: Higher upfront design ceremony; requires building out six separate provider implementations.
    - *Effort*: Medium
 
 ### Recommendation
-We recommend **Approach 2 (Extensible FCP Core & Adapter Design)** because it establishes a standardized framework for developer agent tool integration. By isolating providers, exporters, and adapters, we can customize outputs for various developer agents (Claude, Gemini, Aider) while keeping security checks centralized.
+We recommend **Approach 2 (Extensible ACP Core & Adapter Design)** because it establishes a standardized framework for developer agent tool integration. By isolating providers, exporters, and adapters, we can customize outputs for various developer agents (Claude, Gemini, Aider) while keeping security checks centralized.
 
 Below is the **RFC-0014 Draft (Forge Context Protocol Specification)** detailing the design.
 
 ---
 
-# RFC-0014: Forge Context Protocol (FCP) Specification
+# RFC-0014: Anvil Context Protocol (ACP) Specification
 
 ## 1. Context Engine & Providers
 
@@ -42,14 +42,14 @@ sequenceDiagram
     participant Engine as ContextEngine
     participant Providers as ContextProviders (6 concrete)
 
-    Agent->>Adapter: Handshake Request (FCP v1.0.0, supports: [mcp])
-    Adapter->>Agent: Handshake Response (FCP v1.0.0, negotiated: [mcp])
+    Agent->>Adapter: Handshake Request (ACP v1.0.0, supports: [mcp])
+    Adapter->>Agent: Handshake Response (ACP v1.0.0, negotiated: [mcp])
     Agent->>Adapter: Query Context (scopes: [runtime, diagnostics], excludes: [cache])
     Adapter->>Engine: collect_context(options)
     Engine->>Providers: collect(options)
     Note over Providers: Mask Secrets & Filter Excluded Files
     Providers-->>Engine: JSON Sub-payloads
-    Engine-->>Adapter: ForgeContext Schema
+    Engine-->>Adapter: AnvilContext Schema
     Adapter-->>Agent: Formatted Output (JSON / Markdown / MCP Resource)
 ```
 
@@ -85,7 +85,7 @@ impl ContextEngine {
     }
 
     pub fn collect_context(&self, options: &ContextOptions) -> Result<ForgeContext, String> {
-        let mut context = ForgeContext::new();
+        let mut context = AnvilContext::new();
 
         for (&name, provider) in &self.providers {
             // Check if the scope is active/requested
@@ -114,14 +114,14 @@ impl ContextEngine {
 | Provider | Scope Key | Description | Extracted Data Fields |
 |----------|-----------|-------------|-----------------------|
 | **Runtime** | `runtime` | Lists available and active runtimes, path mappings, and active shims | `active_runtimes`, `lockfile_summary`, `bin_dirs` |
-| **Configuration** | `configuration` | Extracts `forge.toml` configurations, active profile, and variables | `definitions`, `active_profile`, `manifest_vars` |
+| **Configuration** | `configuration` | Extracts `anvil.toml` configurations, active profile, and variables | `definitions`, `active_profile`, `manifest_vars` |
 | **Diagnostics** | `diagnostics` | Queries environment health, execution checks, and diagnostic findings | `health_score`, `findings`, `elapsed_ms` |
 | **Workspace** | `workspace` | Scans workspace root layout, structure, and file locations | `workspace_root`, `file_tree`, `lockfile_exists` |
 | **Environment** | `environment` | Gathers non-sensitive system environment variables and platform data | `platform`, `arch`, `os`, `masked_env_vars` |
 | **Secrets** | `secrets` | Queries presence, metadata, and sources of credentials without plaintext values | `providers`, `secrets_metadata` |
 
-1. **RuntimeContextProvider**: Reads the active workspace `forge.lock` and local cache directory mapping (`.forge/runtimes`). Lists active runtimes and versions.
-2. **ConfigurationContextProvider**: Reads `forge.toml`. Inspects configuration variables, active profiles, and fallback overlays.
+1. **RuntimeContextProvider**: Reads the active workspace `anvil.lock` and local cache directory mapping (`.anvil/runtimes`). Lists active runtimes and versions.
+2. **ConfigurationContextProvider**: Reads `anvil.toml`. Inspects configuration variables, active profiles, and fallback overlays.
 3. **DiagnosticsContextProvider**: Spawns or queries the `DiagnosticEngine` in fast or deep mode. Captures diagnostic reports and suggested quick fixes.
 4. **WorkspaceContextProvider**: Performs light tree traversals of the workspace directory. Generates file trees and sizes, excluding paths designated in the options.
 5. **EnvironmentContextProvider**: Captures `std::env::vars()` filtering out any sensitive/masked strings using `is_secret(key)`. Captures platform architectures.
@@ -129,7 +129,7 @@ impl ContextEngine {
 
 ---
 
-## 2. Forge Context Schema v1
+## 2. Anvil Context Schema v1
 
 The unified data payload is defined as a strongly typed Rust struct with semantic versioning.
 
@@ -137,7 +137,7 @@ The unified data payload is defined as a strongly typed Rust struct with semanti
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ForgeContext {
+pub struct AnvilContext {
     pub metadata: ContextMetadata,
     
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -167,7 +167,7 @@ pub struct ContextMetadata {
     pub errors: HashMap<String, String>, // Capture partial failures per provider
 }
 
-impl ForgeContext {
+impl AnvilContext {
     pub fn new() -> Self {
         Self {
             metadata: ContextMetadata {
@@ -286,19 +286,19 @@ impl ContextOptions {
 
 ### Exclude Commands
 The CLI subcommands parse these options:
-- `forge context --scope runtime --scope diagnostics`
-- `forge context --exclude-cache --exclude-history`
+- `anvil context --scope runtime --scope diagnostics`
+- `anvil context --exclude-cache --exclude-history`
 
 ---
 
 ## 5. Capability Negotiation
 
-When an external agent connects to the Forge daemon or initiates FCP context queries, capability negotiation is performed using a handshake payload.
+When an external agent connects to the Anvil daemon or initiates ACP context queries, capability negotiation is performed using a handshake payload.
 
 ### Client Handshake Payload
 ```json
 {
-  "protocol": "FCP",
+  "protocol": "ACP",
   "version": "1.0.0",
   "client": {
     "name": "Claude Code",
@@ -319,10 +319,10 @@ When an external agent connects to the Forge daemon or initiates FCP context que
 ### Server Response Payload
 ```json
 {
-  "protocol": "FCP",
+  "protocol": "ACP",
   "version": "1.0.0",
   "server": {
-    "name": "forge",
+    "name": "anvil",
     "version": "0.1.0"
   },
   "status": "connected",
@@ -359,7 +359,7 @@ To prevent sensitive credentials and private keys from leaking to external LLM p
 |  [SecretsContextProvider]                                       |
 |       |                                                         |
 |       v (Plaintext Forbidden!)                                  |
-|  [ContextEngine] -> ForgeContext (metadata only, no plaintext)  |
+|  [ContextEngine] -> AnvilContext (metadata only, no plaintext)  |
 |       |                                                         |
 |       v                                                         |
 |  [ContextExporters / AgentAdapters]                             |
@@ -375,7 +375,7 @@ To prevent sensitive credentials and private keys from leaking to external LLM p
    The `SecretsContextProvider` MUST NOT invoke `.get(key)` on any `SecretProvider` to obtain a plaintext value during context collection. Instead, it checks existence and returns a boolean value (`is_set: bool`) and source metadata (`source: ValueSource`).
 
 2. **Keys Filtering**:
-   Only secret keys mapped via `forge.toml` configuration declarations are returned in metadata, avoiding mass discovery of arbitrary environment variables.
+   Only secret keys mapped via `anvil.toml` configuration declarations are returned in metadata, avoiding mass discovery of arbitrary environment variables.
 
 3. **Global String Masking**:
    The `ContextEngine` enforces a fallback sanitization sweep across all other text-based fields (such as diagnostic error logs and system environment variables) using `mask_sensitive_text`. Any value corresponding to a key matching `is_secret(key)` is masked with `[MASKED]`.

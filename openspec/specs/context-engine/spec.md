@@ -1,11 +1,11 @@
 # Context Engine Specification (RFC-0014)
 
 ## Purpose
-Define the Forge Context Protocol (FCP) and the ContextEngine. It manages capability negotiation handshakes, concurrent provider execution, and outputs SemVer-versioned ForgeContext metadata.
+Define the Anvil Context Protocol (ACP) and the ContextEngine. It manages capability negotiation handshakes, concurrent provider execution, and outputs SemVer-versioned AnvilContext metadata.
 
 ## Requirements
 
-### Requirement: FCP Handshake Negotiation
+### Requirement: ACP Handshake Negotiation
 The engine MUST negotiate capabilities with clients using a JSON-RPC 2.0 handshake payload. The client and engine MUST exchange supported protocol versions, list of providers, and maximum payload size limits.
 
 | Field | Type | Description |
@@ -31,8 +31,8 @@ The ContextEngine MUST execute all active `ContextProvider` instances concurrent
 
 ---
 
-### Requirement: ForgeContext Metadata Schema v1.0.0
-Aggregated context MUST conform to the SemVer-versioned ForgeContext schema v1.0.0.
+### Requirement: AnvilContext Metadata Schema v1.0.0
+Aggregated context MUST conform to the SemVer-versioned AnvilContext schema v1.0.0.
 
 | Field | Type | Description |
 |---|---|---|

@@ -1,12 +1,12 @@
-# Archive Report: forge-tui
+# Archive Report: anvil-tui
 
 **Archived on**: 2026-07-02
-**Archive location**: `openspec/changes/archive/2026-07-01-forge-tui/`
+**Archive location**: `openspec/changes/archive/2026-07-01-anvil-tui/`
 **Mode**: openspec
 
 ## Merge Summary
 
-- **Spec sync**: Skipped — spec already placed directly in `openspec/specs/forge-tui/spec.md` during spec phase. No delta specs to merge.
+- **Spec sync**: Skipped — spec already placed directly in `openspec/specs/anvil-tui/spec.md` during spec phase. No delta specs to merge.
 
 ## Verification Status
 
@@ -33,4 +33,4 @@
 
 ## SDD Cycle Complete
 
-The forge-tui change has been fully planned, implemented, verified, and archived.
+The anvil-tui change has been fully planned, implemented, verified, and archived.

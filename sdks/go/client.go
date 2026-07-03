@@ -1,4 +1,4 @@
-package forgesdk
+package anvilsdk
 
 import (
 	"bufio"
@@ -31,12 +31,12 @@ type rpcError struct {
 	Message string `json:"message"`
 }
 
-// ── Forge client ────────────────────────────────────────────────────────────
+// ── Anvil client ────────────────────────────────────────────────────────────
 
-// Forge is a Go SDK client that controls a forge jsonrpc subprocess.
+// Anvil is a Go SDK client that controls a anvil jsonrpc subprocess.
 // All methods communicate via JSON-RPC 2.0 over stdin/stdout.
 // The client is safe for concurrent use.
-type Forge struct {
+type Anvil struct {
 	cmd    *exec.Cmd
 	stdin  io.WriteCloser
 	stdout *bufio.Scanner
@@ -46,11 +46,11 @@ type Forge struct {
 	done   chan struct{}
 }
 
-// NewForge spawns a forge jsonrpc subprocess and returns a connected client.
-// The forge binary must be available on $PATH.
-func NewForge() (*Forge, error) {
+// NewAnvil spawns a anvil jsonrpc subprocess and returns a connected client.
+// The anvil binary must be available on $PATH.
+func NewAnvil() (*Anvil, error) {
 	ctx, cancel := context.WithCancel(context.Background())
-	cmd := exec.CommandContext(ctx, "forge", "jsonrpc")
+	cmd := exec.CommandContext(ctx, "anvil", "jsonrpc")
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -69,10 +69,10 @@ func NewForge() (*Forge, error) {
 
 	if err := cmd.Start(); err != nil {
 		cancel()
-		return nil, fmt.Errorf("failed to start forge jsonrpc: %w", err)
+		return nil, fmt.Errorf("failed to start anvil jsonrpc: %w", err)
 	}
 
-	f := &Forge{
+	a := &Anvil{
 		cmd:    cmd,
 		stdin:  stdin,
 		stdout: bufio.NewScanner(stdout),
@@ -83,26 +83,26 @@ func NewForge() (*Forge, error) {
 	// Wait for process exit in background
 	go func() {
 		cmd.Wait()
-		close(f.done)
+		close(a.done)
 	}()
 
-	return f, nil
+	return a, nil
 }
 
-// Close terminates the forge subprocess.
-func (f *Forge) Close() error {
-	f.cancel()
-	_ = f.stdin.Close()
+// Close terminates the anvil subprocess.
+func (a *Anvil) Close() error {
+	a.cancel()
+	_ = a.stdin.Close()
 	return nil
 }
 
 // ── Core RPC method ─────────────────────────────────────────────────────────
 
-func (f *Forge) call(ctx context.Context, method string, params interface{}, result interface{}) error {
-	f.mu.Lock()
-	f.nextID++
-	id := f.nextID
-	f.mu.Unlock()
+func (a *Anvil) call(ctx context.Context, method string, params interface{}, result interface{}) error {
+	a.mu.Lock()
+	a.nextID++
+	id := a.nextID
+	a.mu.Unlock()
 
 	req := rpcRequest{
 		JSONRPC: "2.0",
@@ -113,7 +113,7 @@ func (f *Forge) call(ctx context.Context, method string, params interface{}, res
 
 	reqData, err := json.Marshal(req)
 	if err != nil {
-		return &ForgeError{Message: fmt.Sprintf("failed to marshal request: %v", err)}
+		return &AnvilError{Message: fmt.Sprintf("failed to marshal request: %v", err)}
 	}
 
 	// Write to stdin
@@ -123,11 +123,11 @@ func (f *Forge) call(ctx context.Context, method string, params interface{}, res
 	default:
 	}
 
-	f.mu.Lock()
-	_, err = f.stdin.Write(append(reqData, '\n'))
-	f.mu.Unlock()
+	a.mu.Lock()
+	_, err = a.stdin.Write(append(reqData, '\n'))
+	a.mu.Unlock()
 	if err != nil {
-		return &ForgeError{Message: fmt.Sprintf("failed to write request: %v", err)}
+		return &AnvilError{Message: fmt.Sprintf("failed to write request: %v", err)}
 	}
 
 	// Read response
@@ -135,18 +135,18 @@ func (f *Forge) call(ctx context.Context, method string, params interface{}, res
 	errCh := make(chan error, 1)
 
 	go func() {
-		if !f.stdout.Scan() {
-			if f.stdout.Err() != nil {
-				errCh <- &ForgeError{Message: fmt.Sprintf("failed to read response: %v", f.stdout.Err())}
+		if !a.stdout.Scan() {
+			if a.stdout.Err() != nil {
+				errCh <- &AnvilError{Message: fmt.Sprintf("failed to read response: %v", a.stdout.Err())}
 			} else {
-				errCh <- &ForgeError{Message: "forge subprocess closed connection"}
+				errCh <- &AnvilError{Message: "anvil subprocess closed connection"}
 			}
 			return
 		}
 
 		var resp rpcResponse
-		if err := json.Unmarshal([]byte(f.stdout.Text()), &resp); err != nil {
-			errCh <- &ForgeError{Message: fmt.Sprintf("failed to parse response: %v", err)}
+		if err := json.Unmarshal([]byte(a.stdout.Text()), &resp); err != nil {
+			errCh <- &AnvilError{Message: fmt.Sprintf("failed to parse response: %v", err)}
 			return
 		}
 		respCh <- &resp
@@ -159,14 +159,14 @@ func (f *Forge) call(ctx context.Context, method string, params interface{}, res
 		return err
 	case resp := <-respCh:
 		if resp.Error != nil {
-			return &ForgeError{
+			return &AnvilError{
 				Code:    resp.Error.Code,
 				Message: resp.Error.Message,
 			}
 		}
 		if result != nil {
 			if err := json.Unmarshal(resp.Result, result); err != nil {
-				return &ForgeError{Message: fmt.Sprintf("failed to decode result: %v", err)}
+				return &AnvilError{Message: fmt.Sprintf("failed to decode result: %v", err)}
 			}
 		}
 		return nil
@@ -176,56 +176,56 @@ func (f *Forge) call(ctx context.Context, method string, params interface{}, res
 // ── Engine methods ──────────────────────────────────────────────────────────
 
 // Status returns the current lifecycle state.
-func (f *Forge) Status(ctx context.Context) (*StatusInfo, error) {
+func (a *Anvil) Status(ctx context.Context) (*StatusInfo, error) {
 	var result StatusInfo
-	if err := f.call(ctx, "engine.status", struct{}{}, &result); err != nil {
+	if err := a.call(ctx, "engine.status", struct{}{}, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
 // Sync synchronises runtimes from lockfile.
-func (f *Forge) Sync(ctx context.Context) (*SyncReport, error) {
+func (a *Anvil) Sync(ctx context.Context) (*SyncReport, error) {
 	var result SyncReport
-	if err := f.call(ctx, "engine.sync", struct{}{}, &result); err != nil {
+	if err := a.call(ctx, "engine.sync", struct{}{}, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
 // Repair repairs corrupted or missing runtimes.
-func (f *Forge) Repair(ctx context.Context) (*RepairReport, error) {
+func (a *Anvil) Repair(ctx context.Context) (*RepairReport, error) {
 	var result RepairReport
-	if err := f.call(ctx, "engine.repair", struct{}{}, &result); err != nil {
+	if err := a.call(ctx, "engine.repair", struct{}{}, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
 // Clean cleans all local cache and state.
-func (f *Forge) Clean(ctx context.Context) (*CleanReport, error) {
+func (a *Anvil) Clean(ctx context.Context) (*CleanReport, error) {
 	var result CleanReport
-	if err := f.call(ctx, "engine.clean", struct{}{}, &result); err != nil {
+	if err := a.call(ctx, "engine.clean", struct{}{}, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
 // Explain returns a runtime's configuration and cache status.
-func (f *Forge) Explain(ctx context.Context, runtime string) (*RuntimeExplanation, error) {
+func (a *Anvil) Explain(ctx context.Context, runtime string) (*RuntimeExplanation, error) {
 	var result RuntimeExplanation
 	params := map[string]string{"runtime": runtime}
-	if err := f.call(ctx, "engine.explain", params, &result); err != nil {
+	if err := a.call(ctx, "engine.explain", params, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
 // History returns past operations history.
-func (f *Forge) History(ctx context.Context, limit int) ([]HistoryEntry, error) {
+func (a *Anvil) History(ctx context.Context, limit int) ([]HistoryEntry, error) {
 	var result []HistoryEntry
 	params := map[string]int{"limit": limit}
-	if err := f.call(ctx, "engine.history", params, &result); err != nil {
+	if err := a.call(ctx, "engine.history", params, &result); err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -234,41 +234,41 @@ func (f *Forge) History(ctx context.Context, limit int) ([]HistoryEntry, error) 
 // ── Environment methods ─────────────────────────────────────────────────────
 
 // EnvList returns all environment variables.
-func (f *Forge) EnvList(ctx context.Context) (map[string]string, error) {
+func (a *Anvil) EnvList(ctx context.Context) (map[string]string, error) {
 	var result map[string]string
-	if err := f.call(ctx, "env.list", struct{}{}, &result); err != nil {
+	if err := a.call(ctx, "env.list", struct{}{}, &result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
 // EnvGet returns a single environment variable.
-func (f *Forge) EnvGet(ctx context.Context, key string) (*string, error) {
+func (a *Anvil) EnvGet(ctx context.Context, key string) (*string, error) {
 	var result *string
 	params := map[string]string{"key": key}
-	if err := f.call(ctx, "env.get", params, &result); err != nil {
+	if err := a.call(ctx, "env.get", params, &result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
 // EnvSet sets an environment variable.
-func (f *Forge) EnvSet(ctx context.Context, key, value string) error {
+func (a *Anvil) EnvSet(ctx context.Context, key, value string) error {
 	params := map[string]string{"key": key, "value": value}
-	return f.call(ctx, "env.set", params, nil)
+	return a.call(ctx, "env.set", params, nil)
 }
 
 // EnvUnset removes an environment variable.
-func (f *Forge) EnvUnset(ctx context.Context, key string) error {
+func (a *Anvil) EnvUnset(ctx context.Context, key string) error {
 	params := map[string]string{"key": key}
-	return f.call(ctx, "env.unset", params, nil)
+	return a.call(ctx, "env.unset", params, nil)
 }
 
 // EnvResolve resolves the unified environment.
-func (f *Forge) EnvResolve(ctx context.Context, profile *string) (*ResolvedEnvironment, error) {
+func (a *Anvil) EnvResolve(ctx context.Context, profile *string) (*ResolvedEnvironment, error) {
 	var result ResolvedEnvironment
 	params := map[string]*string{"profile": profile}
-	if err := f.call(ctx, "env.resolve", params, &result); err != nil {
+	if err := a.call(ctx, "env.resolve", params, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -277,32 +277,32 @@ func (f *Forge) EnvResolve(ctx context.Context, profile *string) (*ResolvedEnvir
 // ── Secrets methods ─────────────────────────────────────────────────────────
 
 // SecretSet sets a secret.
-func (f *Forge) SecretSet(ctx context.Context, key, value string) error {
+func (a *Anvil) SecretSet(ctx context.Context, key, value string) error {
 	params := map[string]string{"key": key, "value": value}
-	return f.call(ctx, "secret.set", params, nil)
+	return a.call(ctx, "secret.set", params, nil)
 }
 
 // SecretGet gets a secret by key.
-func (f *Forge) SecretGet(ctx context.Context, key string) (*string, error) {
+func (a *Anvil) SecretGet(ctx context.Context, key string) (*string, error) {
 	var result *string
 	params := map[string]string{"key": key}
-	if err := f.call(ctx, "secret.get", params, &result); err != nil {
+	if err := a.call(ctx, "secret.get", params, &result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
 // SecretList returns all secret keys.
-func (f *Forge) SecretList(ctx context.Context) ([]string, error) {
+func (a *Anvil) SecretList(ctx context.Context) ([]string, error) {
 	var result []string
-	if err := f.call(ctx, "secret.list", struct{}{}, &result); err != nil {
+	if err := a.call(ctx, "secret.list", struct{}{}, &result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
 // SecretRemove removes a secret.
-func (f *Forge) SecretRemove(ctx context.Context, key string) error {
+func (a *Anvil) SecretRemove(ctx context.Context, key string) error {
 	params := map[string]string{"key": key}
-	return f.call(ctx, "secret.remove", params, nil)
+	return a.call(ctx, "secret.remove", params, nil)
 }

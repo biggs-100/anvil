@@ -1,3 +1,3 @@
-module github.com/user/forge/sdk-go
+module github.com/user/anvil/sdk-go
 
 go 1.21

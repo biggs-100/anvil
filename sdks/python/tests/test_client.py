@@ -1,6 +1,6 @@
-"""Integration tests for forge-sdk Python client.
+"""Integration tests for anvil-sdk Python client.
 
-Requires forge to be built and on $PATH.
+Requires anvil to be built and on $PATH.
 Run with: python -m pytest tests/
 """
 
@@ -12,12 +12,12 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from forge_sdk import Forge, ForgeError
+from anvil_sdk import Anvil, AnvilError
 
 
-def test_forge_connect():
-    """Verify the forge subprocess can be spawned."""
-    client = Forge()
+def test_anvil_connect():
+    """Verify the anvil subprocess can be spawned."""
+    client = Anvil()
     try:
         status = client.status()
         assert isinstance(status, dict)
@@ -28,9 +28,9 @@ def test_forge_connect():
 
 def test_env_roundtrip():
     """Verify env_set, env_get, env_unset."""
-    client = Forge()
+    client = Anvil()
     try:
-        key = "FORGE_SDK_PY_TEST"
+        key = "ANVIL_SDK_PY_TEST"
         value = "test_value_py"
 
         client.env_set(key, value)
@@ -46,7 +46,7 @@ def test_env_roundtrip():
 
 def test_secret_roundtrip():
     """Verify secret_set, secret_get, secret_list, secret_remove."""
-    client = Forge()
+    client = Anvil()
     try:
         key = "SDK_PY_TEST_KEY"
         value = "sdk_py_val"
@@ -67,7 +67,7 @@ def test_secret_roundtrip():
 
 def test_context_manager():
     """Verify context manager lifecycle."""
-    with Forge() as client:
+    with Anvil() as client:
         status = client.status()
         assert isinstance(status, dict)
         assert "state" in status
@@ -78,22 +78,22 @@ def test_context_manager():
 
 def test_parse_error():
     """Verify the client handles JSON-RPC error responses."""
-    client = Forge()
+    client = Anvil()
     try:
         try:
             # Call an unknown method
             client._call("nonexistent.method")
-        except ForgeError as e:
+        except AnvilError as e:
             assert e.code == -32601 or e.code is not None
             assert "Method not found" in str(e)
             return
-        assert False, "Expected ForgeError"
+        assert False, "Expected AnvilError"
     finally:
         client.close()
 
 
 if __name__ == "__main__":
-    test_forge_connect()
+    test_anvil_connect()
     test_env_roundtrip()
     test_secret_roundtrip()
     test_context_manager()

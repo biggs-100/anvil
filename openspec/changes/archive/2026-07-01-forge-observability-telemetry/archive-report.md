@@ -1,4 +1,4 @@
-# Archive Report: Forge Observability & Telemetry
+# Archive Report: Anvil Observability & Telemetry
 
 - **Change Name:** forge-observability-telemetry
 - **Archive Date:** 2026-07-01
@@ -7,22 +7,22 @@
 
 ## Executive Summary
 
-The `forge-observability-telemetry` change has been successfully implemented, verified, and archived. All planned implementation tasks spanning the creation of a stable API facade, asynchronously writing EventBus events to the Operation Journal (`.forge/journal.jsonl`), implementing CLI introspection subcommands (`history`, `explain`, `trace`, and `events`), and documenting core architecture decisions via 6 ADRs have been completed and verified. The spec delta for the Event Bus telemetry forwarding has also been merged into the main Event Bus specification.
+The `forge-observability-telemetry` change has been successfully implemented, verified, and archived. All planned implementation tasks spanning the creation of a stable API facade, asynchronously writing EventBus events to the Operation Journal (`.anvil/journal.jsonl`), implementing CLI introspection subcommands (`history`, `explain`, `trace`, and `events`), and documenting core architecture decisions via 6 ADRs have been completed and verified. The spec delta for the Event Bus telemetry forwarding has also been merged into the main Event Bus specification.
 
 ## Completed Tasks
 
 All tasks in `tasks.md` have been verified as complete (`- [x]`):
 
 - **Phase 1: API Facade & Journal Logging (PR 1)**
-  - Created `crates/forge-core/src/api/v1.rs` exposing the `Engine` struct, v1 types, and unified public methods.
-  - Modified `crates/forge-core/src/lib.rs` to re-export the `api::v1` module.
-  - Updated `crates/forge-core/src/event_bus.rs` to spawn a background Tokio task on EventBus creation that asynchronously writes events to `.forge/journal.jsonl`.
-  - Wrote unit tests verifying serialization of events and concurrent logging safety to `.forge/journal.jsonl`.
+  - Created `crates/anvil-core/src/api/v1.rs` exposing the `Engine` struct, v1 types, and unified public methods.
+  - Modified `crates/anvil-core/src/lib.rs` to re-export the `api::v1` module.
+  - Updated `crates/anvil-core/src/event_bus.rs` to spawn a background Tokio task on EventBus creation that asynchronously writes events to `.anvil/journal.jsonl`.
+  - Wrote unit tests verifying serialization of events and concurrent logging safety to `.anvil/journal.jsonl`.
 - **Phase 2: Architecture Decision Records (PR 2)**
   - Created `docs/adr/` directory.
   - Wrote ADR-0001 through ADR-0006 under `docs/adr/` following standard Status/Context/Decision/Consequences formats.
 - **Phase 3: CLI Introspection Commands (PR 3)**
-  - Implemented subcommands `history`, `explain`, `trace`, and `events` in `crates/forge-cli/src/main.rs`.
+  - Implemented subcommands `history`, `explain`, `trace`, and `events` in `crates/anvil-cli/src/main.rs`.
   - Remapped CLI command handlers to exclusively call the `Engine` API facade.
   - Added CLI integration tests checking command outputs and live tailing (`--live`) behaviour.
 

@@ -1,4 +1,4 @@
-# Verification Report: Forge Context Platform (FCP)
+# Verification Report: Anvil Context Platform (ACP)
 
 - **Change**: `forge-context-platform`
 - **Mode**: Standard
@@ -12,17 +12,17 @@ All 11 tasks defined in [tasks.md](file:///c:/Users/USER/Desktop/forge/openspec/
 
 | Task | Category | Description | Status |
 |---|---|---|---|
-| **1.1** | Core | Create `crates/forge-core/src/context/mod.rs` and define traits `ContextProvider`, `ContextExporter`, `AgentAdapter`. | **PASS** |
+| **1.1** | Core | Create `crates/anvil-core/src/context/mod.rs` and define traits `ContextProvider`, `ContextExporter`, `AgentAdapter`. | **PASS** |
 | **1.2** | Core | Implement the `ContextEngine` registry, capability negotiation handshake structs (JSON-RPC), and the `ForgeContext` schema struct. | **PASS** |
-| **1.3** | Core | Update `crates/forge-core/src/lib.rs` to re-export the `context` module and core structs/traits. | **PASS** |
-| **1.4** | Core | Write unit tests in `crates/forge-core/src/context/tests.rs` (inline) verifying JSON-RPC handshake logic and `ContextEngine` thread safety under concurrent queries. | **PASS** |
-| **2.1** | Providers | Implement `Runtime`, `Configuration`, `Diagnostics`, `Workspace`, `Environment`, and `Secrets` providers in `crates/forge-core/src/context/mod.rs`. | **PASS** |
+| **1.3** | Core | Update `crates/anvil-core/src/lib.rs` to re-export the `context` module and core structs/traits. | **PASS** |
+| **1.4** | Core | Write unit tests in `crates/anvil-core/src/context/tests.rs` (inline) verifying JSON-RPC handshake logic and `ContextEngine` thread safety under concurrent queries. | **PASS** |
+| **2.1** | Providers | Implement `Runtime`, `Configuration`, `Diagnostics`, `Workspace`, `Environment`, and `Secrets` providers in `crates/anvil-core/src/context/mod.rs`. | **PASS** |
 | **2.2** | Providers | Implement strict value masking using `is_secret(key)` in Environment/Secrets providers and limit the Workspace directory crawler to a depth of 5 and max 1000 files. | **PASS** |
-| **2.3** | Providers | Write unit tests in `crates/forge-core/src/context/tests.rs` (inline) for secret masking and depth/file limit enforcement on mock workspace structures. | **PASS** |
-| **3.1** | Exporters | Implement `JsonExporter`, `MarkdownExporter`, and `McpExporter` traits in `crates/forge-core/src/context/mod.rs`. | **PASS** |
+| **2.3** | Providers | Write unit tests in `crates/anvil-core/src/context/tests.rs` (inline) for secret masking and depth/file limit enforcement on mock workspace structures. | **PASS** |
+| **3.1** | Exporters | Implement `JsonExporter`, `MarkdownExporter`, and `McpExporter` traits in `crates/anvil-core/src/context/mod.rs`. | **PASS** |
 | **3.2** | Adapters | Implement `ClaudeCodeAdapter`, `GeminiCliAdapter`, `AiderAdapter`, and `ContinueAdapter` formatting. | **PASS** |
-| **3.3** | CLI | Add the `context` command to `Commands` enum in `crates/forge-cli/src/main.rs`, parse `--format`, `--scope`, `--exclude`, and route execution to `ContextEngine`. | **PASS** |
-| **3.4** | CLI | Create CLI integration tests in `crates/forge-cli/tests/context_cli_tests.rs` verifying dry-runs and output formats (json/markdown). | **PASS** |
+| **3.3** | CLI | Add the `context` command to `Commands` enum in `crates/anvil-cli/src/main.rs`, parse `--format`, `--scope`, `--exclude`, and route execution to `ContextEngine`. | **PASS** |
+| **3.4** | CLI | Create CLI integration tests in `crates/anvil-cli/tests/context_cli_tests.rs` verifying dry-runs and output formats (json/markdown). | **PASS** |
 
 ---
 
@@ -46,7 +46,7 @@ test test_cli_context_markdown ... ok
 
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
 
-     Running unittests src\lib.rs (target\debug\deps\forge_core-9183ac61c0de9f6f.exe)
+     Running unittests src\lib.rs (target\debug\deps\anvil_core-9183ac61c0de9f6f.exe)
 
 running 24 tests
 test context::tests::test_handshake_version_match ... ok
@@ -109,7 +109,7 @@ test tests::test_cache_invalidation_incorrect_header ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
-   Doc-tests forge_core
+   Doc-tests anvil_core
 
 running 0 tests
 
@@ -128,9 +128,9 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 | Spec Target | Requirement / Scenario | Verification Evidence & Test Coverage | Status |
 |---|---|---|---|
-| **context-engine/spec.md** | FCP Handshake Negotiation / Handshake Version Match | Verified JSON-RPC v2.0 handshake method and capability mapping. Covered by unit test `context::tests::test_handshake_version_match`. | **PASS** |
+| **context-engine/spec.md** | ACP Handshake Negotiation / Handshake Version Match | Verified JSON-RPC v2.0 handshake method and capability mapping. Covered by unit test `context::tests::test_handshake_version_match`. | **PASS** |
 | **context-engine/spec.md** | Concurrent Engine Execution / Aggregation with Provider Timeout | Context providers are run concurrently on spawned threads with a timeout of 5000ms. Covered by unit test `context::tests::test_provider_concurrency_with_timeouts`. | **PASS** |
-| **context-engine/spec.md** | ForgeContext Metadata Schema v1.0.0 / Schema Validation | ForgeContext matches version 1.0.0 schema. Covered by integration test `test_cli_context_json`. | **PASS** |
+| **context-engine/spec.md** | AnvilContext Metadata Schema v1.0.0 / Schema Validation | AnvilContext matches version 1.0.0 schema. Covered by integration test `test_cli_context_json`. | **PASS** |
 | **context-providers/spec.md** | Provider Implementation / Runtime Provider Version Fetch | `RuntimeProviderImpl` fetches runtimes and shims from lockfile. Covered by unit and integration tests. | **PASS** |
 | **context-providers/spec.md** | Sovereign Security Rule / Secret Variable Metadata Query | `EnvironmentProviderImpl` and `SecretsProviderImpl` replace secrets matching `is_secret` with `[MASKED]`. Covered by unit test `context::tests::test_secret_masking`. | **PASS** |
 | **context-providers/spec.md** | Workspace Limit Safeguards / Workspace Directory Limit Truncation | `WorkspaceProviderImpl` implements depth recursion limit of 5 and max 1000 files index limit. Covered by unit test `context::tests::test_workspace_limit_bounds`. | **PASS** |
@@ -140,7 +140,7 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 | **context-agent-adapters/spec.md** | Claude Code XML Adapter / Wrap Context in XML Tags | `ClaudeCodeAdapter` maps context to custom XML structured document. | **PASS** |
 | **context-agent-adapters/spec.md** | Gemini JSON Adapter / Translate to Gemini System Context JSON | `GeminiCliAdapter` outputs JSON wrapped in `systemInstructionContext` structure. | **PASS** |
 | **context-agent-adapters/spec.md** | Aider Repo Map Adapter / Generate Aider Repo Map File | `AiderAdapter` creates structured layout mapping class/functions of `.rs` files. | **PASS** |
-| **context-cli-commands/spec.md** | Command Invocation / Subcommand Default Output | Subcommand `forge context` is registered in CLI and aggregates data from all 6 providers to stdout. | **PASS** |
+| **context-cli-commands/spec.md** | Command Invocation / Subcommand Default Output | Subcommand `anvil context` is registered in CLI and aggregates data from all 6 providers to stdout. | **PASS** |
 | **context-cli-commands/spec.md** | Scope Filtering / Scope Restriction to Runtimes and Config | Parses `--scope` option and restricts active providers run to those matching request. | **PASS** |
 | **context-cli-commands/spec.md** | Exclusion Processing / Exclude Cache Folder | Processes `--exclude` options to avoid directory scanning within Workspace provider. | **PASS** |
 | **context-cli-commands/spec.md** | Separation of Streams / Error Redirection to Stderr | Successful outputs are written to `stdout`, diagnostic traces and errors are written to `stderr` with exit code 1. | **PASS** |

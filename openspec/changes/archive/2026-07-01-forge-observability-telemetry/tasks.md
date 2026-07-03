@@ -3,7 +3,7 @@ Chained PRs recommended: No
 Chain strategy: size-exception
 400-line budget risk: High
 
-# Tasks: Forge Observability & Telemetry
+# Tasks: Anvil Observability & Telemetry
 
 ## Review Workload Forecast
 
@@ -26,10 +26,10 @@ Chain strategy: size-exception
 
 ## Phase 1: API Facade & Journal Logging (PR 1)
 
-- [x] 1.1 Create `crates/forge-core/src/api/v1.rs` exposing the `Engine` struct, v1 types, and unified public methods.
-- [x] 1.2 Modify `crates/forge-core/src/lib.rs` to re-export the `api::v1` module.
-- [x] 1.3 Update `crates/forge-core/src/event_bus.rs` to spawn a background Tokio task on EventBus creation that asynchronously writes events to `.forge/journal.jsonl`.
-- [x] 1.4 Write unit tests verifying serialization of events and concurrent logging safety to `.forge/journal.jsonl`.
+- [x] 1.1 Create `crates/anvil-core/src/api/v1.rs` exposing the `Engine` struct, v1 types, and unified public methods.
+- [x] 1.2 Modify `crates/anvil-core/src/lib.rs` to re-export the `api::v1` module.
+- [x] 1.3 Update `crates/anvil-core/src/event_bus.rs` to spawn a background Tokio task on EventBus creation that asynchronously writes events to `.anvil/journal.jsonl`.
+- [x] 1.4 Write unit tests verifying serialization of events and concurrent logging safety to `.anvil/journal.jsonl`.
 
 ## Phase 2: Architecture Decision Records (PR 2)
 
@@ -38,6 +38,6 @@ Chain strategy: size-exception
 
 ## Phase 3: CLI Introspection Commands (PR 3)
 
-- [x] 3.1 Implement subcommands `history`, `explain`, `trace`, and `events` in `crates/forge-cli/src/main.rs`.
+- [x] 3.1 Implement subcommands `history`, `explain`, `trace`, and `events` in `crates/anvil-cli/src/main.rs`.
 - [x] 3.2 Remap CLI command handlers to exclusively call the `Engine` API facade.
 - [x] 3.3 Add CLI integration tests checking command outputs and live tailing (`--live`) behaviour.

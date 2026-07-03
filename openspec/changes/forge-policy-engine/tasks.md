@@ -1,4 +1,4 @@
-# Tasks: Forge Policy Engine
+# Tasks: Anvil Policy Engine
 
 ## Review Workload Forecast
 
@@ -18,7 +18,7 @@ Chain strategy: size-exception
 
 ## Phase 1: Foundation — Policy Module
 
-- [x] 1.1 Create `crates/forge-core/src/policy.rs` — `PolicyConfig` struct with 6 fields + serde defaults (`#[serde(default = "default_true")]` for `allow_network`)
+- [x] 1.1 Create `crates/anvil-core/src/policy.rs` — `PolicyConfig` struct with 6 fields + serde defaults (`#[serde(default = "default_true")]` for `allow_network`)
 - [x] 1.2 Add `PolicyViolation` struct (`rule`, `expected`, `current`, `message`) with `Display` impl printing violation line to stderr
 - [x] 1.3 Add `PolicyEngine` struct with `new(&PolicyConfig)` and helper for clamping `minimum_health` (0..=100) with `eprintln!` warning
 - [x] 1.4 Implement `check_before_up()` — validates `allow_network`, `forbid_unlocked`, `require_hashes`, `minimum_health`
@@ -27,12 +27,12 @@ Chain strategy: size-exception
 
 ## Phase 2: Integration — Manifest Wiring
 
-- [x] 2.1 In `crates/forge-core/src/manifest.rs`, add `#[serde(default)] pub policy: Option<PolicyConfig>` to `ForgeConfig`
-- [x] 2.2 In `crates/forge-core/src/lib.rs`, add `pub mod policy;` and `pub use policy::{PolicyConfig, PolicyEngine, PolicyViolation};`
+- [x] 2.1 In `crates/anvil-core/src/manifest.rs`, add `#[serde(default)] pub policy: Option<PolicyConfig>` to `ForgeConfig`
+- [x] 2.2 In `crates/anvil-core/src/lib.rs`, add `pub mod policy;` and `pub use policy::{PolicyConfig, PolicyEngine, PolicyViolation};`
 
 ## Phase 3: CLI Enforcement
 
-- [x] 3.1 In `crates/forge-cli/src/main.rs`, add helper `build_policy_engine()` to build `PolicyEngine` from forge.toml (returns `None` if no `[policy]` section or no forge.toml found)
+- [x] 3.1 In `crates/anvil-cli/src/main.rs`, add helper `build_policy_engine()` to build `PolicyEngine` from anvil.toml (returns `None` if no `[policy]` section or no anvil.toml found)
 - [x] 3.2 Add policy check before `Commands::Up` — call `check_before_up()`; print violations to stderr via `enforce_policy()` and `process::exit(1)` on hits
 - [x] 3.3 Add policy check before `Commands::Sync` — call `check_before_sync()` with same violation-exit pattern
 - [x] 3.4 Add policy check before `Commands::Run` — call `check_before_run()` passing active_profile, active_runtimes, health_score
@@ -48,4 +48,4 @@ Chain strategy: size-exception
 - [x] 4.6 Unit test: `check_before_run` — `forbid_runtimes` matches active runtime; `required_profiles` mismatch
 - [x] 4.7 Unit test: `forbid_runtimes` ignores unknown runtimes (not configured — no violation)
 - [x] 4.8 Unit test: `PolicyViolation::Display` output includes rule name, expected, current, message
-- [x] 4.9 Integration: CLI helper returns `None` when no forge.toml exists (skips checks)
+- [x] 4.9 Integration: CLI helper returns `None` when no anvil.toml exists (skips checks)

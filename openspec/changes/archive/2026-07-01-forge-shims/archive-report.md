@@ -1,11 +1,11 @@
-# Archive Report: forge-shims
+# Archive Report: anvil-shims
 
-This document summarizes the archiving of the `forge-shims` change.
+This document summarizes the archiving of the `anvil-shims` change.
 
 ## Metadata
-- **Change Name:** forge-shims
+- **Change Name:** anvil-shims
 - **Archive Date:** 2026-07-01
-- **Archived Location:** `openspec/changes/archive/2026-07-01-forge-shims/`
+- **Archived Location:** `openspec/changes/archive/2026-07-01-anvil-shims/`
 - **Artifact Store Mode:** openspec
 - **SDD Cycle Status:** Complete
 
@@ -18,14 +18,14 @@ All tasks in `tasks.md` have been verified as fully completed (all items checked
 
 ## 2. Specification Sync / Merges
 Delta specifications have been successfully merged into the main specification directory:
-- **Delta spec source:** `openspec/changes/forge-shims/specs/runtime-manager/spec.md` (now located at `openspec/changes/archive/2026-07-01-forge-shims/specs/runtime-manager/spec.md`)
+- **Delta spec source:** `openspec/changes/anvil-shims/specs/runtime-manager/spec.md` (now located at `openspec/changes/archive/2026-07-01-anvil-shims/specs/runtime-manager/spec.md`)
 - **Main spec destination:** `openspec/specs/runtime-manager/spec.md`
 - **Merged Requirements:**
-  - Added `REQ-MGR-004`: The system MUST regenerate `.forge/shims.cache` upon successful completion of any runtime installation, update, or package lock modification.
+  - Added `REQ-MGR-004`: The system MUST regenerate `.anvil/shims.cache` upon successful completion of any runtime installation, update, or package lock modification.
   - Added *Cache Regeneration Trigger* scenarios.
 
 ## 3. Archive Contents
-The archived directory contains the following records of the `forge-shims` cycle:
+The archived directory contains the following records of the `anvil-shims` cycle:
 - `proposal.md` - The initial feature proposal.
 - `exploration.md` - Codebase research and design path comparison.
 - `design.md` - Technical architecture design.
@@ -36,4 +36,4 @@ The archived directory contains the following records of the `forge-shims` cycle
 - `archive-report.md` - This report.
 
 ---
-**Status:** ARCHIVED & CLOSED. The SDD cycle for `forge-shims` is complete.
+**Status:** ARCHIVED & CLOSED. The SDD cycle for `anvil-shims` is complete.

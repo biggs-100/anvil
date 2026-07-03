@@ -1,7 +1,7 @@
 {
-  "name": "@forge/sdk",
+  "name": "@anvil/sdk",
   "version": "0.1.0",
-  "description": "Forge TypeScript SDK — control Forge environments from Node.js",
+  "description": "Anvil TypeScript SDK — control Anvil environments from Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -16,6 +16,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^26.1.0",
     "typescript": "^6.0.3"
   }
 }

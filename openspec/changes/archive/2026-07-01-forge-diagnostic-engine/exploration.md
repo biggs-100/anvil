@@ -1,18 +1,18 @@
 ## Exploration: forge-diagnostic-engine
 
 ### Current State
-Today, `forge` has basic diagnostic capabilities scattered across CLI modules. The `forge doctor` command performs simple, sequential checks:
-- Verifies if the shims directory (`~/.forge/bin`) is in the system `$PATH`.
-- Performs quick validation of runtimes declared in `forge.toml` (checks for existence of the extraction folder and whether it's empty).
+Today, `forge` has basic diagnostic capabilities scattered across CLI modules. The `anvil doctor` command performs simple, sequential checks:
+- Verifies if the shims directory (`~/.anvil/bin`) is in the system `$PATH`.
+- Performs quick validation of runtimes declared in `anvil.toml` (checks for existence of the extraction folder and whether it's empty).
 - Validates environment variable definitions in `environment.rs` using a legacy `DoctorIssue` struct, returning a string-based error output if critical validation fails.
 
 There is no structured concurrency, no formal severity hierarchy, no distinct execution modes (fast vs. deep), no automated mapping to repair operations, and no schema-guaranteed secret masking for AI integration.
 
 ### Affected Areas
-- `crates/forge-core/src/lib.rs` — Needs to export the new `diagnostics` module containing traits, models, and engine logic.
-- `crates/forge-core/src/diagnostics/mod.rs` — New module containing `HealthCheck` trait, `DiagnosticEngine`, `Finding` models, and execution routines.
-- `crates/forge-core/src/operations/mod.rs` — Integration of `RepairPlanner` mapping findings to `RepairPlan` actions.
-- `crates/forge-cli/src/main.rs` — Adapt `Commands::Doctor` and `Commands::Ai { subcommand: AiCommands::Doctor }` to leverage the new engine.
+- `crates/anvil-core/src/lib.rs` — Needs to export the new `diagnostics` module containing traits, models, and engine logic.
+- `crates/anvil-core/src/diagnostics/mod.rs` — New module containing `HealthCheck` trait, `DiagnosticEngine`, `Finding` models, and execution routines.
+- `crates/anvil-core/src/operations/mod.rs` — Integration of `RepairPlanner` mapping findings to `RepairPlan` actions.
+- `crates/anvil-cli/src/main.rs` — Adapt `Commands::Doctor` and `Commands::Ai { subcommand: AiCommands::Doctor }` to leverage the new engine.
 
 ### Approaches
 
@@ -23,7 +23,7 @@ There is no structured concurrency, no formal severity hierarchy, no distinct ex
    - *Effort*: Low
 
 2. **Option B: Concurrency DAG Engine with Clean Diagnostic/Repair Mapping (Recommended)**
-   - *Description*: Runs 11 partitioned checks concurrently using `tokio::spawn`. Declares inter-check dependencies to short-circuit downstream checks (e.g. skipping SHA verification if `forge.lock` is missing). Maps findings directly to a `RepairPlanner` using structured `QuickFix` actions.
+   - *Description*: Runs 11 partitioned checks concurrently using `tokio::spawn`. Declares inter-check dependencies to short-circuit downstream checks (e.g. skipping SHA verification if `anvil.lock` is missing). Maps findings directly to a `RepairPlanner` using structured `QuickFix` actions.
    - *Pros*: Highly performant, robust dependency resolution, zero filesystem re-scans for repair, clear separation of concerns, and built-in safety for AI commands.
    - *Cons*: Slightly higher implementation complexity for concurrency mapping.
    - *Effort*: Medium
@@ -47,7 +47,7 @@ I recommend **Option B**. It provides a robust, fast execution model that scales
 ## Appendix: RFC-0013 Draft (Diagnostic Platform Specification)
 
 ### 1. Engine Architecture
-The diagnostic platform resides in `crates/forge-core/src/diagnostics/mod.rs` and is driven by the `HealthCheck` trait and the `DiagnosticEngine`.
+The diagnostic platform resides in `crates/anvil-core/src/diagnostics/mod.rs` and is driven by the `HealthCheck` trait and the `DiagnosticEngine`.
 
 ```rust
 use async_trait::async_trait;
@@ -184,8 +184,8 @@ pub enum QuickFixAction {
 The 11 checks are organized as a Directed Acyclic Graph (DAG) based on their declared `dependencies()`.
 
 #### The 11 Diagnostic Checks
-1. **ManifestCheck** (`manifest`): Reads `forge.toml`.
-2. **LockCheck** (`lock`): Reads `forge.lock`. Depends on `manifest`.
+1. **ManifestCheck** (`manifest`): Reads `anvil.toml`.
+2. **LockCheck** (`lock`): Reads `anvil.lock`. Depends on `manifest`.
 3. **RuntimeCheck** (`runtime`): Checks runtime extraction folders. Depends on `lock`.
 4. **SecretCheck** (`secrets`): Validates secret format/connectivity. No dependencies.
 5. **EnvironmentCheck** (`env`): Validates environment profile variables. Depends on `manifest`.
@@ -202,7 +202,7 @@ Using `tokio::sync::broadcast` or state maps protected by `Arc<Mutex>`:
 - Tasks with 0 unresolved dependencies are spawned immediately via `tokio::spawn`.
 - When a task completes:
   - If it succeeds and has no findings of level `CRITICAL`, dependent tasks are decremented and launched.
-  - If a task yields a blocking finding (e.g. `LockCheck` determines `forge.lock` is missing), the engine marks all dependent tasks (`HashCheck`, `RuntimeCheck`) as **Skipped** with a finding indicating the upstream blocker.
+  - If a task yields a blocking finding (e.g. `LockCheck` determines `anvil.lock` is missing), the engine marks all dependent tasks (`HashCheck`, `RuntimeCheck`) as **Skipped** with a finding indicating the upstream blocker.
 
 ```mermaid
 graph TD
@@ -282,7 +282,7 @@ To optimize CLI performance, checks check their target context's `mode` paramete
 ---
 
 ### 6. Structured Output & HealthScore
-The structured output model maps to the `forge ai doctor` JSON API.
+The structured output model maps to the `anvil ai doctor` JSON API.
 
 #### HealthScore Calculation
 The health score is represented as an integer in the range `[0, 100]`.

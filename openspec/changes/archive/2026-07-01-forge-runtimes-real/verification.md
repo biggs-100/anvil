@@ -11,7 +11,7 @@ All 14 tasks in `openspec/changes/forge-runtimes-real/tasks.md` are marked as co
 | Phase / Task | Goal | Status |
 |---|---|---|
 | **Phase 1: Extractor Trait & Implementations** | | |
-| Task 1.1 | Add `xz2 = "0.4"` dependency to `crates/forge-core/Cargo.toml` | [x] COMPLETE |
+| Task 1.1 | Add `xz2 = "0.4"` dependency to `crates/anvil-core/Cargo.toml` | [x] COMPLETE |
 | Task 1.2 | Define `Extractor` trait and Zip/TarGz/TarXz extractors | [x] COMPLETE |
 | Task 1.3 | Implement path traversal mitigation (Zip Slip) checks | [x] COMPLETE |
 | Task 1.4 | Write unit tests for extraction and path traversal prevention | [x] COMPLETE |
@@ -26,7 +26,7 @@ All 14 tasks in `openspec/changes/forge-runtimes-real/tasks.md` are marked as co
 | **Phase 4: Parallel Download Manager & CLI Updates** | | |
 | Task 4.1 | Update `install_runtimes` with `JoinSet` for parallel downloads | [x] COMPLETE |
 | Task 4.2 | Implement cleanup of incomplete files and abort all on failure | [x] COMPLETE |
-| Task 4.3 | Update `forge-cli` main to use new provider and download manager API | [x] COMPLETE |
+| Task 4.3 | Update `anvil-cli` main to use new provider and download manager API | [x] COMPLETE |
 | Task 4.4 | Verify parallel downloads and error propagation with integration tests | [x] COMPLETE |
 
 ---
@@ -43,7 +43,7 @@ running 0 tests
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running unittests src\lib.rs (target\debug\deps\forge_core-79ae310d16b364e7.exe)
+     Running unittests src\lib.rs (target\debug\deps\anvil_core-79ae310d16b364e7.exe)
 
 running 8 tests
 test lock::tests::test_lockfile_serialization_with_emulation ... ok
@@ -65,7 +65,7 @@ test tests::test_detect_package_manager ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-   Doc-tests forge_core
+   Doc-tests anvil_core
 
 running 0 tests
 
@@ -88,19 +88,19 @@ The implementation has been mapped to requirements across the core specification
 |---|---|---|---|
 | **Runtime Providers** (`runtime-providers/spec.md`) | | | |
 | REQ-PROV-001 | modular Provider interface & dynamic resolution | `Provider` trait and implementations (`NodeProvider`, `PythonProvider`, etc.). Tested in `test_offline_version_matching`. | **PASS** |
-| REQ-PROV-002 | pre-installation verification / skip download | Verified via cached directory checks in `install_runtimes` and `download_runtime` in `crates/forge-core/src/lib.rs`. | **PASS WITH WARNING** (No system-wide path detection implemented, localized cache folder verification is used instead). |
+| REQ-PROV-002 | pre-installation verification / skip download | Verified via cached directory checks in `install_runtimes` and `download_runtime` in `crates/anvil-core/src/lib.rs`. | **PASS WITH WARNING** (No system-wide path detection implemented, localized cache folder verification is used instead). |
 | **Archive Extractors** (`archive-extractors/spec.md`) | | | |
-| REQ-EXT-001 | ZIP, TarGz, TarXz decompression support | `ZipExtractor`, `TarGzExtractor`, and `TarXzExtractor` in `crates/forge-core/src/lib.rs`. Tested in `test_standard_archives_extraction`. | **PASS** |
+| REQ-EXT-001 | ZIP, TarGz, TarXz decompression support | `ZipExtractor`, `TarGzExtractor`, and `TarXzExtractor` in `crates/anvil-core/src/lib.rs`. Tested in `test_standard_archives_extraction`. | **PASS** |
 | REQ-EXT-002 | Prevent path traversal attacks (Zip Slip) | `check_path_traversal` validation in extraction routines. Tested in `test_zip_slip_prevention`. | **PASS** |
 | **Hybrid Registry** (`hybrid-registry/spec.md`) | | | |
-| REQ-REG-001 | consult `.forge/metadata_cache.toml` first | Checked in `update_lockfile` (searches for cache file before defaulting). | **PASS** |
+| REQ-REG-001 | consult `.anvil/metadata_cache.toml` first | Checked in `update_lockfile` (searches for cache file before defaulting). | **PASS** |
 | REQ-REG-002 | fail immediately on exact uncached if offline | Handled by `HybridRegistry::resolve` which errors if exact match is missing. | **PASS** |
 | REQ-REG-003 | resolve loose version ranges if offline | Handled in `HybridRegistry::resolve` sorting and matching. Tested in `test_offline_version_matching`. | **PASS** |
 | **Runtime Manager Delta** (`runtime-manager/spec.md`) | | | |
 | REQ-MGR-002 | parallel download/extraction via JoinSet | Handled in `install_runtimes` using `tokio::task::JoinSet`. Tested in `test_parallel_download_and_abort`. | **PASS** |
 | REQ-MGR-003 | delegate resolution to providers | Implemented in `update_lockfile` using the provider map. | **PASS** |
 | **Lockfile Generator Delta** (`lockfile-generator/spec.md`) | | | |
-| REQ-LOCK-003 | Record emulation details in `forge.lock` | `emulation` attribute on `RuntimeLock` serialize/deserialize check. Tested in `test_lockfile_serialization_with_emulation`. | **PASS** |
+| REQ-LOCK-003 | Record emulation details in `anvil.lock` | `emulation` attribute on `RuntimeLock` serialize/deserialize check. Tested in `test_lockfile_serialization_with_emulation`. | **PASS** |
 
 ---
 
@@ -108,7 +108,7 @@ The implementation has been mapped to requirements across the core specification
 
 ### Warnings / Deviations
 1. **Host-Level Pre-installation Checks (REQ-PROV-002)**:
-   The specification mentions skipping downloading if a valid system installation (e.g. standard system Go) matches version constraints. The current implementation performs pre-installation check localized only to `.forge/runtimes/{name}/{version}/extracted`. It does not execute or query the system path (like running `go version` on the host to use a system install).
+   The specification mentions skipping downloading if a valid system installation (e.g. standard system Go) matches version constraints. The current implementation performs pre-installation check localized only to `.anvil/runtimes/{name}/{version}/extracted`. It does not execute or query the system path (like running `go version` on the host to use a system install).
    *Impact*: Low. Localized sandbox caching prevents redundant downloads for the current toolchain.
 
 ### Suggestions

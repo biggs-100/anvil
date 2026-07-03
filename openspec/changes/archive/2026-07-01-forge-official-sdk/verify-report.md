@@ -38,7 +38,7 @@ will stop functioning in TypeScript 7.0. Specify compilerOption
 
 **Rust SDK async feature**: ✅ Compiled
 ```text
-cargo check -p forge-sdk --features async
+cargo check -p anvil-sdk --features async
 Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.77s
 ```
 
@@ -48,7 +48,7 @@ cargo test --no-fail-fast
   forge_cli (main.rs):       11 passed
   context_cli_tests:          3 passed
   jsonrpc_test:               0 passed, 4 ignored (require compiled binary)
-  forge_core (lib.rs):       40 passed
+  anvil_core (lib.rs):       40 passed
   integration:               10 passed
   forge_drivers (lib.rs):     1 passed
   forge_sdk (lib.rs):         4 passed
@@ -76,12 +76,12 @@ Total: 73 passed, 0 failed, 4 ignored
 
 | Requirement | Scenario | Test | Result |
 |-------------|----------|------|--------|
-| Crate Structure | Crate compiles as workspace member | `cargo build -p forge-sdk` | ✅ COMPLIANT |
-| Forge Struct | Create Forge instance | `forge_sdk > tests > test_forge_new_succeeds` | ✅ COMPLIANT |
+| Crate Structure | Crate compiles as workspace member | `cargo build -p anvil-sdk` | ✅ COMPLIANT |
+| Anvil Struct | Create Anvil instance | `forge_sdk > tests > test_forge_new_succeeds` | ✅ COMPLIANT |
 | Method Surface | Sync environment | `forge_sdk > tests > test_env_roundtrip` | ✅ COMPLIANT |
 | Method Surface | Query context | `forge_sdk > tests > test_run_shell_context_methods_exist` | ✅ COMPLIANT |
 | Method Surface | Manage secrets | `forge_sdk > tests > test_secret_roundtrip` | ✅ COMPLIANT |
-| Async Support | Async compile with feature | `cargo check -p forge-sdk --features async` | ✅ COMPLIANT |
+| Async Support | Async compile with feature | `cargo check -p anvil-sdk --features async` | ✅ COMPLIANT |
 | Error Handling | Error propagation | `forge_sdk > tests > test_forge_error_traits` | ✅ COMPLIANT |
 
 #### SDK Go (`specs/sdk-go/spec.md`)
@@ -89,11 +89,11 @@ Total: 73 passed, 0 failed, 4 ignored
 | Requirement | Scenario | Test | Result |
 |-------------|----------|------|--------|
 | Package Structure | N/A (no scenario for go.mod) | `go build ./...` | ✅ COMPLIANT (by inspection) |
-| Subprocess Lifecycle | Connect to forge subprocess | `client_test.go > TestNewForge` | ⚠️ PARTIAL (skips if forge not on PATH) |
+| Subprocess Lifecycle | Connect to anvil subprocess | `client_test.go > TestNewForge` | ⚠️ PARTIAL (skips if anvil not on PATH) |
 | Subprocess Lifecycle | Handle subprocess crash | `tests/jsonrpc_test.rs > test_subprocess_lifecycle_error` (ignored) | ✅ COMPLIANT |
-| Method Surface | Call status via RPC | `client_test.go > TestNewForge` (via Status()) | ⚠️ PARTIAL (skips if forge not on PATH) |
-| Method Surface | Call sync via RPC | `client_test.go > TestSync` | ⚠️ PARTIAL (skips if forge not on PATH) |
-| Context Cancellation | Context cancellation aborts request | `client_test.go > TestContextCancellation` | ⚠️ PARTIAL (skips if forge not on PATH) |
+| Method Surface | Call status via RPC | `client_test.go > TestNewForge` (via Status()) | ⚠️ PARTIAL (skips if anvil not on PATH) |
+| Method Surface | Call sync via RPC | `client_test.go > TestSync` | ⚠️ PARTIAL (skips if anvil not on PATH) |
+| Context Cancellation | Context cancellation aborts request | `client_test.go > TestContextCancellation` | ⚠️ PARTIAL (skips if anvil not on PATH) |
 | Concurrent Safety | Concurrent calls do not deadlock | (none found) | ❌ UNTESTED |
 
 #### SDK Python (`specs/sdk-python/spec.md`)
@@ -101,10 +101,10 @@ Total: 73 passed, 0 failed, 4 ignored
 | Requirement | Scenario | Test | Result |
 |-------------|----------|------|--------|
 | Package Structure | pip install succeeds | (not run — requires PyPI) | ❌ UNTESTED |
-| Subprocess Lifecycle | Create Forge client | `tests/test_client.py > test_forge_connect` | ⚠️ PARTIAL (requires forge on PATH) |
+| Subprocess Lifecycle | Create Anvil client | `tests/test_client.py > test_forge_connect` | ⚠️ PARTIAL (requires anvil on PATH) |
 | Method Surface | Query context as dict | `tests/test_client.py > test_forge_connect` (indirect via status) | ❌ UNTESTED (context not called in tests) |
-| Method Surface | Handle connection error | `tests/test_client.py > test_parse_error` | ⚠️ PARTIAL (requires forge on PATH) |
-| Error Handling | N/A | ForgeError extends Exception | ✅ COMPLIANT (by inspection) |
+| Method Surface | Handle connection error | `tests/test_client.py > test_parse_error` | ⚠️ PARTIAL (requires anvil on PATH) |
+| Error Handling | N/A | AnvilError extends Exception | ✅ COMPLIANT (by inspection) |
 | Async Support | Async context query | (none found) | ❌ UNTESTED |
 
 #### SDK TypeScript (`specs/sdk-typescript/spec.md`)
@@ -113,10 +113,10 @@ Total: 73 passed, 0 failed, 4 ignored
 |-------------|----------|------|--------|
 | Package Structure | npm install succeeds | `npm install` | ✅ COMPLIANT |
 | Package Structure | TypeScript compilation with types | `npx tsc` | ✅ COMPLIANT (moduleResolution fixed to node16) |
-| Subprocess Lifecycle | Create Forge client with types | `tests/client.test.ts` | ✅ COMPLIANT |
+| Subprocess Lifecycle | Create Anvil client with types | `tests/client.test.ts` | ✅ COMPLIANT |
 | Method Surface | Run command with types | `tests/client.test.ts` | ✅ COMPLIANT |
 | Method Surface | Handle process error | `tests/jsonrpc_test.rs > test_subprocess_lifecycle_error` | ✅ COMPLIANT |
-| Error Handling | N/A | ForgeError extends Error with code | ✅ COMPLIANT (by inspection) |
+| Error Handling | N/A | AnvilError extends Error with code | ✅ COMPLIANT (by inspection) |
 | Type Definitions | TypeScript compilation with types | `npx tsc` | ✅ COMPLIANT |
 
 **Compliance summary**: 20/29 scenarios with covering tests; of those, 15 COMPLIANT, 5 PARTIAL, 8 UNTESTED, 1 DEFERRED (cross-SDK parity)
@@ -131,14 +131,14 @@ Total: 73 passed, 0 failed, 4 ignored
 | Transport Protocol — Stream Flushing | ✅ Implemented | `out.flush()` after each response write |
 | Transport Protocol — EOF shutdown | ✅ Implemented | `break` on `n == 0` (EOF) |
 | Transport Protocol — Concurrent requests | ✅ Implemented | `tokio::spawn` per request, shared `Arc<Mutex<()>>` for stdout |
-| SDK Rust — Crate structure | ✅ Implemented | Workspace member at `crates/forge-sdk/`, deps on forge-core + serde_json |
-| SDK Rust — Forge struct | ✅ Implemented | `Forge::new()` + `with_root()` constructors |
+| SDK Rust — Crate structure | ✅ Implemented | Workspace member at `crates/anvil-sdk/`, deps on anvil-core + serde_json |
+| SDK Rust — Anvil struct | ✅ Implemented | `Forge::new()` + `with_root()` constructors |
 | SDK Rust — Error handling | ✅ Implemented | `ForgeError` implements `Display` + `Error` |
 | SDK Rust — Async feature | ✅ Implemented | Feature-gated async methods (`status_async`, `sync_async`, etc.) |
-| SDK Rust — Method surface: run, shell, context | ❌ **Missing** | `run()`, `shell()`, `context()` NOT implemented in forge-sdk lib.rs (spec deviation) |
+| SDK Rust — Method surface: run, shell, context | ❌ **Missing** | `run()`, `shell()`, `context()` NOT implemented in anvil-sdk lib.rs (spec deviation) |
 | SDK Rust — types.rs | ⚠️ Merged into lib.rs | No separate `types.rs` — `ForgeError` defined inline in `lib.rs` |
 | SDK Go — Package structure | ✅ Implemented | `go.mod` module, stdlib only |
-| SDK Go — Subprocess lifecycle | ✅ Implemented | `exec.CommandContext("forge", "jsonrpc")`, `Close()` kills process |
+| SDK Go — Subprocess lifecycle | ✅ Implemented | `exec.CommandContext("anvil", "jsonrpc")`, `Close()` kills process |
 | SDK Go — Context cancellation | ✅ Implemented | All methods accept `context.Context`, cancellation via `ctx.Done()` |
 | SDK Go — Concurrent safety | ✅ Implemented | `sync.Mutex` on stdio writes in `call()` |
 | SDK Python — Package structure | ✅ Implemented | `pyproject.toml`, stdlib only, `forge_sdk` package |
@@ -160,18 +160,18 @@ Total: 73 passed, 0 failed, 4 ignored
 | Dedicated `JsonRpc` subcommand | ✅ Yes | `Commands::JsonRpc` in main.rs, `jsonrpc::serve()` dispatch |
 | tokio spawn per request + shared stdout writer | ✅ Yes | Each request in `tokio::spawn`, `Arc<Mutex<()>>` guards stdout writes |
 | RPC Method Namespace (engine.*, exec.*, env.*, secret.*, context.*) | ✅ Yes | Full method catalog implemented in `dispatch()` |
-| forge-sdk: Direct wrapper (not RPC) | ✅ Yes | `Forge` wraps `Engine` directly, no RPC loopback |
-| forge-sdk: Feature-gated async | ✅ Yes | `#[cfg(feature = "async")]` block with `_async` suffixed methods |
-| Non-Rust SDK transport: subprocess + stdio JSON-RPC | ✅ Yes | Go/Python/TS all spawn `forge --jsonrpc` via subprocess |
+| anvil-sdk: Direct wrapper (not RPC) | ✅ Yes | `Forge` wraps `Engine` directly, no RPC loopback |
+| anvil-sdk: Feature-gated async | ✅ Yes | `#[cfg(feature = "async")]` block with `_async` suffixed methods |
+| Non-Rust SDK transport: subprocess + stdio JSON-RPC | ✅ Yes | Go/Python/TS all spawn `anvil --jsonrpc` via subprocess |
 | No external dependencies for non-Rust SDKs | ✅ Yes | All SDKs use stdlib only |
-| Zero changes to forge-core | ✅ Yes | All additions are in forge-cli (new subcommand) and new SDK crates/dirs |
+| Zero changes to anvil-core | ✅ Yes | All additions are in anvil-cli (new subcommand) and new SDK crates/dirs |
 
 ### Issues Found
 
 **CRITICAL**: None — all previously identified issues resolved or deferred.
 
 **WARNING**:
-1. **4 JSON-RPC integration tests are `#[ignore]`** — they require a compiled forge binary. Run as post-build step.
+1. **4 JSON-RPC integration tests are `#[ignore]`** — they require a compiled anvil binary. Run as post-build step.
 2. **Cross-SDK inconsistency: `env_resolve` parameter** — Python/TS SDKs use `key` instead of `profile`.
 
 **SUGGESTION**:

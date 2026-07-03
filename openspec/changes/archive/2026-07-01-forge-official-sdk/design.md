@@ -1,8 +1,8 @@
-# Design: Forge Official SDK
+# Design: Anvil Official SDK
 
 ## Technical Approach
 
-Add a JSON-RPC 2.0 server mode to forge-cli (dedicated subcommand), a `forge-sdk` Rust crate wrapping `Engine` directly, and thin SDKs in Go/Python/TypeScript communicating via stdio JSON-RPC. Zero changes to `forge-core` — everything is additive.
+Add a JSON-RPC 2.0 server mode to anvil-cli (dedicated subcommand), a `anvil-sdk` Rust crate wrapping `Engine` directly, and thin SDKs in Go/Python/TypeScript communicating via stdio JSON-RPC. Zero changes to `anvil-core` — everything is additive.
 
 ## Architecture Decisions
 
@@ -35,18 +35,18 @@ Each incoming line spawns a tokio task. All responses go through a shared buffer
 
 Namespaced methods leave room for future capabilities without breaking existing clients.
 
-### Decision: forge-sdk — Direct Wrapper (Not RPC)
+### Decision: anvil-sdk — Direct Wrapper (Not RPC)
 
 | Option | Tradeoff | Decision |
 |--------|----------|----------|
 | Wraps Engine via RPC loopback | Unnecessary overhead in same process | Rejected |
-| Direct function calls to forge-core | Zero overhead, typed, async-compatible | **Chosen** |
+| Direct function calls to anvil-core | Zero overhead, typed, async-compatible | **Chosen** |
 | Sync-only API | Simple but limits Rust consumers | Rejected |
 | Feature-gated async (`default`, `async`) | Both paths available, zero-cost when unused | **Chosen** |
 
 ### Decision: Non-Rust SDK Transport
 
-Go/Python/TS all use the same pattern: spawn `forge --jsonrpc` via subprocess, write JSON-RPC to stdin, read responses from stdout, kill on close. No external dependencies for any SDK — stdlib only.
+Go/Python/TS all use the same pattern: spawn `anvil --jsonrpc` via subprocess, write JSON-RPC to stdin, read responses from stdout, kill on close. No external dependencies for any SDK — stdlib only.
 
 ## Data Flow
 
@@ -60,7 +60,7 @@ Go/Python/TS all use the same pattern: spawn `forge --jsonrpc` via subprocess, w
    └───────────────┼───────────────────┘
                    ▼
         ┌─────────────────────┐
-        │  forge --jsonrpc    │
+        │  anvil --jsonrpc    │
         │  stdin → dispatch   │
         │  → stdout           │
         └────────┬────────────┘
@@ -70,7 +70,7 @@ Go/Python/TS all use the same pattern: spawn `forge --jsonrpc` via subprocess, w
         └─────────────────────┘
 
 ┌──────────────────┐
-│ forge-sdk crate  │──→ engine methods (direct calls)
+│ anvil-sdk crate  │──→ engine methods (direct calls)
 │ (Rust SDK)       │
 └──────────────────┘
 ```
@@ -79,15 +79,15 @@ Go/Python/TS all use the same pattern: spawn `forge --jsonrpc` via subprocess, w
 
 | File | Action | Description |
 |------|--------|-------------|
-| `Cargo.toml` | Modify | Add `"crates/forge-sdk"` to workspace members |
-| `crates/forge-cli/src/main.rs` | Modify | Add `JsonRpc` subcommand with read-dispatch-write loop |
-| `crates/forge-sdk/Cargo.toml` | Create | SDK crate manifest, dep on forge-core |
-| `crates/forge-sdk/src/lib.rs` | Create | `Forge` struct wrapping `Engine`, typed methods |
-| `crates/forge-sdk/src/types.rs` | Create | `ForgeError`, SDK-specific type aliases |
+| `Cargo.toml` | Modify | Add `"crates/anvil-sdk"` to workspace members |
+| `crates/anvil-cli/src/main.rs` | Modify | Add `JsonRpc` subcommand with read-dispatch-write loop |
+| `crates/anvil-sdk/Cargo.toml` | Create | SDK crate manifest, dep on anvil-core |
+| `crates/anvil-sdk/src/lib.rs` | Create | `Forge` struct wrapping `Engine`, typed methods |
+| `crates/anvil-sdk/src/types.rs` | Create | `ForgeError`, SDK-specific type aliases |
 | `sdks/go/go.mod` | Create | Go module `github.com/user/forge/sdk-go` |
 | `sdks/go/client.go` | Create | Go `Forge` struct: spawn, JSON-RPC, typed methods |
 | `sdks/go/types.go` | Create | Go response types |
-| `sdks/python/pyproject.toml` | Create | Package config for `forge-sdk` |
+| `sdks/python/pyproject.toml` | Create | Package config for `anvil-sdk` |
 | `sdks/python/forge_sdk/__init__.py` | Create | Package re-exports |
 | `sdks/python/forge_sdk/client.py` | Create | Python `Forge` class with subprocess + JSON-RPC |
 | `sdks/python/forge_sdk/types.py` | Create | Python dataclasses |
@@ -124,25 +124,25 @@ context.get       → {format?, scope?, exclude?} → ContextData
 
 All error responses follow JSON-RPC 2.0: `{"code": -32603, "message": "..."}`.
 
-### forge-sdk Rust Surface (Core)
+### anvil-sdk Rust Surface (Core)
 
 ```rust
-pub struct Forge { engine: Engine }
-impl Forge {
-    pub fn new() -> Result<Self, ForgeError>;
-    pub async fn status(&self) -> Result<String, ForgeError>;
-    pub async fn sync(&self) -> Result<(), ForgeError>;
-    pub async fn repair(&self) -> Result<(), ForgeError>;
-    pub async fn clean(&self) -> Result<(), ForgeError>;
-    pub async fn explain(&self, runtime: &str) -> Result<RuntimeExplanation, ForgeError>;
-    pub async fn history(&self, limit: Option<usize>) -> Result<Vec<OperationSummary>, ForgeError>;
-    pub async fn env_list(&self) -> Result<HashMap<String, String>, ForgeError>;
-    pub async fn env_get(&self, key: &str) -> Result<Option<String>, ForgeError>;
-    pub async fn env_set(&self, key: &str, val: &str) -> Result<(), ForgeError>;
-    pub async fn secret_set(&self, key: &str, val: &str) -> Result<(), ForgeError>;
-    pub async fn secret_get(&self, key: &str) -> Result<Option<String>, ForgeError>;
-    pub async fn secret_list(&self) -> Result<Vec<String>, ForgeError>;
-    pub async fn secret_remove(&self, key: &str) -> Result<(), ForgeError>;
+pub struct Anvil { engine: Engine }
+impl Anvil {
+    pub fn new() -> Result<Self, AnvilError>;
+    pub async fn status(&self) -> Result<String, AnvilError>;
+    pub async fn sync(&self) -> Result<(), AnvilError>;
+    pub async fn repair(&self) -> Result<(), AnvilError>;
+    pub async fn clean(&self) -> Result<(), AnvilError>;
+    pub async fn explain(&self, runtime: &str) -> Result<RuntimeExplanation, AnvilError>;
+    pub async fn history(&self, limit: Option<usize>) -> Result<Vec<OperationSummary>, AnvilError>;
+    pub async fn env_list(&self) -> Result<HashMap<String, String>, AnvilError>;
+    pub async fn env_get(&self, key: &str) -> Result<Option<String>, AnvilError>;
+    pub async fn env_set(&self, key: &str, val: &str) -> Result<(), AnvilError>;
+    pub async fn secret_set(&self, key: &str, val: &str) -> Result<(), AnvilError>;
+    pub async fn secret_get(&self, key: &str) -> Result<Option<String>, AnvilError>;
+    pub async fn secret_list(&self) -> Result<Vec<String>, AnvilError>;
+    pub async fn secret_remove(&self, key: &str) -> Result<(), AnvilError>;
 }
 ```
 
@@ -151,17 +151,17 @@ impl Forge {
 | Layer | What | Approach |
 |-------|------|----------|
 | Unit | JSON-RPC request/response parsing | Test serde roundtrips, error code mapping |
-| Integration | forge --jsonrpc against real binary | Spawn `cargo run -- jsonrpc`, send requests, verify responses |
-| Integration | forge-sdk crate | `cargo test -p forge-sdk` — all Engine methods via typed API |
+| Integration | anvil --jsonrpc against real binary | Spawn `cargo run -- jsonrpc`, send requests, verify responses |
+| Integration | anvil-sdk crate | `cargo test -p anvil-sdk` — all Engine methods via typed API |
 | E2E | Cross-SDK parity | Run same method catalog against all 4 SDKs, assert identical output shapes |
-| E2E | Subprocess lifecycle | Kill forge mid-request, assert SDK returns connection error |
+| E2E | Subprocess lifecycle | Kill anvil mid-request, assert SDK returns connection error |
 
 ## Migration / Rollout
 
-No migration required. All changes are additive. forge-core surface frozen. Existing CLI commands unchanged. SDKs are entirely new artifacts.
+No migration required. All changes are additive. anvil-core surface frozen. Existing CLI commands unchanged. SDKs are entirely new artifacts.
 
 ## Open Questions
 
 - [ ] Context method — should `context.get` accept the same format/scope/exclude params as the CLI `context` subcommand, or start simpler?
 - [ ] Events streaming (`engine.events`) returns a `Receiver<Event>` — exclude from initial catalog or add a polling variant?
-- [ ] `exec.run` / `exec.shell` — implement via forge-core `Operation` traits (matching CLI) or inline within the RPC dispatcher?
+- [ ] `exec.run` / `exec.shell` — implement via anvil-core `Operation` traits (matching CLI) or inline within the RPC dispatcher?

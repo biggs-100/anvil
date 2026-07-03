@@ -41,19 +41,19 @@ All 11 tasks completed across 3 phases:
 ### Created
 | File | Purpose |
 |------|---------|
-| `crates/forge-core/src/event_bus.rs` | Broadcast-based event bus for operation progress telemetry |
-| `crates/forge-core/src/operations/mod.rs` | Plan/Operation traits and 10 concrete operation implementations |
+| `crates/anvil-core/src/event_bus.rs` | Broadcast-based event bus for operation progress telemetry |
+| `crates/anvil-core/src/operations/mod.rs` | Plan/Operation traits and 10 concrete operation implementations |
 
 ### Modified
 | File | Change Summary |
 |------|---------------|
-| `crates/forge-core/src/types.rs` | Added LifecycleState, OperationResult, Event, EventStatus, OperationStatus |
-| `crates/forge-core/src/installer.rs` | Staging directory download, atomic promotion, backup/rollback |
-| `crates/forge-core/src/cache.rs` | Decoupled shims cache regen to post-commit hook |
-| `crates/forge-core/src/lib.rs` | Module registration for event_bus and operations |
-| `crates/forge-cli/src/main.rs` | 13 CLI commands remapped to operations layer |
+| `crates/anvil-core/src/types.rs` | Added LifecycleState, OperationResult, Event, EventStatus, OperationStatus |
+| `crates/anvil-core/src/installer.rs` | Staging directory download, atomic promotion, backup/rollback |
+| `crates/anvil-core/src/cache.rs` | Decoupled shims cache regen to post-commit hook |
+| `crates/anvil-core/src/lib.rs` | Module registration for event_bus and operations |
+| `crates/anvil-cli/src/main.rs` | 13 CLI commands remapped to operations layer |
 | `Cargo.toml` | Dependency updates |
-| `crates/forge-core/tests/integration.rs` | End-to-end idempotency and lifecycle integration tests |
+| `crates/anvil-core/tests/integration.rs` | End-to-end idempotency and lifecycle integration tests |
 
 ## Spec Sync
 

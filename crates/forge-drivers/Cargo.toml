@@ -1,8 +1,0 @@
-[package]
-name = "forge-drivers"
-version = "0.1.0"
-edition = "2021"
-description = "Forge drivers — standard command runners for managed runtimes"
-
-[dependencies]
-# No external dependencies needed for standard command runner drivers.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the automated testing infrastructure for forge: runnable integration tests, CI/CD pipeline, and baseline coverage for forge-core modules. Ensures regressions are caught across platforms before merge.
+Define the automated testing infrastructure for anvil: runnable integration tests, CI/CD pipeline, and baseline coverage for anvil-core modules. Ensures regressions are caught across platforms before merge.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ Define the automated testing infrastructure for forge: runnable integration test
 
 Integration test files `jsonrpc_test.rs` and `mcp_test.rs` MUST be executable via `cargo test` without the `--ignored` flag or a separate `cargo build` step.
 
-The system MUST resolve the forge binary through `CARGO_BIN_EXE_forge` or `CARGO_BIN_EXE_forge-cli` env vars set by Cargo when the test target depends on the binary crate. The `#[ignore]` attribute on each integration test MUST be removed.
+The system MUST resolve the anvil binary through `CARGO_BIN_EXE_ANVIL` env var set by Cargo when the test target depends on the binary crate. The `#[ignore]` attribute on each integration test MUST be removed.
 
 #### Scenario: Integration tests pass after cargo build
 
@@ -20,8 +20,8 @@ The system MUST resolve the forge binary through `CARGO_BIN_EXE_forge` or `CARGO
 
 #### Scenario: Binary not found produces actionable error
 
-- GIVEN `CARGO_BIN_EXE_forge` and `CARGO_BIN_EXE_forge-cli` are unset
-- AND the forge binary is not in PATH
+- GIVEN `CARGO_BIN_EXE_ANVIL` is unset
+- AND the anvil binary is not in PATH
 - WHEN `cargo test --test jsonrpc_test` is run
 - THEN the test SHOULD produce a clear error message indicating the binary was not found
 
@@ -63,13 +63,13 @@ The workflow MUST use a matrix strategy covering `ubuntu-latest`, `macos-latest`
 
 ### Requirement: Coverage Gap Identification
 
-The system MUST identify forge-core source files that lack `#[cfg(test)]` test modules. Each untested module MUST be documented with a baseline status: either a smoke test is added, or a `// TODO: tests` marker is left with rationale.
+The system MUST identify anvil-core source files that lack `#[cfg(test)]` test modules. Each untested module MUST be documented with a baseline status: either a smoke test is added, or a `// TODO: tests` marker is left with rationale.
 
 Target modules without tests: `launcher.rs`, `lib.rs`, `lock.rs`, `manifest.rs`, `state.rs`, `api/mod.rs`, `operations/mod.rs`, `plugin/mod.rs`.
 
 #### Scenario: Untested modules are cataloged
 
-- GIVEN a coverage audit of `forge-core/src/`
+- GIVEN a coverage audit of `anvil-core/src/`
 - WHEN scanning for `#[cfg(test)]` in each `.rs` file
 - THEN modules without test modules MUST be listed in a coverage report
 

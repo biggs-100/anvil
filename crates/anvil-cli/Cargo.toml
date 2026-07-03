@@ -1,0 +1,15 @@
+[package]
+name = "anvil"
+version = "0.1.0"
+edition = "2021"
+description = "Anvil CLI — command-line interface for reproducible development environments"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.35", features = ["full"] }
+anvil-core = { path = "../anvil-core" }
+anvil-drivers = { path = "../anvil-drivers" }
+anvil-tui = { path = "../anvil-tui" }
+dirs = "5.0"

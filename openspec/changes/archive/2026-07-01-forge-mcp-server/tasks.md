@@ -1,4 +1,4 @@
-# Tasks: Forge MCP Server
+# Tasks: Anvil MCP Server
 
 ## Review Workload Forecast
 
@@ -11,7 +11,7 @@ Estimated changed lines: 500–650. If accepting single PR, maintainer must appr
 
 ## Phase 1: MCP Protocol Types
 
-- [x] 1.1 Define `McpRequest`, `McpResponse`, `McpError`, `McpNotification` serde structs in `crates/forge-cli/src/mcp.rs`
+- [x] 1.1 Define `McpRequest`, `McpResponse`, `McpError`, `McpNotification` serde structs in `crates/anvil-cli/src/mcp.rs`
 - [x] 1.2 Define `InitializeParams`, `InitializeResult`, `ServerCapabilities`
 - [x] 1.3 Define `ReadResourceParams`, `ResourceContent`, `CallToolParams`, `ToolResultContent`
 - [x] 1.4 Define `GetPromptParams`, `PromptMessage`
@@ -57,7 +57,7 @@ Estimated changed lines: 500–650. If accepting single PR, maintainer must appr
 
 ## Phase 7: CLI Integration
 
-- [x] 7.1 Add `mod mcp;` to `crates/forge-cli/src/main.rs`
+- [x] 7.1 Add `mod mcp;` to `crates/anvil-cli/src/main.rs`
 - [x] 7.2 Add `Mcp` variant to `Commands` enum with about description
 - [x] 7.3 Dispatch `Commands::Mcp` → `mcp::serve()` in `run_cli()`
 

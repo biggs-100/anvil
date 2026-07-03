@@ -1,6 +1,6 @@
 ## Verification Report
 
-**Change**: forge-tui
+**Change**: anvil-tui
 **Version**: N/A (initial implementation)
 **Mode**: Standard
 
@@ -22,16 +22,16 @@ cargo build
 **Tests**: ✅ 111 passed (0 failed, 11 ignored — integration tests requiring compiled binary)
 ```text
 cargo test
-   forge-cli unit: 37 passed
+   anvil-cli unit: 37 passed
    context_cli_tests: 3 passed
    jsonrpc_test: 0 passed (5 ignored, requires binary)
    mcp_test: 0 passed (6 ignored, requires binary)
-   forge-core unit: 40 passed
+   anvil-core unit: 40 passed
    integration: 10 passed
-   forge-drivers: 1 passed
-   forge-sdk: 5 passed
-   forge-shim: 4 passed
-   forge-tui: 11 passed
+   anvil-drivers: 1 passed
+   anvil-sdk: 5 passed
+   anvil-shim: 4 passed
+   anvil-tui: 11 passed
 ```
 
 **Coverage**: N/A (threshold: 0% — not configured)
@@ -51,7 +51,7 @@ cargo test
 | Navigation and Controls | Tab switching | `test_tab_switching_via_handle_event` | ✅ COMPLIANT |
 | Navigation and Controls | Clean quit | `test_quit_key` | ✅ COMPLIANT |
 | Navigation and Controls | Terminal resize | `test_resize_event` | ✅ COMPLIANT |
-| Error Handling | Missing forge.toml | (none found) | ❌ UNTESTED — logic exists but no covering test |
+| Error Handling | Missing anvil.toml | (none found) | ❌ UNTESTED — logic exists but no covering test |
 | Error Handling | Engine failure | (none found) | ❌ UNTESTED — error display logic exists but no covering test |
 
 **Compliance summary**: 3/13 scenarios compliant, 2/13 partial, 8/13 untested
@@ -77,7 +77,7 @@ cargo test
 | Tab rendering via match | ✅ Yes | `render()` dispatches to `render_dashboard`/`render_runtimes`/`render_diagnostics`/`render_history` |
 | `App` struct fields | ✅ Yes | All design-specified fields present (with additional `refresh_requested`, `last_refresh`, `scroll_positions` as reasonable additions) |
 | Data struct shapes | ✅ Yes | `DashboardData`, `RuntimesData`, `RuntimeEntry`, `DiagnosticsData`, `HistoryData` all match design |
-| File changes | ✅ Yes | Workspace Cargo.toml, forge-cli Cargo.toml, forge-cli main.rs, forge-tui Cargo.toml, forge-tui src/lib.rs — all match |
+| File changes | ✅ Yes | Workspace Cargo.toml, anvil-cli Cargo.toml, anvil-cli main.rs, anvil-tui Cargo.toml, anvil-tui src/lib.rs — all match |
 
 ### Issues Found
 **CRITICAL**: None
@@ -87,7 +87,7 @@ cargo test
 - Design is followed (one minor deviation with equivalent behavior).
 
 **WARNING**: None
-- 8 spec scenarios are untested by direct covering tests. The code implements the scenarios correctly (verified by static analysis), but runtime evidence is limited. Per the skill's graceful handling rules, full rendering scenarios in a Ratatui TUI are inherently difficult to unit-test without a terminal backend. The existing unit tests cover event handling, color mapping, and data flow logic (11 forge-tui tests).
+- 8 spec scenarios are untested by direct covering tests. The code implements the scenarios correctly (verified by static analysis), but runtime evidence is limited. Per the skill's graceful handling rules, full rendering scenarios in a Ratatui TUI are inherently difficult to unit-test without a terminal backend. The existing unit tests cover event handling, color mapping, and data flow logic (11 anvil-tui tests).
 
 **SUGGESTION**:
 - Add test coverage for missing-config error display and empty-state rendering (Runtimes, Diagnostics, History views).

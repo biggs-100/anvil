@@ -18,18 +18,18 @@ Chain strategy: size-exception
 
 ## Phase 1: LlvmProvider
 
-- [x] 1.1 Add `LlvmProvider` struct + `RuntimeProvider` impl in `crates/forge-core/src/resolver.rs` (pattern-match `NodeProvider`)
-- [x] 1.2 Add 5 default `RegistryEntry` rows for `llvm` in `crates/forge-core/src/registry.rs` `default_with_internal()` (windows/macos/linux × x86_64/aarch64)
+- [x] 1.1 Add `LlvmProvider` struct + `RuntimeProvider` impl in `crates/anvil-core/src/resolver.rs` (pattern-match `NodeProvider`)
+- [x] 1.2 Add 5 default `RegistryEntry` rows for `llvm` in `crates/anvil-core/src/registry.rs` `default_with_internal()` (windows/macos/linux × x86_64/aarch64)
 
 ## Phase 2: JdkProvider
 
-- [x] 2.1 Add `JdkProvider` struct + `RuntimeProvider` impl in `crates/forge-core/src/resolver.rs` (pattern-match `NodeProvider`)
-- [x] 2.2 Add 5 default `RegistryEntry` rows for `jdk` in `crates/forge-core/src/registry.rs` `default_with_internal()`
+- [x] 2.1 Add `JdkProvider` struct + `RuntimeProvider` impl in `crates/anvil-core/src/resolver.rs` (pattern-match `NodeProvider`)
+- [x] 2.2 Add 5 default `RegistryEntry` rows for `jdk` in `crates/anvil-core/src/registry.rs` `default_with_internal()`
 
 ## Phase 3: Wiring
 
-- [x] 3.1 Re-export `LlvmProvider`, `JdkProvider` from `crates/forge-core/src/lib.rs`
-- [x] 3.2 Register both providers in `Resolver::new()` in `crates/forge-core/src/resolver.rs`
+- [x] 3.1 Re-export `LlvmProvider`, `JdkProvider` from `crates/anvil-core/src/lib.rs`
+- [x] 3.2 Register both providers in `Resolver::new()` in `crates/anvil-core/src/resolver.rs`
 
 ## Phase 4: Testing
 

@@ -1,19 +1,19 @@
-# Forge Architecture Overview
+# Anvil Architecture Overview
 
 **Version:** 1.0 (Core frozen)
 **Last updated:** 2026-07-01
 
 ---
 
-## What is Forge?
+## What is Anvil?
 
-Forge is a **platform for creating, running, inspecting, and sharing reproducible development environments**. It serves three audiences through the same core:
+Anvil is a **platform for creating, running, inspecting, and sharing reproducible development environments**. It serves three audiences through the same core:
 
-| Audience | How they use Forge |
+| Audience | How they use Anvil |
 |----------|-------------------|
-| **Humans** | `forge shell`, `forge run`, `forge status`, `forge explain` — daily development workflows |
-| **Tools** | `forge context --format json`, `forge doctor --json`, `forge history` — CI, scripts, automation |
-| **AI Agents** | `forge ai context`, `forge ai doctor`, FCP protocol — structured project understanding |
+| **Humans** | `anvil shell`, `anvil run`, `anvil status`, `anvil explain` — daily development workflows |
+| **Tools** | `anvil context --format json`, `anvil doctor --json`, `anvil history` — CI, scripts, automation |
+| **AI Agents** | `anvil ai context`, `anvil ai doctor`, ACP protocol — structured project understanding |
 
 This is not a "container alternative" or "Nix replacement." The core abstraction is **reproducible context**, not package management or system configuration.
 
@@ -21,10 +21,10 @@ This is not a "container alternative" or "Nix replacement." The core abstraction
 
 ## Core Tenets
 
-1. **Offline-first by design.** Forge never requires a network connection for basic operation. Registries and downloads are cached; everything works after the initial sync.
+1. **Offline-first by design.** Anvil never requires a network connection for basic operation. Registries and downloads are cached; everything works after the initial sync.
 2. **No daemon, no server, no lock-in.** A single binary. No background processes. No vendor dependency.
 3. **Reproducibility through content-addressed integrity.** Every runtime has verified checksums. Every environment is defined by a declarative manifest.
-4. **Context is a first-class product.** Project state is not locked inside the tool — it is extracted, structured, and exported via the Forge Context Protocol.
+4. **Context is a first-class product.** Project state is not locked inside the tool — it is extracted, structured, and exported via the Anvil Context Protocol.
 5. **Stable core, extensible ecosystem.** The core is frozen at 1.0. All new capabilities come through plugins, SDKs, and integrations.
 
 ---
@@ -33,7 +33,7 @@ This is not a "container alternative" or "Nix replacement." The core abstraction
 
 ```
                   ┌──────────────────────┐
-                  │     CLI (forge-cli)   │
+                  │     CLI (anvil-cli)   │
                   │  commands, formatters │
                   └──────┬───────────────┘
                          │
@@ -47,7 +47,7 @@ This is not a "container alternative" or "Nix replacement." The core abstraction
    ┌──────▼─────┐ ┌──────▼─────┐ ┌──────▼──────┐
    │  Operations │ │  Context   │ │  Diagnostic  │
    │   Layer     │ │   Engine   │ │   Engine     │
-   │ (atomic TX) │ │   (FCP)    │ │ (health/repair)│
+   │ (atomic TX) │ │   (ACP)    │ │ (health/repair)│
    └──────┬─────┘ └──────┬─────┘ └──────┬──────┘
           │              │              │
    ┌──────▼─────┐ ┌──────▼─────┐ ┌──────▼──────┐
@@ -62,12 +62,12 @@ This is not a "container alternative" or "Nix replacement." The core abstraction
 
 ### Core Data Flow
 
-1. **`forge.toml`** declares desired state (runtimes, profiles, env vars).
+1. **`anvil.toml`** declares desired state (runtimes, profiles, env vars).
 2. **Operations Layer** computes a plan, executes it atomically, and updates state.
 3. **Runtime Engine** resolves versions, downloads with checksum verification, extracts, caches, and generates shims.
 4. **Configuration & Secrets** resolve environment variables, apply profiles, and manage encrypted credentials.
 5. **Diagnostic Engine** runs health checks, generates repair plans, and produces structured findings.
-6. **Context Engine** aggregates everything into a unified `ForgeContext` schema and exports it via FCP.
+6. **Context Engine** aggregates everything into a unified `AnvilContext` schema and exports it via ACP.
 7. **Observability** records every operation in the journal, streams events for live consumption, and supports trace queries.
 
 ---
@@ -80,10 +80,10 @@ The environment state machine has eight well-defined states:
 Uninitialized
     │
     ▼
-Initialized (forge.toml exists)
+Initialized (anvil.toml exists)
     │
     ▼
-Locked (forge.lock generated)
+Locked (anvil.lock generated)
     │
     ▼
 Synced (runtimes extracted)
@@ -95,7 +95,7 @@ Ready (shims cached, environment complete)
     └── Broken (integrity check failed)
 ```
 
-Transitions are always planned first (`forge plan`), then executed (`forge up`, `forge repair`).
+Transitions are always planned first (`anvil plan`), then executed (`anvil up`, `anvil repair`).
 
 ---
 
@@ -103,11 +103,11 @@ Transitions are always planned first (`forge plan`), then executed (`forge up`, 
 
 The following are frozen and stable:
 
-- **Public API** (`Engine` facade in `crates/forge-core/src/api/v1.rs`) — all queries and operations
-- **Core types** (`RuntimeId`, `Lockfile`, `LifecycleState`, `Event`, `ForgeContext`, `DiagnosticReport`)
-- **Manifest format** (`forge.toml` schema, `forge.lock` schema)
-- **FCP handshake protocol** (JSON-RPC schema, version negotiation, capability exchange)
-- **NDJSON journal format** (`.forge/journal.jsonl`)
+- **Public API** (`Engine` facade in `crates/anvil-core/src/api/v1.rs`) — all queries and operations
+- **Core types** (`RuntimeId`, `Lockfile`, `LifecycleState`, `Event`, `AnvilContext`, `DiagnosticReport`)
+- **Manifest format** (`anvil.toml` schema, `anvil.lock` schema)
+- **ACP handshake protocol** (JSON-RPC schema, version negotiation, capability exchange)
+- **NDJSON journal format** (`.anvil/journal.jsonl`)
 - **Secrets engine** (keyring integration, encrypted payload format)
 - **Diagnostic protocol** (severity levels, quick-fix format, health score computation)
 
@@ -131,7 +131,7 @@ What is NOT frozen (expected to evolve):
 | ADR-0002 | Engine facade isolation — `Engine` as the only public entry point |
 | ADR-0003 | In-process EventBus via `tokio::sync::broadcast` |
 | ADR-0004 | CLI introspection subcommands: `history`, `explain`, `trace`, `events` |
-| ADR-0005 | NDJSON (JSON Lines) for journal format under `.forge/journal.jsonl` |
+| ADR-0005 | NDJSON (JSON Lines) for journal format under `.anvil/journal.jsonl` |
 | ADR-0006 | Lightweight polling for cache integrity verification |
 
 See individual ADR files in `docs/adr/` for full details.
@@ -141,11 +141,11 @@ See individual ADR files in `docs/adr/` for full details.
 ## Project Structure
 
 ```
-forge/
+anvil/
 ├── Cargo.toml             # Workspace definition
-├── forge.toml             # Project runtime manifest
-├── forge.lock             # Resolved runtime lockfile
-├── forge.env              # Environment variable definitions
+├── anvil.toml             # Project runtime manifest
+├── anvil.lock             # Resolved runtime lockfile
+├── anvil.env              # Environment variable definitions
 ├── README.md
 ├── docs/
 │   ├── adr/               # Architecture Decision Records
@@ -156,9 +156,9 @@ forge/
 │   ├── specs/             # Formal specifications (stable)
 │   └── changes/archive/   # Completed SDD phase artifacts
 ├── crates/
-│   ├── forge-core/        # Core engine
-│   ├── forge-cli/         # CLI
-│   ├── forge-drivers/     # Standard command runners
-│   └── forge-shim/        # Runtime shim binary
-└── .forge/                # Local cache and state
+│   ├── anvil-core/        # Core engine
+│   ├── anvil-cli/         # CLI
+│   ├── anvil-drivers/     # Standard command runners
+│   └── anvil-shim/        # Runtime shim binary
+└── .anvil/                # Local cache and state
 ```

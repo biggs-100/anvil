@@ -1,7 +1,7 @@
 # Diagnostic CLI Commands Specification
 
 ## Purpose
-Define the CLI parameters, layout formats, and security safeguards for the commands `forge doctor` and `forge ai doctor`.
+Define the CLI parameters, layout formats, and security safeguards for the commands `anvil doctor` and `anvil ai doctor`.
 
 ## Requirements
 
@@ -10,14 +10,14 @@ The CLI MUST expose commands for running diagnostics.
 
 | Command | Option / Flag | Output Format | Description |
 |---|---|---|---|
-| `forge doctor` | None | UTF-8 Table | Runs default diagnostics in Fast mode |
-| `forge doctor` | `--deep` | UTF-8 Table | Runs default diagnostics in Deep mode |
-| `forge doctor` | `--json` | JSON string | Serializes results into raw JSON |
-| `forge ai doctor` | None | JSON string | Performs Deep diagnostic run formatted for LLM consumption |
+| `anvil doctor` | None | UTF-8 Table | Runs default diagnostics in Fast mode |
+| `anvil doctor` | `--deep` | UTF-8 Table | Runs default diagnostics in Deep mode |
+| `anvil doctor` | `--json` | JSON string | Serializes results into raw JSON |
+| `anvil ai doctor` | None | JSON string | Performs Deep diagnostic run formatted for LLM consumption |
 
 #### Scenario: Running Doctor with JSON output
 - GIVEN a workspace with a missing lockfile
-- WHEN the user executes `forge doctor --json`
+- WHEN the user executes `anvil doctor --json`
 - THEN the command MUST output a JSON string matching the `DiagnosticReport` schema and exit with a non-zero status
 
 ---
@@ -34,7 +34,7 @@ When executing without `--json`, the CLI MUST render a structured table.
 
 #### Scenario: Human-Readable Table Render
 - GIVEN a list of active findings
-- WHEN `forge doctor` completes execution
+- WHEN `anvil doctor` completes execution
 - THEN the terminal MUST print a formatted table listing each finding with its code, severity, category, and message
 
 ---

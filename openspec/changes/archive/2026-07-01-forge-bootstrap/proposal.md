@@ -1,39 +1,39 @@
-# Proposal: Forge Bootstrap
+# Proposal: Anvil Bootstrap
 
 ## Intent
-Bootstrap the core architecture and first implementation slice of Forge as a Runtime Environment Manager (not a package manager) that is fast, deterministic, cross-platform, and optimized for humans and AI agents.
+Bootstrap the core architecture and first implementation slice of Anvil as a Runtime Environment Manager (not a package manager) that is fast, deterministic, cross-platform, and optimized for humans and AI agents.
 
 ## Scope
 
 ### In Scope
-- Forge CLI and Runtime Engine split from the Platform/Driver layers.
+- Anvil CLI and Runtime Engine split from the Platform/Driver layers.
 - Native Rust implementation.
 - Support for downloading and executing 5 native runtimes: Python, Node.js, Bun, Go, and Rust.
 - System packages fallback wrapper drivers executing host package managers (Winget, Homebrew, Apt/Pacman).
-- Core activation via subprocess wrapping (`forge run <cmd>` and `forge shell`). No shell hooks.
-- Env loading from `forge.env` and secret verification (checked, not displayed) in `forge doctor` / `forge ai context`.
-- Deterministic `forge.lock` (versions, platforms, URLs, sizes, SHA-256 hashes).
+- Core activation via subprocess wrapping (`anvil run <cmd>` and `anvil shell`). No shell hooks.
+- Env loading from `anvil.env` and secret verification (checked, not displayed) in `anvil doctor` / `anvil ai context`.
+- Deterministic `anvil.lock` (versions, platforms, URLs, sizes, SHA-256 hashes).
 
 ### Out of Scope
 - Heavy virtualization (Docker wrapper, WSL integration).
 - Shell auto-switching cd hooks (e.g. direnv style).
 - Secure OS Keychain integration.
-- Forge custom package registry.
+- Anvil custom package registry.
 
 ## Capabilities
 
 ### New Capabilities
 - `runtime-manager`: Resolves, downloads, extracts, and executes local toolchains.
 - `platform-drivers`: Fallback wrapper for system package manager installations.
-- `environment-activation`: Subprocess environment injector and `forge.env` / secrets parser.
-- `lockfile-generator`: Generates, parses, and synchronizes `forge.lock`.
-- `agent-inspector`: Provides `forge ai context` and `forge ai doctor` commands with structured JSON outputs.
+- `environment-activation`: Subprocess environment injector and `anvil.env` / secrets parser.
+- `lockfile-generator`: Generates, parses, and synchronizes `anvil.lock`.
+- `agent-inspector`: Provides `anvil ai context` and `anvil ai doctor` commands with structured JSON outputs.
 
 ### Modified Capabilities
 - None
 
 ## Approach
-Implement a native Rust workspace split into core CLI/Engine and driver crates. The engine resolves runtime binaries, writes to a directory-local `.forge/` cache, updates `forge.lock`, and spawns command execution wrappers.
+Implement a native Rust workspace split into core CLI/Engine and driver crates. The engine resolves runtime binaries, writes to a directory-local `.anvil/` cache, updates `anvil.lock`, and spawns command execution wrappers.
 
 ## Affected Areas
 
@@ -61,4 +61,4 @@ Since this bootstraps a greenfield repository, rollback consists of discarding u
 - [ ] Statically linked `forge` binary compiles and runs on Windows, macOS, and Linux.
 - [ ] Downloader successfully retrieves, verifies SHA-256, extracts, and caches all 5 runtimes.
 - [ ] Command execution wraps child processes with correct env variables and PATH.
-- [ ] `forge ai context` outputs valid, non-sensitive JSON environment maps.
+- [ ] `anvil ai context` outputs valid, non-sensitive JSON environment maps.

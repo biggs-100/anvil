@@ -17,7 +17,7 @@ Chain strategy: size-exception
 
 ## Phase 1: Benchmark Module
 
-- [x] 1.1 Create `crates/forge-cli/src/benchmark.rs` — define `BenchmarkResult` struct with `name`, `duration_ms`, `health_score`, `error`
+- [x] 1.1 Create `crates/anvil-cli/src/benchmark.rs` — define `BenchmarkResult` struct with `name`, `duration_ms`, `health_score`, `error`
 - [x] 1.2 Implement `benchmark_sync()` — wrap `Engine::sync()` in `Instant::now()`, return `BenchmarkResult`
 - [x] 1.3 Implement `benchmark_diagnostics()` — wrap `DiagnosticEngine::run(Fast)` in `Instant`, return `BenchmarkResult`
 - [x] 1.4 Implement `benchmark_context()` — wrap `ContextEngine::query(6 providers)` in `Instant`, return `BenchmarkResult`
@@ -29,7 +29,7 @@ Chain strategy: size-exception
 
 ## Phase 2: CLI Integration
 
-- [x] 2.1 Add `mod benchmark;` declaration to `crates/forge-cli/src/main.rs`
+- [x] 2.1 Add `mod benchmark;` declaration to `crates/anvil-cli/src/main.rs`
 - [x] 2.2 Add `Benchmark { json: bool, compare: bool }` variant to `Commands` enum
 - [x] 2.3 Add dispatch arm `Commands::Benchmark { json, compare } => benchmark::run_benchmarks(...)` in `run_cli`
 - [x] 2.4 Add `"benchmark"` to `BUILTIN_COMMANDS` list

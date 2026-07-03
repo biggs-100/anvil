@@ -1,11 +1,11 @@
-/** Forge TypeScript SDK client — subprocess-based JSON-RPC client. */
+/** Anvil TypeScript SDK client — subprocess-based JSON-RPC client. */
 
 import { spawn, ChildProcess } from 'child_process';
 import {
   CleanReport,
   ContextData,
   ContextFormat,
-  ForgeError,
+  AnvilError,
   HistoryEntry,
   RepairReport,
   ResolvedEnvironment,
@@ -31,14 +31,14 @@ interface RpcResponse {
   error?: { code: number; message: string };
 }
 
-// ── Forge client ────────────────────────────────────────────────────────────
+// ── Anvil client ────────────────────────────────────────────────────────────
 
 /**
- * Client that controls a `forge jsonrpc` subprocess.
+ * Client that controls a `anvil jsonrpc` subprocess.
  *
  * All methods communicate via JSON-RPC 2.0 over stdin/stdout.
  */
-export class Forge {
+export class Anvil {
   private process: ChildProcess;
   private nextId = 0;
   private buffer: string;
@@ -47,10 +47,10 @@ export class Forge {
     reject: (reason: unknown) => void;
   }>;
 
-  constructor(forgePath = 'forge') {
+  constructor(anvilPath = 'anvil') {
     this.buffer = '';
     this.resolveQueue = [];
-    this.process = spawn(forgePath, ['jsonrpc'], {
+    this.process = spawn(anvilPath, ['jsonrpc'], {
       stdio: ['pipe', 'pipe', 'inherit'],
     });
 
@@ -62,14 +62,14 @@ export class Forge {
     this.process.on('exit', (code) => {
       // Reject any pending requests
       for (const entry of this.resolveQueue) {
-        entry.reject(new ForgeError(`forge subprocess exited with code ${code}`));
+        entry.reject(new AnvilError(`anvil subprocess exited with code ${code}`));
       }
       this.resolveQueue = [];
     });
 
     this.process.on('error', (err) => {
       for (const entry of this.resolveQueue) {
-        entry.reject(new ForgeError(`forge subprocess error: ${err.message}`));
+        entry.reject(new AnvilError(`anvil subprocess error: ${err.message}`));
       }
       this.resolveQueue = [];
     });
@@ -77,7 +77,7 @@ export class Forge {
 
   // ── Lifecycle ──────────────────────────────────────────────────────
 
-  /** Disconnect and kill the forge subprocess. */
+  /** Disconnect and kill the anvil subprocess. */
   disconnect(): void {
     if (this.process && !this.process.killed) {
       this.process.kill();
@@ -88,7 +88,7 @@ export class Forge {
 
   private async call<T>(method: string, params: Record<string, unknown> = {}): Promise<T> {
     if (!this.process || !this.process.stdout) {
-      throw new ForgeError('forge subprocess is not running');
+      throw new AnvilError('anvil subprocess is not running');
     }
 
     this.nextId++;
@@ -107,13 +107,13 @@ export class Forge {
         if (err) {
           // Remove from queue if write fails
           this.resolveQueue.pop();
-          reject(new ForgeError(`failed to write request: ${err.message}`));
+          reject(new AnvilError(`failed to write request: ${err.message}`));
         }
       });
     }).then((response: unknown) => {
       const resp = response as RpcResponse;
       if (resp.error) {
-        throw new ForgeError(resp.error.message, resp.error.code);
+        throw new AnvilError(resp.error.message, resp.error.code);
       }
       return resp.result as T;
     });

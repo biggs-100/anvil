@@ -2,7 +2,7 @@
 
 ## Technical Approach
 
-New `SnapshotManager` in `forge-core` handles snapshot CRUD as directory-based flat files under `.forge/snapshots/{name}/`. The CLI adds three commands via `clap` subcommands. Restore delegates to the existing `forge up` pipeline for runtime sync. No new runtime binaries or caches are stored — only descriptors.
+New `SnapshotManager` in `anvil-core` handles snapshot CRUD as directory-based flat files under `.anvil/snapshots/{name}/`. The CLI adds three commands via `clap` subcommands. Restore delegates to the existing `anvil up` pipeline for runtime sync. No new runtime binaries or caches are stored — only descriptors.
 
 ## Architecture Decisions
 
@@ -24,14 +24,14 @@ New `SnapshotManager` in `forge-core` handles snapshot CRUD as directory-based f
 
 | Option | Tradeoff | Decision |
 |--------|----------|----------|
-| `.forge/snapshots/.backup/{ts}/` | Co-located with snapshots, self-cleaning on `forge clean` | **Chosen** |
-| User home temp dir | Cross-device confusion, invisible to forge cleanup | Rejected |
+| `.anvil/snapshots/.backup/{ts}/` | Co-located with snapshots, self-cleaning on `anvil clean` | **Chosen** |
+| User home temp dir | Cross-device confusion, invisible to anvil cleanup | Rejected |
 
-### Decision: Restore triggers forge up (not resolve+sync)
+### Decision: Restore triggers anvil up (not resolve+sync)
 
 | Option | Tradeoff | Decision |
 |--------|----------|----------|
-| Delegate to `forge up` | Reuses existing lock + sync pipeline, consistent UX | **Chosen** |
+| Delegate to `anvil up` | Reuses existing lock + sync pipeline, consistent UX | **Chosen** |
 | Inline resolve+sync | Duplicates pipeline logic, diverges from UX | Rejected |
 
 ## Data Flow
@@ -40,40 +40,40 @@ New `SnapshotManager` in `forge-core` handles snapshot CRUD as directory-based f
 Snapshot Create:
   workspace_root
      │
-     ├── forge.toml ──────────────────────┐
-     ├── forge.lock ──────────────────────┤
+     ├── anvil.toml ──────────────────────┐
+     ├── anvil.lock ──────────────────────┤
      ├── compute_current_state() ─────────┤
-     ├── .forge/journal.jsonl (last 100)──┤
+     ├── .anvil/journal.jsonl (last 100)──┤
      └── metadata (name, desc, version) ──┤
                                           ▼
-                              .forge/snapshots/{name}/
-                              ├── forge.toml (copy)
-                              ├── forge.lock (copy)
+                              .anvil/snapshots/{name}/
+                              ├── anvil.toml (copy)
+                              ├── anvil.lock (copy)
                               ├── state.json
                               ├── journal.jsonl
                               └── snapshot.json
 
 Snapshot Restore:
-  .forge/snapshots/{name}/
+  .anvil/snapshots/{name}/
      │
-     ├── forge.toml ──→ backup current → copy to workspace
-     ├── forge.lock ──→ backup current → copy to workspace
+     ├── anvil.toml ──→ backup current → copy to workspace
+     ├── anvil.lock ──→ backup current → copy to workspace
      │
-     └── forge up (LockOperation + engine.sync())
+     └── anvil up (LockOperation + engine.sync())
 ```
 
 ## File Changes
 
 | File | Action | Description |
 |------|--------|-------------|
-| `crates/forge-core/src/snapshot.rs` | Create | `SnapshotManager` with `create()`, `list()`, `restore()` |
-| `crates/forge-core/src/lib.rs` | Modify | Add `pub mod snapshot;` and re-exports |
-| `crates/forge-cli/src/main.rs` | Modify | Add `Snapshot`, `SnapshotList`, `Restore` subcommands + `"snapshot"` to `BUILTIN_COMMANDS` |
+| `crates/anvil-core/src/snapshot.rs` | Create | `SnapshotManager` with `create()`, `list()`, `restore()` |
+| `crates/anvil-core/src/lib.rs` | Modify | Add `pub mod snapshot;` and re-exports |
+| `crates/anvil-cli/src/main.rs` | Modify | Add `Snapshot`, `SnapshotList`, `Restore` subcommands + `"snapshot"` to `BUILTIN_COMMANDS` |
 
 ## Interfaces / Contracts
 
 ```rust
-// crates/forge-core/src/snapshot.rs
+// crates/anvil-core/src/snapshot.rs
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SnapshotMetadata {
@@ -109,16 +109,16 @@ Key signatures reused from existing codebase:
 
 | Layer | What to Test | Approach |
 |-------|-------------|----------|
-| Unit | SnapshotManager::create | Temp dir with forge.toml/forge.lock → verify all 5 files created |
+| Unit | SnapshotManager::create | Temp dir with anvil.toml/anvil.lock → verify all 5 files created |
 | Unit | SnapshotManager::list | Create 3 snapshots → verify sorted output + metadata |
 | Unit | SnapshotManager::restore dry-run | Verify no files changed, output preview |
 | Unit | SnapshotManager::restore missing | Verify error + no files modified |
-| Integration | CLI `forge snapshot` dispatch | Match existing CLI test pattern (temp workspace, exec forge CLI) |
-| Integration | Restore → forge up chain | Temp workspace → create snapshot → modify lock → restore → verify lock reverted |
+| Integration | CLI `anvil snapshot` dispatch | Match existing CLI test pattern (temp workspace, exec anvil CLI) |
+| Integration | Restore → anvil up chain | Temp workspace → create snapshot → modify lock → restore → verify lock reverted |
 
 ## Migration / Rollout
 
-No migration required. Snapshots are opt-in — existing `.forge/` directories without `snapshots/` work normally. `forge clean` removes `.forge/snapshots/` as part of the existing clean scope.
+No migration required. Snapshots are opt-in — existing `.anvil/` directories without `snapshots/` work normally. `anvil clean` removes `.anvil/snapshots/` as part of the existing clean scope.
 
 ## Open Questions
 

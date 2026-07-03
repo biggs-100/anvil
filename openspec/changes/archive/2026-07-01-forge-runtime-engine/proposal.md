@@ -1,14 +1,14 @@
-# Proposal: Modularize Forge Core Runtime Engine
+# Proposal: Modularize Anvil Core Runtime Engine
 
 ## Intent
 
-Decompose the monolithic `crates/forge-core/src/lib.rs` (~1300 lines) into 8 domain-specific submodules to establish a decoupled, sustainable, and scalable architecture.
+Decompose the monolithic `crates/anvil-core/src/lib.rs` (~1300 lines) into 8 domain-specific submodules to establish a decoupled, sustainable, and scalable architecture.
 
 ## Scope
 
 ### In Scope
 - Create `types.rs`: Common domain types (`RuntimeId`, `RuntimeVersion`, `Platform`, `Architecture`, `Hash`).
-- Refactor `manifest.rs`: `forge.toml` path/load/validation logic.
+- Refactor `manifest.rs`: `anvil.toml` path/load/validation logic.
 - Refactor `resolver.rs`: `RuntimeProvider` abstractions (Node, Python).
 - Refactor `installer.rs`: Download, extraction, Zip Slip protection.
 - Refactor `registry.rs`: HybridRegistry resolution & metadata checks.
@@ -19,8 +19,8 @@ Decompose the monolithic `crates/forge-core/src/lib.rs` (~1300 lines) into 8 dom
 - Test Relocation: Inline unit tests inside submodules; integration tests to `tests/`.
 
 ### Out of Scope
-- Command additions: `forge sync`, `forge gc`, `forge clean` (Phase 5).
-- Secret management CLI/commands: `forge secret` (Phase 6).
+- Command additions: `anvil sync`, `anvil gc`, `anvil clean` (Phase 5).
+- Secret management CLI/commands: `anvil secret` (Phase 6).
 
 ## Capabilities
 
@@ -40,7 +40,7 @@ Decompose the monolithic `crates/forge-core/src/lib.rs` (~1300 lines) into 8 dom
 ## Approach
 
 1. Decompose `lib.rs` into new module files, resolving circular dependencies by moving shared types to `types.rs`.
-2. Re-export public APIs in `lib.rs` to maintain compatibility with `forge-cli` and downstream crates.
+2. Re-export public APIs in `lib.rs` to maintain compatibility with `anvil-cli` and downstream crates.
 3. Migrate and organize unit tests into target submodules and construct verification integration tests.
 4. Run `cargo test` and `cargo check` after each module extraction to guarantee regression-free incremental refactoring.
 
@@ -48,15 +48,15 @@ Decompose the monolithic `crates/forge-core/src/lib.rs` (~1300 lines) into 8 dom
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `crates/forge-core/src/lib.rs` | Modified | Monolith split; exposes submodules and re-exports stable API. |
-| `crates/forge-core/src/types.rs` | New | Shared domain types. |
-| `crates/forge-core/src/manifest.rs` | New | Manifest load/parsing. |
-| `crates/forge-core/src/resolver.rs` | New | Provider interfaces and resolver logic. |
-| `crates/forge-core/src/installer.rs` | New | Downloader and extractors. |
-| `crates/forge-core/src/registry.rs` | New | Registry coordinates resolution. |
-| `crates/forge-core/src/cache.rs` | New | Toolchain and shim cache management. |
-| `crates/forge-core/src/environment.rs` | New | Env parsing/masking and PATH calculation. |
-| `crates/forge-core/src/launcher.rs` | New | Process execution & signal forwarding. |
+| `crates/anvil-core/src/lib.rs` | Modified | Monolith split; exposes submodules and re-exports stable API. |
+| `crates/anvil-core/src/types.rs` | New | Shared domain types. |
+| `crates/anvil-core/src/manifest.rs` | New | Manifest load/parsing. |
+| `crates/anvil-core/src/resolver.rs` | New | Provider interfaces and resolver logic. |
+| `crates/anvil-core/src/installer.rs` | New | Downloader and extractors. |
+| `crates/anvil-core/src/registry.rs` | New | Registry coordinates resolution. |
+| `crates/anvil-core/src/cache.rs` | New | Toolchain and shim cache management. |
+| `crates/anvil-core/src/environment.rs` | New | Env parsing/masking and PATH calculation. |
+| `crates/anvil-core/src/launcher.rs` | New | Process execution & signal forwarding. |
 
 ## Risks
 
@@ -70,8 +70,8 @@ Decompose the monolithic `crates/forge-core/src/lib.rs` (~1300 lines) into 8 dom
 
 Revert all changes using git:
 ```bash
-git checkout -- crates/forge-core/
-rm -f crates/forge-core/src/{types,manifest,resolver,installer,registry,cache,environment,launcher}.rs
+git checkout -- crates/anvil-core/
+rm -f crates/anvil-core/src/{types,manifest,resolver,installer,registry,cache,environment,launcher}.rs
 ```
 
 ## Dependencies

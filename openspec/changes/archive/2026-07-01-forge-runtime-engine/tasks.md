@@ -3,7 +3,7 @@ Chained PRs recommended: No
 Chain strategy: size-exception
 400-line budget risk: High
 
-# Tasks: Modularize Forge Core Runtime Engine
+# Tasks: Modularize Anvil Core Runtime Engine
 
 ## Review Workload Forecast
 
@@ -26,19 +26,19 @@ Chain strategy: size-exception
 
 ## Phase 1: Domain & Manifest Setup (PR 1)
 
-- [x] 1.1 Create `crates/forge-core/src/types.rs` containing Primitive types (`RuntimeId`, `RuntimeVersion`, `Hash`, `Platform`, `Architecture`, `RuntimeLock`, `EmulationLog`) from `lib.rs`.
-- [x] 1.2 Create `crates/forge-core/src/manifest.rs` and move `ForgeConfig`, `find_forge_toml`, `load_config` from `lib.rs`.
-- [x] 1.3 Update `crates/forge-core/src/lib.rs` to expose `types` and `manifest`, and re-export stable types. Move unit tests to their respective modules. Verify compiling and passing tests.
+- [x] 1.1 Create `crates/anvil-core/src/types.rs` containing Primitive types (`RuntimeId`, `RuntimeVersion`, `Hash`, `Platform`, `Architecture`, `RuntimeLock`, `EmulationLog`) from `lib.rs`.
+- [x] 1.2 Create `crates/anvil-core/src/manifest.rs` and move `ForgeConfig`, `find_forge_toml`, `load_config` from `lib.rs`.
+- [x] 1.3 Update `crates/anvil-core/src/lib.rs` to expose `types` and `manifest`, and re-export stable types. Move unit tests to their respective modules. Verify compiling and passing tests.
 
 ## Phase 2: Resolution & Cache Infrastructure (PR 2)
 
-- [x] 2.1 Create `crates/forge-core/src/registry.rs` and relocate registry types (`HybridRegistry`, `RegistryEntry`), normalizations, and `test_offline_version_matching`.
-- [x] 2.2 Create `crates/forge-core/src/resolver.rs` defining `RuntimeProvider` trait and refactored provider structs mapping node, python, bun, go, rust in a map.
-- [x] 2.3 Create `crates/forge-core/src/cache.rs` to house cache managers (shims map generation, signature/write helper, `.gitignore` sync). Move cache-related unit tests.
+- [x] 2.1 Create `crates/anvil-core/src/registry.rs` and relocate registry types (`HybridRegistry`, `RegistryEntry`), normalizations, and `test_offline_version_matching`.
+- [x] 2.2 Create `crates/anvil-core/src/resolver.rs` defining `RuntimeProvider` trait and refactored provider structs mapping node, python, bun, go, rust in a map.
+- [x] 2.3 Create `crates/anvil-core/src/cache.rs` to house cache managers (shims map generation, signature/write helper, `.gitignore` sync). Move cache-related unit tests.
 
 ## Phase 3: Spawning, Execution, & Integration (PR 3)
 
-- [x] 3.1 Create `crates/forge-core/src/installer.rs` containing `Extractor` trait, `check_path_traversal`, decompressors, `download_runtime`, `install_runtimes`, and archive extraction.
-- [x] 3.2 Create `crates/forge-core/src/environment.rs` (PATH manipulation, `.env` file parsing, secret masking).
-- [x] 3.3 Create `crates/forge-core/src/launcher.rs` (process spawning and signal forwarding).
-- [x] 3.4 Relocate remaining unit tests. Create consolidated integration tests in `crates/forge-core/tests/integration.rs` testing standard archives, zip slip, parallel downloads. Verify all tests pass.
+- [x] 3.1 Create `crates/anvil-core/src/installer.rs` containing `Extractor` trait, `check_path_traversal`, decompressors, `download_runtime`, `install_runtimes`, and archive extraction.
+- [x] 3.2 Create `crates/anvil-core/src/environment.rs` (PATH manipulation, `.env` file parsing, secret masking).
+- [x] 3.3 Create `crates/anvil-core/src/launcher.rs` (process spawning and signal forwarding).
+- [x] 3.4 Relocate remaining unit tests. Create consolidated integration tests in `crates/anvil-core/tests/integration.rs` testing standard archives, zip slip, parallel downloads. Verify all tests pass.

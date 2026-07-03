@@ -5,7 +5,7 @@
 - **Verdict**: PASS
 
 ## Executive Summary
-This report documents the verification results for the `forge-observability-telemetry` changes. The verification phase confirms that all tasks defined in `tasks.md` are completed, the workspace builds successfully and passes all unit and integration tests cleanly, the implementation meets all requirements across all 5 specified specifications, and the design remains coherent with the architecture of the Forge engine.
+This report documents the verification results for the `forge-observability-telemetry` changes. The verification phase confirms that all tasks defined in `tasks.md` are completed, the workspace builds successfully and passes all unit and integration tests cleanly, the implementation meets all requirements across all 5 specified specifications, and the design remains coherent with the architecture of the Anvil engine.
 
 ---
 
@@ -15,13 +15,13 @@ All 9 tasks in `openspec/changes/forge-observability-telemetry/tasks.md` are ful
 
 | Task ID | Description | Status | Verification Evidence |
 |---|---|---|---|
-| 1.1 | Create `crates/forge-core/src/api/v1.rs` exposing the `Engine` struct, v1 types, and unified public methods. | Complete | Exists at `crates/forge-core/src/api/v1.rs` with `Engine` facade. |
-| 1.2 | Modify `crates/forge-core/src/lib.rs` to re-export the `api::v1` module. | Complete | Re-exports in `crates/forge-core/src/lib.rs`. |
-| 1.3 | Update `crates/forge-core/src/event_bus.rs` to spawn a background Tokio task on EventBus creation that asynchronously writes events to `.forge/journal.jsonl`. | Complete | `EventBus::new_internal` spawns background log writer. |
-| 1.4 | Write unit tests verifying serialization of events and concurrent logging safety to `.forge/journal.jsonl`. | Complete | `test_event_ndjson_serialization` & `test_concurrent_appends` pass in `event_bus.rs`. |
+| 1.1 | Create `crates/anvil-core/src/api/v1.rs` exposing the `Engine` struct, v1 types, and unified public methods. | Complete | Exists at `crates/anvil-core/src/api/v1.rs` with `Engine` facade. |
+| 1.2 | Modify `crates/anvil-core/src/lib.rs` to re-export the `api::v1` module. | Complete | Re-exports in `crates/anvil-core/src/lib.rs`. |
+| 1.3 | Update `crates/anvil-core/src/event_bus.rs` to spawn a background Tokio task on EventBus creation that asynchronously writes events to `.anvil/journal.jsonl`. | Complete | `EventBus::new_internal` spawns background log writer. |
+| 1.4 | Write unit tests verifying serialization of events and concurrent logging safety to `.anvil/journal.jsonl`. | Complete | `test_event_ndjson_serialization` & `test_concurrent_appends` pass in `event_bus.rs`. |
 | 2.1 | Create `docs/adr/` directory. | Complete | Directory exists and contains 6 documents. |
 | 2.2 | Write ADR-0001 through ADR-0006 under `docs/adr/` following standard Status/Context/Decision/Consequences formats. | Complete | Formatted records exist from ADR-0001 to ADR-0006. |
-| 3.1 | Implement subcommands `history`, `explain`, `trace`, and `events` in `crates/forge-cli/src/main.rs`. | Complete | Command enums, argument parsing, and handlers implemented. |
+| 3.1 | Implement subcommands `history`, `explain`, `trace`, and `events` in `crates/anvil-cli/src/main.rs`. | Complete | Command enums, argument parsing, and handlers implemented. |
 | 3.2 | Remap CLI command handlers to exclusively call the `Engine` API facade. | Complete | Command handlers in `run_cli` route through `Engine` struct. |
 | 3.3 | Add CLI integration tests checking command outputs and live tailing (`--live`) behaviour. | Complete | `test_events_live_tailing`, `test_explain_resolution`, and `test_trace_ascii_formatting` pass. |
 
@@ -35,14 +35,14 @@ All 9 tasks in `openspec/changes/forge-observability-telemetry/tasks.md` are ful
 | **observability-journal/spec.md** | Directory and File Setup | `fs::create_dir_all` in background task | `test_event_ndjson_serialization` | COMPLIANT |
 | **observability-journal/spec.md** | Thread-Safe Serialization | Uses static `JOURNAL_MUTEX` block | `test_concurrent_appends` | COMPLIANT |
 | **observability-journal/spec.md** | Scenario: Appending Event to Journal | Serializes events and appends them with `writeln!` | `test_event_ndjson_serialization` | COMPLIANT |
-| **observability-journal/spec.md** | Scenario: Auto-creation of Journal Directory | `fs::create_dir_all` automatically creates `.forge/` | `test_event_ndjson_serialization` | COMPLIANT |
-| **observability-introspection/spec.md** | Requirement: `forge history` | `Engine::history` reads and parses journal | Handled via API facade call | COMPLIANT |
+| **observability-journal/spec.md** | Scenario: Auto-creation of Journal Directory | `fs::create_dir_all` automatically creates `.anvil/` | `test_event_ndjson_serialization` | COMPLIANT |
+| **observability-introspection/spec.md** | Requirement: `anvil history` | `Engine::history` reads and parses journal | Handled via API facade call | COMPLIANT |
 | **observability-introspection/spec.md** | Scenario: History Limit and Format | Truncates history results; formats to json/table | Handled in CLI handler | COMPLIANT |
-| **observability-introspection/spec.md** | Requirement: `forge explain <runtime>` | `Engine::explain` gathers diagnostics | `test_explain_resolution` | COMPLIANT |
-| **observability-introspection/spec.md** | Scenario: Explain Bun Runtime Cache | Validates `forge.toml`, `forge.lock`, shims | `test_explain_resolution` | COMPLIANT |
-| **observability-introspection/spec.md** | Requirement: `forge trace <op_id>` | `Engine::trace` builds TraceTree | `test_trace_ascii_formatting` | COMPLIANT |
+| **observability-introspection/spec.md** | Requirement: `anvil explain <runtime>` | `Engine::explain` gathers diagnostics | `test_explain_resolution` | COMPLIANT |
+| **observability-introspection/spec.md** | Scenario: Explain Bun Runtime Cache | Validates `anvil.toml`, `anvil.lock`, shims | `test_explain_resolution` | COMPLIANT |
+| **observability-introspection/spec.md** | Requirement: `anvil trace <op_id>` | `Engine::trace` builds TraceTree | `test_trace_ascii_formatting` | COMPLIANT |
 | **observability-introspection/spec.md** | Scenario: Hierarchical Trace | Prints ASCII tree with node durations | `test_trace_ascii_formatting` | COMPLIANT |
-| **observability-introspection/spec.md** | Requirement: `forge events` | `Engine::events` streams events | `test_events_live_tailing` | COMPLIANT |
+| **observability-introspection/spec.md** | Requirement: `anvil events` | `Engine::events` streams events | `test_events_live_tailing` | COMPLIANT |
 | **observability-introspection/spec.md** | Scenario: Live Events Tailing | Tail logs with sleep-watch loop | `test_events_live_tailing` | COMPLIANT |
 | **observability-api-v1/spec.md** | Requirement: Facade Interface | `Engine` struct in `api/v1.rs` | Exposes standard facade methods | COMPLIANT |
 | **observability-api-v1/spec.md** | Requirement: Command Routing Isolation | CLI commands sync, clean, status route through Engine | `test_e2e_lifecycle_state_transitions` | COMPLIANT |
@@ -68,7 +68,7 @@ test tests::test_shim_args_and_exit_code_propagation ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
 
-     Running unittests src\lib.rs (target\debug\deps\forge_core-2504f1fdf9e5f594.exe)
+     Running unittests src\lib.rs (target\debug\deps\anvil_core-2504f1fdf9e5f594.exe)
 
 running 12 tests
 test environment::tests::test_mask_env_vars ... ok
@@ -118,7 +118,7 @@ test tests::test_cache_invalidation_incorrect_header ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
 
-   Doc-tests forge_core
+   Doc-tests anvil_core
 
 running 0 tests
 

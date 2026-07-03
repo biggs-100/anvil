@@ -12,11 +12,11 @@ Trigger shims cache regeneration upon successful toolchain operations.
 
 | Requirement ID | Description | Strength |
 |---|---|---|
-| REQ-MGR-004 | The system MUST regenerate `.forge/shims.cache` upon successful completion of any runtime installation, update, or package lock modification. | MUST |
+| REQ-MGR-004 | The system MUST regenerate `.anvil/shims.cache` upon successful completion of any runtime installation, update, or package lock modification. | MUST |
 
 ### Requirement: Cache Regeneration Trigger
 
 #### Scenario: Successful Install Triggers Cache Regeneration
 - GIVEN a successful runtime toolchain download and extraction
 - WHEN the installation task completes successfully
-- THEN the system MUST regenerate the `.forge/shims.cache` file with the updated binary paths
+- THEN the system MUST regenerate the `.anvil/shims.cache` file with the updated binary paths

@@ -1,4 +1,4 @@
-# Proposal: Forge Environment Lifecycle
+# Proposal: Anvil Environment Lifecycle
 
 ## Intent
 Implement Environment Lifecycle (RFC-0011) and modular Operations Layer. Introduces Plan Engine, Event Bus progress dispatch, and Staging-to-Commit atomic transactional installations across the 13 CLI environment commands.
@@ -9,7 +9,7 @@ Implement Environment Lifecycle (RFC-0011) and modular Operations Layer. Introdu
 - Create RFC-0011 detailing 10 states (UNINITIALIZED, INITIALIZED, RESOLVED, LOCKED, SYNCED, READY, ACTIVE, DIRTY, OUTDATED, BROKEN) and transitions.
 - Modular Operations Layer: `trait Operation` returning `OperationResult` (status, duration, warnings, changes, diagnostics).
 - Plan Engine: deterministic planner (`SyncPlan`, `RepairPlan`) before mutations.
-- Atomic Transactional Installations: download/extract to `.forge/staging`, promote/commit on validation success, rollback/discard on failure.
+- Atomic Transactional Installations: download/extract to `.anvil/staging`, promote/commit on validation success, rollback/discard on failure.
 - Tokio-based Event Bus (`tokio::sync::broadcast`) for progress dispatch.
 - Map 13 CLI commands: `init`, `resolve`, `lock`, `sync`, `up`, `run`, `shell`, `clean`, `gc`, `status`, `inspect`, `repair`, `plan`.
 - Implement `RepairOperation` (5-step pipeline) and `ValidateOperation` (read-only health checks).
@@ -35,16 +35,16 @@ Implement Environment Lifecycle (RFC-0011) and modular Operations Layer. Introdu
 ## Approach
 - Rust `Operation` trait architecture for core logic separation.
 - `tokio::sync::broadcast` for decoupled asynchronous progress telemetry.
-- Transactional filesystem staging under `.forge/staging` with fallback/atomic directory rename promotion.
+- Transactional filesystem staging under `.anvil/staging` with fallback/atomic directory rename promotion.
 - CLI commands re-mapped to trigger plans, operations, and format event feeds.
 
 ## Affected Areas
 
 | Area | Impact | Description |
 |---|---|---|
-| `crates/forge-core/src/types.rs` | Modified | Add `LifecycleState`, `Event`, `OperationResult`. |
-| `crates/forge-core/src/operations/` | New | Implement `Operation` traits, planner, and engine. |
-| `crates/forge-cli/src/main.rs` | Modified | Map 13 CLI commands to operations and Event Bus. |
+| `crates/anvil-core/src/types.rs` | Modified | Add `LifecycleState`, `Event`, `OperationResult`. |
+| `crates/anvil-core/src/operations/` | New | Implement `Operation` traits, planner, and engine. |
+| `crates/anvil-cli/src/main.rs` | Modified | Map 13 CLI commands to operations and Event Bus. |
 
 ## Risks
 
@@ -54,8 +54,8 @@ Implement Environment Lifecycle (RFC-0011) and modular Operations Layer. Introdu
 | File locks on Windows blocking promotion | High | Implement retry policies, error handling, and file-lock checks during rename. |
 
 ## Rollback Plan
-- Promotion failures: delete `.forge/staging` directory and restore from `.backup`.
-- Deployment revert: git revert to restore previous CLI code and run `forge clean --all` to reset cache.
+- Promotion failures: delete `.anvil/staging` directory and restore from `.backup`.
+- Deployment revert: git revert to restore previous CLI code and run `anvil clean --all` to reset cache.
 
 ## Dependencies
 - Tokio broadcast channel support (Rust tokio crate).

@@ -11,7 +11,7 @@ import {
 } from "./types";
 
 /**
- * MCP client that spawns `forge mcp` as a stdio subprocess, sends JSON-RPC 2.0
+ * MCP client that spawns `anvil mcp` as a stdio subprocess, sends JSON-RPC 2.0
  * requests, and receives line-delimited responses. Uses a pending-request map
  * to route responses back to callers and emits events for server-sent notifications.
  *
@@ -40,7 +40,7 @@ export class McpClient {
   }
 
   /**
-   * Register a handler for server-sent notifications (e.g. forge/warning, forge/error).
+   * Register a handler for server-sent notifications (e.g. anvil/warning, anvil/error).
    */
   onNotification(method: string, handler: (params: unknown) => void): void {
     this._emitter.on(method, handler);
@@ -54,7 +54,7 @@ export class McpClient {
   }
 
   /**
-   * Spawn `forge mcp` and perform the MCP initialize handshake.
+   * Spawn `anvil mcp` and perform the MCP initialize handshake.
    *
    * Rejects if the binary is not found, the process fails to start, or the
    * initialize handshake does not complete within the timeout.
@@ -68,7 +68,7 @@ export class McpClient {
 
     return new Promise<void>((resolve, reject) => {
       try {
-        const proc = cp.spawn("forge", ["mcp"], {
+        const proc = cp.spawn("anvil", ["mcp"], {
           stdio: ["pipe", "pipe", "pipe"],
           windowsHide: true,
         });
@@ -100,8 +100,8 @@ export class McpClient {
 
           if (code !== 0 && stderrBuf && this._pending.size > 0) {
             const errMsg = stderrBuf.includes("not found") || stderrBuf.includes("No such file")
-              ? "forge binary not found on PATH. Install forge and try again."
-              : `forge mcp exited unexpectedly (code=${code}, signal=${signal}): ${stderrBuf.trim()}`;
+              ? "anvil binary not found on PATH. Install anvil and try again."
+              : `anvil mcp exited unexpectedly (code=${code}, signal=${signal}): ${stderrBuf.trim()}`;
             // Reject all pending requests
             for (const [, entry] of this._pending) {
               clearTimeout(entry.timer);
@@ -117,8 +117,8 @@ export class McpClient {
           this._cleanup();
 
           const msg = (err as NodeJS.ErrnoException).code === "ENOENT"
-            ? "forge binary not found on PATH. Install forge and try again."
-            : `Failed to spawn forge mcp: ${err.message}`;
+            ? "anvil binary not found on PATH. Install anvil and try again."
+            : `Failed to spawn anvil mcp: ${err.message}`;
           reject(new Error(msg));
         });
 
@@ -126,7 +126,7 @@ export class McpClient {
         setImmediate(() => {
           if (!proc.pid && !proc.killed) {
             // The error handler should have fired, but as a safety net:
-            reject(new Error("forge mcp process failed to start"));
+            reject(new Error("anvil mcp process failed to start"));
             return;
           }
 
@@ -134,7 +134,7 @@ export class McpClient {
           this._sendRawRequest("initialize", {
             protocol_version: "2024-11-05",
             capabilities: {},
-            client_info: { name: "forge-vscode", version: "0.1.0" },
+            client_info: { name: "anvil-vscode", version: "0.1.0" },
           })
             .then((_resp) => {
               // Send initialized notification (no response expected)
@@ -149,8 +149,8 @@ export class McpClient {
         });
       } catch (err) {
         const msg = err instanceof Error && (err as NodeJS.ErrnoException).code === "ENOENT"
-          ? "forge binary not found on PATH. Install forge and try again."
-          : `Failed to connect to forge mcp: ${err instanceof Error ? err.message : String(err)}`;
+          ? "anvil binary not found on PATH. Install anvil and try again."
+          : `Failed to connect to anvil mcp: ${err instanceof Error ? err.message : String(err)}`;
         this._setState("error");
         reject(new Error(msg));
       }
@@ -199,7 +199,7 @@ export class McpClient {
 
   /**
    * Gracefully shut down the MCP connection. Sends shutdown notification,
-   * closes stdin (signals EOF to forge mcp), then waits up to 3 seconds
+   * closes stdin (signals EOF to anvil mcp), then waits up to 3 seconds
    * before force-killing the process.
    */
   close(): void {
@@ -212,7 +212,7 @@ export class McpClient {
     // Send shutdown notification
     this._sendNotification("shutdown", {});
 
-    // Close stdin to signal EOF to forge mcp
+    // Close stdin to signal EOF to anvil mcp
     if (this._process.stdin) {
       this._process.stdin.end();
     }
@@ -303,7 +303,7 @@ export class McpClient {
       } catch (err) {
         this._pending.delete(id);
         clearTimeout(timer);
-        reject(new Error(`Failed to write to forge mcp stdin: ${err instanceof Error ? err.message : String(err)}`));
+        reject(new Error(`Failed to write to anvil mcp stdin: ${err instanceof Error ? err.message : String(err)}`));
       }
     });
   }

@@ -1,8 +1,8 @@
-# Design: forge-tui — Terminal Dashboard
+# Design: anvil-tui — Terminal Dashboard
 
 ## Technical Approach
 
-New `crates/forge-tui/` crate using Ratatui + crossterm. Single `App` struct owns all state, runs a crossterm event loop with a Tokio 5s interval for auto-refresh. Four tab views (Dashboard, Runtimes, Diagnostics, History) rendered via `match` on active tab index. Data fetched synchronously from Engine facade on each render — no caching, read-only. Async Engine calls run via `tokio::task::block_in_place` or the existing Tokio runtime (forge-cli is `#[tokio::main]`). Events dispatched by `match` on key code. Terminal resize handled by crossterm's `Event::Resize`.
+New `crates/anvil-tui/` crate using Ratatui + crossterm. Single `App` struct owns all state, runs a crossterm event loop with a Tokio 5s interval for auto-refresh. Four tab views (Dashboard, Runtimes, Diagnostics, History) rendered via `match` on active tab index. Data fetched synchronously from Engine facade on each render — no caching, read-only. Async Engine calls run via `tokio::task::block_in_place` or the existing Tokio runtime (anvil-cli is `#[tokio::main]`). Events dispatched by `match` on key code. Terminal resize handled by crossterm's `Event::Resize`.
 
 ## Architecture Decisions
 
@@ -15,14 +15,14 @@ New `crates/forge-tui/` crate using Ratatui + crossterm. Single `App` struct own
 ### Decision: Synchronous Data Fetch on render
 | Option | Tradeoff | Decision |
 |--------|----------|----------|
-| Block on Engine in rendering path | Simplest, no channels; works inside existing Tokio runtime | **Chosen** — Engine calls are fast (cache reads), forge-core frozen surface |
+| Block on Engine in rendering path | Simplest, no channels; works inside existing Tokio runtime | **Chosen** — Engine calls are fast (cache reads), anvil-core frozen surface |
 | Async with channel back to TUI | Handles slow Engine calls but adds channel wiring | Rejected — perf not justified for local cache reads |
 
 ### Decision: Blocked fetch using `block_in_place`
 | Option | Tradeoff | Decision |
 |--------|----------|----------|
-| Tokio `block_in_place` + `Handle::block_on` | Matches existing forge-cli pattern in `run_diagnostic_engine` | **Chosen** — reuse proven pattern |
-| `std::thread::spawn` + channel | Avoids Tokio runtime coupling | Rejected — forge-cli already runs Tokio |
+| Tokio `block_in_place` + `Handle::block_on` | Matches existing anvil-cli pattern in `run_diagnostic_engine` | **Chosen** — reuse proven pattern |
+| `std::thread::spawn` + channel | Avoids Tokio runtime coupling | Rejected — anvil-cli already runs Tokio |
 
 ### Decision: Crossterm raw mode + event polling
 | Option | Tradeoff | Decision |
@@ -33,7 +33,7 @@ New `crates/forge-tui/` crate using Ratatui + crossterm. Single `App` struct own
 ### Decision: Auto-refresh via Tokio interval in event loop
 | Option | Tradeoff | Decision |
 |--------|----------|----------|
-| `tokio::time::interval` in event select | Natural fit with existing Tokio runtime | **Chosen** — forge-cli is `#[tokio::main]` |
+| `tokio::time::interval` in event select | Natural fit with existing Tokio runtime | **Chosen** — anvil-cli is `#[tokio::main]` |
 | Crossterm tick timer | Works outside Tokio | Rejected — doubles timer logic |
 
 ## Data Flow
@@ -67,11 +67,11 @@ New `crates/forge-tui/` crate using Ratatui + crossterm. Single `App` struct own
 
 | File | Action | Description |
 |------|--------|-------------|
-| `Cargo.toml` | Modify | Add `"crates/forge-tui"` to workspace members |
-| `crates/forge-cli/Cargo.toml` | Modify | Add `forge-tui` dependency |
-| `crates/forge-cli/src/main.rs` | Modify | Add `Tui` variant to `Commands` enum, dispatch in `run_cli` |
-| `crates/forge-tui/Cargo.toml` | Create | Dependencies: forge-core, ratatui, crossterm, tokio |
-| `crates/forge-tui/src/lib.rs` | Create | `App` struct, event loop, tab rendering, data fetching |
+| `Cargo.toml` | Modify | Add `"crates/anvil-tui"` to workspace members |
+| `crates/anvil-cli/Cargo.toml` | Modify | Add `anvil-tui` dependency |
+| `crates/anvil-cli/src/main.rs` | Modify | Add `Tui` variant to `Commands` enum, dispatch in `run_cli` |
+| `crates/anvil-tui/Cargo.toml` | Create | Dependencies: anvil-core, ratatui, crossterm, tokio |
+| `crates/anvil-tui/src/lib.rs` | Create | `App` struct, event loop, tab rendering, data fetching |
 
 ## Interfaces / Contracts
 
@@ -168,12 +168,12 @@ impl App {
 |-------|-------------|----------|
 | Unit | Tab switching, key dispatch, scroll state | Mock `Engine`, direct `App::handle_event()` calls |
 | Unit | Data struct assembly from Engine responses | Pure function tests for data mappers |
-| Integration | `forge tui` subcommand wiring | `cargo check` that enum variant and dispatch compile |
-| E2E | Full TUI launch (smoke test) | Manual: launch `forge tui`, verify 4 tabs, quit with `q` |
+| Integration | `anvil tui` subcommand wiring | `cargo check` that enum variant and dispatch compile |
+| E2E | Full TUI launch (smoke test) | Manual: launch `anvil tui`, verify 4 tabs, quit with `q` |
 
 ## Migration / Rollout
 
-No migration required. Additive change — new subcommand, new crate. Rollback: delete `forge-tui` from workspace and CLI.
+No migration required. Additive change — new subcommand, new crate. Rollback: delete `anvil-tui` from workspace and CLI.
 
 ## Open Questions
 

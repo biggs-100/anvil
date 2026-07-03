@@ -1,4 +1,4 @@
-package forgesdk
+package anvilsdk
 
 import (
 	"context"
@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-// TestNewForge verifies the forge subprocess can be spawned.
-// Requires forge to be on $PATH.
-func TestNewForge(t *testing.T) {
-	client, err := NewForge()
+// TestNewAnvil verifies the anvil subprocess can be spawned.
+// Requires anvil to be on $PATH.
+func TestNewAnvil(t *testing.T) {
+	client, err := NewAnvil()
 	if err != nil {
-		t.Skipf("forge not on PATH or not built: %v", err)
+		t.Skipf("anvil not on PATH or not built: %v", err)
 	}
 	defer client.Close()
 
@@ -30,9 +30,9 @@ func TestNewForge(t *testing.T) {
 
 // TestSync verifies the sync method works.
 func TestSync(t *testing.T) {
-	client, err := NewForge()
+	client, err := NewAnvil()
 	if err != nil {
-		t.Skipf("forge not on PATH: %v", err)
+		t.Skipf("anvil not on PATH: %v", err)
 	}
 	defer client.Close()
 
@@ -48,16 +48,16 @@ func TestSync(t *testing.T) {
 
 // TestEnvRoundtrip verifies env_set, env_get, env_unset.
 func TestEnvRoundtrip(t *testing.T) {
-	client, err := NewForge()
+	client, err := NewAnvil()
 	if err != nil {
-		t.Skipf("forge not on PATH: %v", err)
+		t.Skipf("anvil not on PATH: %v", err)
 	}
 	defer client.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	key := "FORGE_SDK_GO_TEST"
+	key := "ANVIL_SDK_GO_TEST"
 	value := "test_value_go"
 
 	// Set
@@ -82,9 +82,9 @@ func TestEnvRoundtrip(t *testing.T) {
 
 // TestContextCancellation verifies cancellation works.
 func TestContextCancellation(t *testing.T) {
-	client, err := NewForge()
+	client, err := NewAnvil()
 	if err != nil {
-		t.Skipf("forge not on PATH: %v", err)
+		t.Skipf("anvil not on PATH: %v", err)
 	}
 	defer client.Close()
 

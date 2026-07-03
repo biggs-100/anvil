@@ -1,4 +1,4 @@
-# Design: Forge Diagnostic Engine
+# Design: Anvil Diagnostic Engine
 
 ## Technical Approach
 Implement a parallelized DAG-based diagnostic engine using `tokio` to execute 11 concurrent checks. The engine calculates a consolidated health score, filters findings to prevent secret leaks, and delegates recovery options to a decoupled `RepairPlanner`.
@@ -31,10 +31,10 @@ graph TD
 
 | File | Action | Description |
 |------|--------|-------------|
-| `crates/forge-core/src/diagnostics/mod.rs` | Create | Traits, types, concrete checks, and `DiagnosticEngine`. |
-| `crates/forge-core/src/lib.rs` | Modify | Export `diagnostics` module and domain models. |
-| `crates/forge-core/src/operations/mod.rs` | Modify | Re-route `RepairOperation` to use the new `RepairPlanner`. |
-| `crates/forge-cli/src/main.rs` | Modify | Route CLI subcommands (`doctor`, `ai doctor`) to the new diagnostics framework. |
+| `crates/anvil-core/src/diagnostics/mod.rs` | Create | Traits, types, concrete checks, and `DiagnosticEngine`. |
+| `crates/anvil-core/src/lib.rs` | Modify | Export `diagnostics` module and domain models. |
+| `crates/anvil-core/src/operations/mod.rs` | Modify | Re-route `RepairOperation` to use the new `RepairPlanner`. |
+| `crates/anvil-cli/src/main.rs` | Modify | Route CLI subcommands (`doctor`, `ai doctor`) to the new diagnostics framework. |
 
 ## Interfaces / Contracts
 
@@ -103,8 +103,8 @@ pub struct DiagnosticReport {
 
 ## The 11 Concrete Checks
 
-1. **ManifestCheck** (`FG001`/`FG002`): Reads `forge.toml`. Critical error aborts downstream lock, runtime, environment, profile, and shim checks.
-2. **LockCheck** (`FG003`/`FG004`): Parses `forge.lock`. Outdated warning or missing error. Depends on ManifestCheck.
+1. **ManifestCheck** (`FG001`/`FG002`): Reads `anvil.toml`. Critical error aborts downstream lock, runtime, environment, profile, and shim checks.
+2. **LockCheck** (`FG003`/`FG004`): Parses `anvil.lock`. Outdated warning or missing error. Depends on ManifestCheck.
 3. **RuntimeCheck** (`FG005`/`FG006`): Verifies runtime extraction folders. Depends on LockCheck.
 4. **HashCheck** (`FG007`): Computes and compares archive SHA-256 for all runtimes during `Deep` mode. Skipped in `Fast` mode. Depends on RuntimeCheck.
 5. **SecretCheck** (`FG008`): Validates format and connectivity of secrets/keyrings.
@@ -113,7 +113,7 @@ pub struct DiagnosticReport {
 8. **ShimCheck** (`FG011`): Validates shim file layouts on disk. Depends on LockCheck.
 9. **CacheCheck**: Checks cache disk usage.
 10. **ProviderCheck**: Pings remote toolchain registries (Deep mode only).
-11. **ProfileCheck**: Validates active profiles inside `forge.toml`. Depends on ManifestCheck.
+11. **ProfileCheck**: Validates active profiles inside `anvil.toml`. Depends on ManifestCheck.
 
 ## Concurrency & Short-Circuit Logic
 The `DiagnosticEngine` maps checks to a dependency graph. Downstream checks execute as soon as all dependency tasks successfully complete without CRITICAL or blocking errors. If an upstream dependency fails (e.g., ManifestCheck returns CRITICAL), dependent nodes are immediately flagged as `Skipped` with a warning indicating the upstream blocker, preventing cascade failures.
@@ -125,9 +125,9 @@ Starts at `100`. Deduct `30` per `CRITICAL`, `15` per `ERROR`, and `5` per `WARN
 `RepairPlanner::plan(report: &DiagnosticReport) -> RepairPlan` maps findings containing `QuickFixAction` to a list of sequential, human-readable commands or transactional operations. Execution runs inside `RepairOperation` with transaction rollbacks. Dry-runs output the planner's proposed `RepairPlan` without executing.
 
 ## CLI & AI Doctor (Zero Secret Leakage)
-The CLI exposes `forge doctor [--deep] [--json]` and `forge ai doctor`.
+The CLI exposes `anvil doctor [--deep] [--json]` and `anvil ai doctor`.
 Zero secret leakage is enforced by:
-1. `forge ai doctor` invokes serialization on the report.
+1. `anvil ai doctor` invokes serialization on the report.
 2. The custom `Serialize` implementation for `QuickFixAction` or `Finding` checks any secrets or env values (e.g., in `SetEnvVar`) and replaces values with `"[MASKED]"`:
 ```rust
 impl serde::Serialize for QuickFixAction {
@@ -140,4 +140,4 @@ impl serde::Serialize for QuickFixAction {
 
 ## Testing Strategy
 - **Unit**: Verify HealthScore calculations, Tokio DAG scheduler order/short-circuits, and `[MASKED]` JSON serializer logic.
-- **Integration**: Validate `forge doctor` outputs, execution of dry-runs, and exit status matching.
+- **Integration**: Validate `anvil doctor` outputs, execution of dry-runs, and exit status matching.

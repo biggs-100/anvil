@@ -1,15 +1,15 @@
-# Design: Forge Policy Engine
+# Design: Anvil Policy Engine
 
 ## Technical Approach
 
-Add a `policy` module inside `forge-core` that parses an optional `[policy]` section from `forge.toml` and gates operations via pre-flight checks. The `PolicyEngine` is a stateless evaluator — it takes config + snapshot of current state, returns all violations at once. CLI handlers call it before Up/Sync/Run/Shell, passing the required context (lockfile state, health score, active profile, active runtimes). No changes to operations themselves.
+Add a `policy` module inside `anvil-core` that parses an optional `[policy]` section from `anvil.toml` and gates operations via pre-flight checks. The `PolicyEngine` is a stateless evaluator — it takes config + snapshot of current state, returns all violations at once. CLI handlers call it before Up/Sync/Run/Shell, passing the required context (lockfile state, health score, active profile, active runtimes). No changes to operations themselves.
 
 ## Architecture Decisions
 
 | Decision | Alternatives | Choice & Rationale |
 |----------|-------------|--------------------|
-| Module location | Separate crate `forge-policy-engine` | **Module in forge-core** (`policy.rs`). Same pattern as `diagnostics`, `operations`. No new dependency graph edge. Direct access to manifest types. |
-| PolicyConfig placement | Inline fields in ForgeConfig | **Separate `PolicyConfig` struct** ref'd as `policy: Option<PolicyConfig>`. Follows existing `ConfigSection` / `ProfileSection` pattern. Clean `#[serde(default)]` on the Option. |
+| Module location | Separate crate `forge-policy-engine` | **Module in anvil-core** (`policy.rs`). Same pattern as `diagnostics`, `operations`. No new dependency graph edge. Direct access to manifest types. |
+| PolicyConfig placement | Inline fields in AnvilConfig | **Separate `PolicyConfig` struct** ref'd as `policy: Option<PolicyConfig>`. Follows existing `ConfigSection` / `ProfileSection` pattern. Clean `#[serde(default)]` on the Option. |
 | Check method shape | Single `check(op_kind)` with flags | **Three methods** — `check_before_up`, `check_before_sync`, `check_before_run`. Each takes only the state it needs. Clearer at call sites and self-documenting. |
 | Violation return | Return first violation only | **Return `Vec<PolicyViolation>`**. Spec requires ALL violations. Caller iterates and prints all before aborting. |
 | `minimum_health` coupling | PolicyEngine calls DiagnosticEngine directly | **PolicyEngine accepts `health_score: u8`**. Caller evaluates diagnostic health and passes the score. Keeps PolicyEngine stateless and testable without DiagnosticEngine dependency. |
@@ -18,7 +18,7 @@ Add a `policy` module inside `forge-core` that parses an optional `[policy]` sec
 ## Data Flow
 
 ```
-forge.toml ──serde──→ ForgeConfig
+anvil.toml ──serde──→ AnvilConfig
                           │
                     policy: Option<PolicyConfig>
                           │
@@ -39,10 +39,10 @@ forge.toml ──serde──→ ForgeConfig
 
 | File | Action | Description |
 |------|--------|-------------|
-| `crates/forge-core/src/policy.rs` | Create | `PolicyConfig`, `PolicyEngine`, `PolicyViolation`, check methods |
-| `crates/forge-core/src/manifest.rs` | Modify | Add `policy: Option<PolicyConfig>` to `ForgeConfig` |
-| `crates/forge-core/src/lib.rs` | Modify | Re-export `pub mod policy` and key types |
-| `crates/forge-cli/src/main.rs` | Modify | Add policy checks before `Up`, `Sync`, `Run`, `Shell` arms |
+| `crates/anvil-core/src/policy.rs` | Create | `PolicyConfig`, `PolicyEngine`, `PolicyViolation`, check methods |
+| `crates/anvil-core/src/manifest.rs` | Modify | Add `policy: Option<PolicyConfig>` to `ForgeConfig` |
+| `crates/anvil-core/src/lib.rs` | Modify | Re-export `pub mod policy` and key types |
+| `crates/anvil-cli/src/main.rs` | Modify | Add policy checks before `Up`, `Sync`, `Run`, `Shell` arms |
 
 ## Interfaces / Contracts
 
@@ -101,7 +101,7 @@ impl PolicyEngine {
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct ForgeConfig {
+pub struct AnvilConfig {
     pub runtimes: HashMap<String, String>,
     pub workspace_id: Option<String>,
     pub config: Option<ConfigSection>,
@@ -117,7 +117,7 @@ pub struct ForgeConfig {
 |-------|------|----------|
 | Unit | Each rule in isolation (policy_config defaults, clamping, violation triggers) | Pure function tests — construct `PolicyEngine` with known config, call check, assert violations |
 | Unit | `PolicyConfig` serde (absent section, full section, unknown keys, invalid value) | Round-trip through `toml::from_str` / `toml::to_string` |
-| Integration | `PolicyEngine` wired in CLI dispatch | Test that missing forge.toml skips checks; test that violations print and abort |
+| Integration | `PolicyEngine` wired in CLI dispatch | Test that missing anvil.toml skips checks; test that violations print and abort |
 | Edge | `minimum_health` clamping (0, 100, 150) | Assert value is clamped to valid range with warning |
 
 ## Migration / Rollout

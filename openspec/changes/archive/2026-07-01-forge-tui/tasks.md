@@ -1,4 +1,4 @@
-# Tasks: forge-tui — Terminal Dashboard
+# Tasks: anvil-tui — Terminal Dashboard
 
 ## Review Workload Forecast
 
@@ -24,14 +24,14 @@ Chain strategy: size-exception
 
 ## Phase 1: Project Setup
 
-- [x] 1.1 Add `"crates/forge-tui"` to workspace `members` in root `Cargo.toml`
-- [x] 1.2 Create `crates/forge-tui/Cargo.toml` with ratatui, crossterm, tokio, forge-core
-- [x] 1.3 Add `forge-tui` dep to `crates/forge-cli/Cargo.toml`
-- [x] 1.4 Add `Tui` variant to `Commands` enum + dispatch in `crates/forge-cli/src/main.rs`
+- [x] 1.1 Add `"crates/anvil-tui"` to workspace `members` in root `Cargo.toml`
+- [x] 1.2 Create `crates/anvil-tui/Cargo.toml` with ratatui, crossterm, tokio, anvil-core
+- [x] 1.3 Add `anvil-tui` dep to `crates/anvil-cli/Cargo.toml`
+- [x] 1.4 Add `Tui` variant to `Commands` enum + dispatch in `crates/anvil-cli/src/main.rs`
 
 ## Phase 2: App Shell
 
-- [x] 2.1 Create `crates/forge-tui/src/lib.rs` with `Tab` enum, `App` struct, data structs
+- [x] 2.1 Create `crates/anvil-tui/src/lib.rs` with `Tab` enum, `App` struct, data structs
 - [x] 2.2 Implement terminal setup/teardown: crossterm raw mode, alternate screen, panic restore
 - [x] 2.3 Implement event loop: crossterm poll, key dispatch, Tokio 5s interval for auto-refresh
 - [x] 2.4 Implement tab switching (`1`–`4`), quit (`q`/Ctrl+C), scroll (`j`/`k`/arrows/Home/End)
@@ -62,4 +62,4 @@ Chain strategy: size-exception
 
 - [x] 7.1 Unit tests for tab switching, key dispatch, scroll state via mock Engine
 - [x] 7.2 Unit tests for data struct assembly from Engine responses
-- [x] 7.3 Compile-check `forge tui` subcommand wiring (`cargo check`)
+- [x] 7.3 Compile-check `anvil tui` subcommand wiring (`cargo check`)

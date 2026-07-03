@@ -1,15 +1,15 @@
-# Design: Forge Explain Everything
+# Design: Anvil Explain Everything
 
 ## Technical Approach
 
-Refactor `Commands::Explain` from a flat `{ runtime: String }` variant into a subcommand enum `ExplainCommands` with 5 variants: `Runtime`, `Operation`, `Context`, `Config`, `Profile`. Each variant maps to existing Engine/ContextEngine methods — no new data sources backend needed. All output follows the existing `{:<20} | {:<50}` table format from `print_explain_table`. The bare `forge explain <name>` continues to work via clap defaulting the first positional variant.
+Refactor `Commands::Explain` from a flat `{ runtime: String }` variant into a subcommand enum `ExplainCommands` with 5 variants: `Runtime`, `Operation`, `Context`, `Config`, `Profile`. Each variant maps to existing Engine/ContextEngine methods — no new data sources backend needed. All output follows the existing `{:<20} | {:<50}` table format from `print_explain_table`. The bare `anvil explain <name>` continues to work via clap defaulting the first positional variant.
 
 ## Architecture Decisions
 
 | Decision | Option | Tradeoff | Choice |
 |----------|--------|----------|--------|
 | CLI shape | (a) Subcommand enum, (b) Flat args with string dispatch | (a) Type-safe, automatic help text, no manual parsing; (b) Less code churn | **(a)** — matches existing patterns (`AiCommands`, `EnvCommands`) |
-| Backward compat | (a) `Runtime` as first variant with `{ name }`, (b) Manual prefix match | (a) clap maps `forge explain foo` to `Runtime { name: "foo" }` automatically; (b) Fragile and non-standard | **(a)** — clap's positional arg in first variant handles this |
+| Backward compat | (a) `Runtime` as first variant with `{ name }`, (b) Manual prefix match | (a) clap maps `anvil explain foo` to `Runtime { name: "foo" }` automatically; (b) Fragile and non-standard | **(a)** — clap's positional arg in first variant handles this |
 | Context output | (a) Parse `ForgeContext` fields into table rows, (b) Dump raw JSON | (a) Consistent UX with other explain output; (b) Cheap but breaks pattern | **(a)** — extract provider names, masked values, limits |
 | Config output | (a) Render `ResolvedEnvironment.vars` + `metadata[].source` as table, (b) Key=value lines | (a) Shows the *why* behind each value (source level, interpolation); (b) Hides ValueSource info | **(a)** — ValueSource is the valuable insight |
 
@@ -28,8 +28,8 @@ CLI parse → Commands::Explain { command }
     │
     ├── Context
     │   ├─ ContextEngine::new()
-    │   ├─ .register(...) 6 providers (same as `forge context`)
-    │   ├─ .query(&options) → ForgeContext
+    │   ├─ .register(...) 6 providers (same as `anvil context`)
+    │   ├─ .query(&options) → AnvilContext
     │   └─ print_context_table(context)
     │
     ├── Config
@@ -37,7 +37,7 @@ CLI parse → Commands::Explain { command }
     │   └─ print_config_table(vars, metadata)
     │
     └── Profile
-        ├─ ForgeConfig.profile → profile list
+        ├─ AnvilConfig.profile → profile list
         ├─ get_active_profile() → name
         ├─ Engine::env_resolve(Some(&name)) → ResolvedEnvironment
         └─ print_profile_table(name, env_vars, precedence)
@@ -47,7 +47,7 @@ CLI parse → Commands::Explain { command }
 
 | File | Action | Description |
 |------|--------|-------------|
-| `crates/forge-cli/src/main.rs` | Modify | Replace `Explain { runtime }` with `Explain { command: ExplainCommands }` + 5 subcommand variants + 4 new print helpers |
+| `crates/anvil-cli/src/main.rs` | Modify | Replace `Explain { runtime }` with `Explain { command: ExplainCommands }` + 5 subcommand variants + 4 new print helpers |
 
 ## Interfaces / Contracts
 
@@ -82,13 +82,13 @@ fn print_profile_table(active_profile: &str, config: &ForgeConfig, resolved: &Re
 | Layer | What to Test | Approach |
 |-------|-------------|----------|
 | Unit | Print helpers formatting | Snapshot table strings with known inputs |
-| Integration | Backward compat (`forge explain node`) | Run via clap test harness, compare output |
+| Integration | Backward compat (`anvil explain node`) | Run via clap test harness, compare output |
 | Integration | Each subcommand dispatches correctly | `--help` shows 5 subcommands; each exits 0 |
-| Integration | `forge explain operation <unknown>` | Expects non-zero exit + error message |
+| Integration | `anvil explain operation <unknown>` | Expects non-zero exit + error message |
 
 ## Migration / Rollout
 
-No migration required. Binary change only — `Explain` struct serialization is not persisted. The flat `runtime: String` variant becomes a subcommand; all existing callers of `forge explain <runtime>` continue to work unchanged.
+No migration required. Binary change only — `Explain` struct serialization is not persisted. The flat `runtime: String` variant becomes a subcommand; all existing callers of `anvil explain <runtime>` continue to work unchanged.
 
 ## Open Questions
 

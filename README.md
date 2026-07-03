@@ -1,24 +1,24 @@
-# Forge
+# Anvil
 
-[![CI](https://github.com/biggs-100/forge/actions/workflows/ci.yml/badge.svg)](https://github.com/biggs-100/forge/actions/workflows/ci.yml)
+[![CI](https://github.com/biggs-100/anvil/actions/workflows/ci.yml/badge.svg)](https://github.com/biggs-100/anvil/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Create, run, inspect, and share reproducible development environments — for humans, tools, and AI agents.**
 
-Forge is a platform that treats development environments as first-class, reproducible artifacts. Not a package manager. Not a container runtime. A **context platform** that manages runtimes, configuration, secrets, diagnostics, and environment state through a unified engine and a stable public API.
+Anvil is a platform that treats development environments as first-class, reproducible artifacts. Not a package manager. Not a container runtime. A **context platform** that manages runtimes, configuration, secrets, diagnostics, and environment state through a unified engine and a stable public API.
 
 ---
 
-## Why Forge?
+## Why Anvil?
 
 Development environments today are fragile. A `~/.bashrc` here, a Homebrew install there, a Dockerfile that worked last week, a Node version manager that doesn't know about your Python — and forget about sharing any of it with an AI agent.
 
-Forge solves this by providing:
+Anvil solves this by providing:
 
-- **Reproducible runtime toolchains** — declare `node = "20.11.0"` in `forge.toml`, get the exact binary with verified checksums.
+- **Reproducible runtime toolchains** — declare `node = "20.11.0"` in `anvil.toml`, get the exact binary with verified checksums.
 - **Unified configuration and secrets** — environment variables, profiles, and encrypted secrets managed through a single engine.
 - **Built-in diagnostics** — health checks, repair planning, and explainability for every component.
-- **Context extraction** — a stable protocol (FCP) that surfaces project state to humans, CLI tools, IDEs, and AI agents in a structured, secure format.
+- **Context extraction** — a stable protocol (ACP) that surfaces project state to humans, CLI tools, IDEs, and AI agents in a structured, secure format.
 - **No lock-in** — everything works locally, offline-first, with no daemon, no registry dependency, and no vendor.
 
 ---
@@ -27,41 +27,41 @@ Forge solves this by providing:
 
 ```bash
 # Install from source (Rust required)
-cargo install --git https://github.com/biggs-100/forge.git forge-cli
+cargo install --git https://github.com/biggs-100/anvil.git anvil-cli
 
 # Or clone and build
-git clone https://github.com/biggs-100/forge.git
-cd forge
+git clone https://github.com/biggs-100/anvil.git
+cd anvil
 cargo build --release
-./target/release/forge-cli --help
+./target/release/anvil-cli --help
 
 # Initialize in your project
 cd my-project
-forge init
+anvil init
 
-# Declare runtimes in forge.toml
-cat >> forge.toml <<EOF
+# Declare runtimes in anvil.toml
+cat >> anvil.toml <<EOF
 [runtimes]
 node = "20.11.0"
 python = "3.12.0"
 EOF
 
 # Resolve and download
-forge up
+anvil up
 
 # Use it
-forge run node --version   # -> v20.11.0
-forge run python --version # -> Python 3.12.0
+anvil run node --version   # -> v20.11.0
+anvil run python --version # -> Python 3.12.0
 
 # Spawn a subshell in the isolated environment
-forge shell
+anvil shell
 ```
 
 ---
 
 ## Architecture
 
-Forge's architecture is organized into **stable core** (frozen at 1.0) and **extensible ecosystem** layers.
+Anvil's architecture is organized into **stable core** (frozen at 1.0) and **extensible ecosystem** layers.
 
 ### Core (Stable — frozen at v1.0)
 
@@ -70,7 +70,7 @@ Forge's architecture is organized into **stable core** (frozen at 1.0) and **ext
 | **Runtime Engine** | ✅ Stable | Resolve, download, verify checksums, extract, cache, and shim any runtime |
 | **Lifecycle Engine** | ✅ Stable | State machine: uninitialized → ready, with plan/apply/rollback semantics |
 | **Operations Layer** | ✅ Stable | Atomic operations (init, resolve, lock, sync, install, clean, gc) with transaction safety |
-| **Configuration Engine** | ✅ Stable | Parse `forge.toml`, resolve profiles, interpolate environment variables |
+| **Configuration Engine** | ✅ Stable | Parse `anvil.toml`, resolve profiles, interpolate environment variables |
 | **Secrets Engine** | ✅ Stable | OS keyring with local fallback, AES-GCM encryption, import/export |
 | **Diagnostic Engine** | ✅ Stable | Health checks, repair planner, explainability, quick-fix suggestions |
 | **Context Engine** | ✅ Stable | Aggregate runtimes, config, diagnostics, workspace, env, secrets metadata into a unified schema |
@@ -79,7 +79,7 @@ Forge's architecture is organized into **stable core** (frozen at 1.0) and **ext
 
 ### Ecosystem (Complete)
 
-Beyond the stable core, Forge's ecosystem is fully built:
+Beyond the stable core, Anvil's ecosystem is fully built:
 
 | Component | Status | Description |
 |-----------|--------|-------------|
@@ -88,14 +88,14 @@ Beyond the stable core, Forge's ecosystem is fully built:
 | **MCP Server** | ✅ Complete | Full Model Context Protocol with resources, tools, prompts, notifications |
 | **IDE Integration** | ✅ Complete | VS Code extension + Neovim plugin (MCP-based) |
 | **TUI** | ✅ Complete | Terminal dashboard with Ratatui (4 views, keyboard-driven) |
-| **Bundle** | ✅ Complete | `forge bundle` — deterministic tar+gzip with SHA-256 verification |
-| **Snapshot** | ✅ Complete | `forge snapshot` — save/restore full environment state |
+| **Bundle** | ✅ Complete | `anvil bundle` — deterministic tar+gzip with SHA-256 verification |
+| **Snapshot** | ✅ Complete | `anvil snapshot` — save/restore full environment state |
 | **Policy Engine** | ✅ Complete | Declarative pre-flight rules (network, hashes, health, profiles) |
 | **Explain Everything** | ✅ Complete | 5 explain subcommands (runtime, operation, context, config, profile) |
 | **Benchmark** | ✅ Complete | 5 performance metrics with table and JSON output |
-| **Forge Registry** | ✅ Complete | FRRS open format + remote registry client |
-| **Public Specs** | ✅ Complete | FCP, FMS, FRRS — open, versioned, frozen specifications |
-| **Supply Chain Security** | ✅ Complete | GPG registry signing, pin-by-hash, forge audit, SHA-256 verification |
+| **Registry** | ✅ Complete | ARRS open format + remote registry client |
+| **Public Specs** | ✅ Complete | ACP, AMS, ARRS — open, versioned, frozen specifications |
+| **Supply Chain Security** | ✅ Complete | GPG registry signing, pin-by-hash, anvil audit, SHA-256 verification |
 
 ---
 
@@ -103,69 +103,69 @@ Beyond the stable core, Forge's ecosystem is fully built:
 
 ```text
 # Core lifecycle
-forge init      Initialize forge in the current directory
-forge resolve   Resolve runtime versions
-forge lock      Generate or update forge.lock
-forge sync      Sync runtimes from lockfile
-forge up        Resolve + lock + sync (all-in-one)
-forge run       Execute a command inside the activated environment
-forge shell     Spawn an interactive subshell
-forge status    Show lifecycle status
-forge inspect   Inspect environment health
-forge repair    Repair corrupted or missing runtimes
-forge plan      Show proposed changes plan
-forge clean     Clean local cache
-forge gc        Garbage collect unused runtimes
+anvil init      Initialize anvil in the current directory
+anvil resolve   Resolve runtime versions
+anvil lock      Generate or update anvil.lock
+anvil sync      Sync runtimes from lockfile
+anvil up        Resolve + lock + sync (all-in-one)
+anvil run       Execute a command inside the activated environment
+anvil shell     Spawn an interactive subshell
+anvil status    Show lifecycle status
+anvil inspect   Inspect environment health
+anvil repair    Repair corrupted or missing runtimes
+anvil plan      Show proposed changes plan
+anvil clean     Clean local cache
+anvil gc        Garbage collect unused runtimes
 
 # Context & diagnostics
-forge context   Export project context (JSON, Markdown, MCP, agent-adapted)
-forge doctor    Run diagnostics and health checks
-forge explain   Explain subcommands: runtime, operation, context, config, profile
-forge which     Locate a runtime binary
+anvil context   Export project context (JSON, Markdown, MCP, agent-adapted)
+anvil doctor    Run diagnostics and health checks
+anvil explain   Explain subcommands: runtime, operation, context, config, profile
+anvil which     Locate a runtime binary
 
 # Supply chain security
-forge audit     Show download/install history with checksums
+anvil audit     Show download/install history with checksums
 
 # Observability
-forge history   Show past operations
-forge trace     Show operation hierarchy and durations
-forge events    Stream live operation events
+anvil history   Show past operations
+anvil trace     Show operation hierarchy and durations
+anvil events    Stream live operation events
 
 # Configuration & secrets
-forge env       Manage environment variables
-forge secret    Manage secure credentials
+anvil env       Manage environment variables
+anvil secret    Manage secure credentials
 
 # Distribution
-forge bundle           Package project into a portable .forge archive
-forge bundle restore   Restore a project from a .forge archive
+anvil bundle           Package project into a portable .anvil archive
+anvil bundle restore   Restore a project from a .anvil archive
 
 # State management
-forge snapshot                Save current environment state
-forge snapshot list           List available snapshots
-forge snapshot restore        Restore environment from a snapshot
+anvil snapshot                Save current environment state
+anvil snapshot list           List available snapshots
+anvil snapshot restore        Restore environment from a snapshot
 
 # AI & tooling
-forge ai        AI-agent-specific context and diagnostics
-forge mcp       MCP server (Model Context Protocol) over stdio
-forge jsonrpc   JSON-RPC 2.0 server for SDK integration
+anvil ai        AI-agent-specific context and diagnostics
+anvil mcp       MCP server (Model Context Protocol) over stdio
+anvil jsonrpc   JSON-RPC 2.0 server for SDK integration
 
 # Advanced
-forge tui       Terminal dashboard (Ratatui)
-forge benchmark Performance benchmarks
-forge registry  Refresh remote registry cache
+anvil tui       Terminal dashboard (Ratatui)
+anvil benchmark Performance benchmarks
+anvil registry  Refresh remote registry cache
 ```
 
 ---
 
 ## Public Specifications
 
-Forge is more than an implementation. It defines three open specifications:
+Anvil is more than an implementation. It defines three open specifications:
 
 | Spec | Description | Document |
 |------|-------------|----------|
-| **FCP** | Forge Context Protocol v1 — JSON-RPC protocol for extracting dev environment context | [`docs/specs/fcp-spec.md`](docs/specs/fcp-spec.md) |
-| **FMS** | Forge Manifest Specification v1 — forge.toml, forge.lock, profiles, precedence | [`docs/specs/fms-spec.md`](docs/specs/fms-spec.md) |
-| **FRRS** | Forge Runtime Registry Specification — open format for toolchain metadata | `openspec/specs/frrs-spec/spec.md` |
+| **ACP** | Anvil Context Protocol v1 — JSON-RPC protocol for extracting dev environment context | [`docs/specs/acp-spec.md`](docs/specs/acp-spec.md) |
+| **AMS** | Anvil Manifest Specification v1 — anvil.toml, anvil.lock, profiles, precedence | [`docs/specs/ams-spec.md`](docs/specs/ams-spec.md) |
+| **ARRS** | Anvil Runtime Registry Specification — open format for toolchain metadata | `openspec/specs/arrs-spec/spec.md` |
 
 These specifications are designed to enable interoperability without reimplementing the core.
 
@@ -179,16 +179,16 @@ cargo test
 cargo run -- help
 ```
 
-Forge is a Rust workspace with six crates:
+Anvil is a Rust workspace with six crates:
 
 | Crate | Role |
 |-------|------|
-| `forge-core` | Engine — all core logic, traits, providers, API |
-| `forge-cli` | CLI — command parsing and user-facing interface |
-| `forge-sdk` | Official Rust SDK (typed Engine wrapper) |
-| `forge-tui` | Terminal dashboard (Ratatui) |
-| `forge-drivers` | Standard command runners |
-| `forge-shim` | Runtime shim binary (<5ms overhead) |
+| `anvil-core` | Engine — all core logic, traits, providers, API |
+| `anvil-cli` | CLI — command parsing and user-facing interface |
+| `anvil-sdk` | Official Rust SDK (typed Engine wrapper) |
+| `anvil-tui` | Terminal dashboard (Ratatui) |
+| `anvil-drivers` | Standard command runners |
+| `anvil-shim` | Runtime shim binary (<5ms overhead) |
 
 ### SDKs & Integrations
 

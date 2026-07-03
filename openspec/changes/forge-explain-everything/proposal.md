@@ -1,16 +1,16 @@
-# Proposal: Forge Explain Everything
+# Proposal: Anvil Explain Everything
 
 ## Intent
 
-`forge explain <runtime>` currently shows runtime version, state, cache and shim details. Users need the same visibility into operations, context extraction, resolved configuration, and profile overlays — all data already exists in the Engine/ContextEngine/resolver layers but has no CLI surface. This change extends explain to cover those four domains without adding new Engine API methods.
+`anvil explain <runtime>` currently shows runtime version, state, cache and shim details. Users need the same visibility into operations, context extraction, resolved configuration, and profile overlays — all data already exists in the Engine/ContextEngine/resolver layers but has no CLI surface. This change extends explain to cover those four domains without adding new Engine API methods.
 
 ## Scope
 
 ### In Scope
-- `forge explain operation <id>` — operation detail with events and trace tree
-- `forge explain context` — provider summary, masked values, workspace limits
-- `forge explain config` — resolved env vars with source levels and interpolation
-- `forge explain profile` — active profile env, precedence chain
+- `anvil explain operation <id>` — operation detail with events and trace tree
+- `anvil explain context` — provider summary, masked values, workspace limits
+- `anvil explain config` — resolved env vars with source levels and interpolation
+- `anvil explain profile` — active profile env, precedence chain
 - Refactor `Commands::Explain` from flat `{runtime}` to subcommand enum preserving existing behavior
 - Structured table output matching `print_explain_table` / `print_history_table` style
 
@@ -24,7 +24,7 @@
 ## Capabilities
 
 ### New Capabilities
-None — all data sources exist in Engine, ContextEngine, resolver, and ForgeConfig.
+None — all data sources exist in Engine, ContextEngine, resolver, and AnvilConfig.
 
 ### Modified Capabilities
 - `cli-commands-lifecycle`: explain subcommands (runtime, operation, context, config, profile) added as new command entries with input/output contracts. Req table extended from 13 to 17 commands.
@@ -43,15 +43,15 @@ None — all data sources exist in Engine, ContextEngine, resolver, and ForgeCon
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `crates/forge-cli/src/main.rs` | Modified | Explain refactored to subcommands, 4 new print helpers |
-| `crates/forge-core/src/api/v1.rs` | None | No new methods needed |
-| `crates/forge-core/src/resolver.rs` | Read | Level/precedence data reused |
+| `crates/anvil-cli/src/main.rs` | Modified | Explain refactored to subcommands, 4 new print helpers |
+| `crates/anvil-core/src/api/v1.rs` | None | No new methods needed |
+| `crates/anvil-core/src/resolver.rs` | Read | Level/precedence data reused |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| None — read-only, no new state, backward-compatible CLI | Low | Explain subcommand preserves `forge explain <runtime>` as default |
+| None — read-only, no new state, backward-compatible CLI | Low | Explain subcommand preserves `anvil explain <runtime>` as default |
 
 ## Rollback Plan
 
@@ -63,8 +63,8 @@ None — all data sources are in the same crate workspace.
 
 ## Success Criteria
 
-- [ ] `forge explain operation <id>` shows op ID, runtime, duration, status, event phases
-- [ ] `forge explain context` shows provider names and collected fields
-- [ ] `forge explain config` shows each var with source level and interpolated value
-- [ ] `forge explain profile` shows active profile and precedence chain
-- [ ] `forge explain <runtime>` output unchanged
+- [ ] `anvil explain operation <id>` shows op ID, runtime, duration, status, event phases
+- [ ] `anvil explain context` shows provider names and collected fields
+- [ ] `anvil explain config` shows each var with source level and interpolated value
+- [ ] `anvil explain profile` shows active profile and precedence chain
+- [ ] `anvil explain <runtime>` output unchanged

@@ -2,27 +2,27 @@
 
 ### Current State
 Currently, `forge` loads configuration in a very simple manner:
-1. Manifest loading parses only active runtimes from `forge.toml` via `load_config`.
-2. Environment variables are parsed from a local `forge.env` file via `parse_env_file`.
+1. Manifest loading parses only active runtimes from `anvil.toml` via `load_config`.
+2. Environment variables are parsed from a local `anvil.env` file via `parse_env_file`.
 3. Secret detection is purely heuristic-based (`is_secret` checking if keys contain "secret", "token", etc.), masking them only for AI context printing.
 4. There is no formalized precedence stack, no support for encrypted secrets, no OS keyring integration, and no validation of configurations (e.g., types, patterns).
 
 ---
 
 ### Affected Areas
-- `crates/forge-core/src/manifest.rs` — Update the `ForgeConfig` struct to support declarative configuration schemas under `[config.definitions]` and default environment blocks.
-- `crates/forge-core/src/environment.rs` — Implement the precedence resolver, key-value materialization engine, and validation checks.
-- `crates/forge-core/src/lib.rs` — Re-export configuration and secrets provider interfaces.
-- `crates/forge-core/src/types.rs` / New Module — Introduce `SecretProvider` and `ConfigurationProvider` traits and errors.
-- `crates/forge-core/src/secrets/` (New Crate or Module) — Implement built-in keyring-based (macOS Keychain, Windows Credential Manager, Linux Secret Service via DBus) and file-based (Argon2id + AES-256-GCM) fallback providers.
-- `crates/forge-cli/src/main.rs` — Update CLI commands (`run`, `shell`, `doctor`, `ai doctor`, `ai context`) to leverage the resolved config, perform validation, and handle set/get subcommands.
+- `crates/anvil-core/src/manifest.rs` — Update the `ForgeConfig` struct to support declarative configuration schemas under `[config.definitions]` and default environment blocks.
+- `crates/anvil-core/src/environment.rs` — Implement the precedence resolver, key-value materialization engine, and validation checks.
+- `crates/anvil-core/src/lib.rs` — Re-export configuration and secrets provider interfaces.
+- `crates/anvil-core/src/types.rs` / New Module — Introduce `SecretProvider` and `ConfigurationProvider` traits and errors.
+- `crates/anvil-core/src/secrets/` (New Crate or Module) — Implement built-in keyring-based (macOS Keychain, Windows Credential Manager, Linux Secret Service via DBus) and file-based (Argon2id + AES-256-GCM) fallback providers.
+- `crates/anvil-cli/src/main.rs` — Update CLI commands (`run`, `shell`, `doctor`, `ai doctor`, `ai context`) to leverage the resolved config, perform validation, and handle set/get subcommands.
 
 ---
 
 ### Approaches
 
 #### Approach 1: Simple Local File Decryption (Stateless File-based Encryption)
-Store all secrets in a local `forge.secrets` file encrypted with AES-256-GCM, prompting the user for a password on every command that requires them. CLI flags override file-based keys in memory.
+Store all secrets in a local `anvil.secrets` file encrypted with AES-256-GCM, prompting the user for a password on every command that requires them. CLI flags override file-based keys in memory.
 - **Pros:**
   - Simple to implement; no OS-specific keyring dependencies.
   - Highly portable (file can be committed to git if desired, though discouraged).
@@ -38,7 +38,7 @@ Introduce generic traits for configuration and secret resolution. Implement loca
   - Seamless developer experience using secure native OS Keyrings.
   - Extensible architecture supporting plugin-based providers (e.g., AWS Secrets Manager, 1Password CLI).
   - Hybrid materialization ensures excellent performance without compromising security or freshness.
-  - Strict schema-based validation via `forge doctor` and rich metadata injection into AI context.
+  - Strict schema-based validation via `anvil doctor` and rich metadata injection into AI context.
 - **Cons:**
   - High initial development overhead.
   - Adds dependency on `keyring` crate and crypto crates (`argon2`, `aes-gcm`).
@@ -52,30 +52,30 @@ Introduce generic traits for configuration and secret resolution. Implement loca
 To guarantee deterministic resolution, we define a strict precedence stack. Resolving a configuration or secret key starts at the highest priority layer and moves downward until the key is found:
 
 ```
-[Priority 1] CLI Flags (e.g. forge run --set KEY=val)
+[Priority 1] CLI Flags (e.g. anvil run --set KEY=val)
      ↓
-[Priority 2] System Environment Overrides (matching prefix FORGE_VAR_<KEY>)
+[Priority 2] System Environment Overrides (matching prefix ANVIL_VAR_<KEY>)
      ↓
-[Priority 3] Local Developer Overrides (forge.local.toml)
+[Priority 3] Local Developer Overrides (anvil.local.toml)
      ↓
-[Priority 4] Keyring / Secrets Providers (forge.secrets -> OS Keyring / External Vaults)
+[Priority 4] Keyring / Secrets Providers (anvil.secrets -> OS Keyring / External Vaults)
      ↓
-[Priority 5] Flat Environment File (forge.env)
+[Priority 5] Flat Environment File (anvil.env)
      ↓
-[Priority 6] Project Manifest (forge.toml [env] and [config] sections)
+[Priority 6] Project Manifest (anvil.toml [env] and [config] sections)
      ↓
-[Priority 7] Schema Defaults (forge.toml [config.definitions.<KEY>] default value)
+[Priority 7] Schema Defaults (anvil.toml [config.definitions.<KEY>] default value)
 ```
 
 **Conflict Resolution Rules:**
 - **Case Sensitivity:** All keys are case-sensitive.
 - **Type Coercion:** Values retrieved from CLI flags, env files, and keyrings are strings. Type coercion (e.g., string to integer or boolean) is evaluated at the end of the resolution process against the validation schema.
-- **Scope Isolation:** Secrets defined in `forge.secrets` map a key to a specific provider backend. If a key is listed in `forge.secrets` but the provider fails to fetch it, the resolver falls back to lower precedence levels (e.g. `forge.env`) rather than crashing immediately.
+- **Scope Isolation:** Secrets defined in `anvil.secrets` map a key to a specific provider backend. If a key is listed in `anvil.secrets` but the provider fails to fetch it, the resolver falls back to lower precedence levels (e.g. `anvil.env`) rather than crashing immediately.
 
 ---
 
 #### 2. Provider Architecture
-We define two core traits in `forge-core` to handle resolution:
+We define two core traits in `anvil-core` to handle resolution:
 
 ```rust
 use async_trait::async_trait;
@@ -120,10 +120,10 @@ pub trait ConfigurationProvider: Send + Sync {
 To allow third-party integrations (e.g., 1Password, AWS Secrets Manager, HashiCorp Vault), we implement a `PluginSecretProvider` that communicates with external helper binaries using a simple JSON-RPC stdin/stdout protocol:
 
 ```toml
-# Example forge.toml registry configuration
+# Example anvil.toml registry configuration
 [secrets.providers.aws]
 type = "plugin"
-command = "forge-secret-aws"
+command = "anvil-secret-aws"
 args = ["--region", "us-east-1"]
 ```
 
@@ -133,10 +133,10 @@ At runtime, the `PluginSecretProvider` spawns the registered binary, passes a JS
 
 #### 3. Environment Materialization
 We evaluated three approaches for environment variable injection:
-- **Pre-computed/Cached on Sync:** Write resolved variables to a `.forge/env.cache` file during `forge sync`.
-- **Just-in-Time (JIT) Resolution on Execution:** Resolve all variables from scratch when `forge run` or `forge shell` is called.
+- **Pre-computed/Cached on Sync:** Write resolved variables to a `.anvil/env.cache` file during `anvil sync`.
+- **Just-in-Time (JIT) Resolution on Execution:** Resolve all variables from scratch when `anvil run` or `anvil shell` is called.
 - **Hybrid (Lazy JIT + Cached Statics) [Recommended]:**
-  - **Static / Derived Variables:** (e.g., `${workspace.root}`, `${runtime.python.path}`) are resolved and cached on disk during `forge sync` since they only change when the lockfile or workspaces are modified.
+  - **Static / Derived Variables:** (e.g., `${workspace.root}`, `${runtime.python.path}`) are resolved and cached on disk during `anvil sync` since they only change when the lockfile or workspaces are modified.
   - **Standard Configs:** Cached local configuration is loaded instantly.
   - **Dynamic Secrets:** Retrieved in-memory JIT during execution. Secrets are never written to disk. The keyring lookup adds sub-millisecond overhead, and network-based providers use short-lived local in-memory caching to avoid redundant calls during nested process execution.
 
@@ -192,9 +192,9 @@ Forge handles secrets using native secure backends on supported OSes, falling ba
 flowchart TD
     A[Start Secret Request] --> B{Keyring Available?}
     B -- Yes --> C[Query OS Keychain/Credential Manager]
-    B -- No --> D{FORGE_MASTER_KEY set?}
-    D -- Yes --> E[Derive key using Argon2id + Decrypt forge.secrets]
-    D -- No --> F[Prompt user for master password -> Decrypt forge.secrets]
+    B -- No --> D{ANVIL_MASTER_KEY set?}
+    D -- Yes --> E[Derive key using Argon2id + Decrypt anvil.secrets]
+    D -- No --> F[Prompt user for master password -> Decrypt anvil.secrets]
 ```
 
 ##### OS Keyring Integration:
@@ -208,12 +208,12 @@ When keyrings are unavailable (e.g. CI, Docker):
 1. **Key Derivation (KDF):** **Argon2id** (configured with 64MB memory cost, 3 iterations, and parallelism of 4). Uses a random 16-byte salt saved alongside the payload.
 2. **Authenticated Encryption:** **AES-256-GCM** to encrypt a JSON map of secrets.
 3. **Data Integrity:** Additional Authenticated Data (AAD) binds the payload to the specific workspace ID, preventing credential reuse/copy-paste across different directories.
-4. **CI Bypass:** If `FORGE_MASTER_KEY` environment variable is present, it is consumed as the master passphrase to bypass interactive prompts.
+4. **CI Bypass:** If `ANVIL_MASTER_KEY` environment variable is present, it is consumed as the master passphrase to bypass interactive prompts.
 
 ---
 
 #### 6. Declarative Validation
-We enforce schema-based validation rules directly within the `forge.toml` manifest:
+We enforce schema-based validation rules directly within the `anvil.toml` manifest:
 
 ```toml
 [config.definitions.DATABASE_URL]
@@ -229,11 +229,11 @@ description = "Maximum database connections"
 ```
 
 ##### Integration Points:
-- **`forge doctor`:** Compares the materialized environment map against the validation rules. Returns `DoctorIssue` reports containing:
+- **`anvil doctor`:** Compares the materialized environment map against the validation rules. Returns `DoctorIssue` reports containing:
   - Missing required fields.
   - Pattern mismatches (regex failures).
   - Type conversion errors.
-- **AI Context (`forge ai context`):** Emits masked configuration maps including descriptions, required flags, and type parameters. The LLM can diagnose why an environment is unhealthy without ever seeing the raw secret values.
+- **AI Context (`anvil ai context`):** Emits masked configuration maps including descriptions, required flags, and type parameters. The LLM can diagnose why an environment is unhealthy without ever seeing the raw secret values.
 
 ---
 
@@ -244,10 +244,10 @@ description = "Maximum database connections"
 #### Date: 2026-07-01
 
 #### 1. Introduction
-This RFC proposes the design of the Forge Configuration & Secrets Platform. It establishes a secure, unified environment injection model that supports OS keyrings, client-side encryption fallbacks, and schema validation.
+This RFC proposes the design of the Anvil Configuration & Secrets Platform. It establishes a secure, unified environment injection model that supports OS keyrings, client-side encryption fallbacks, and schema validation.
 
 #### 2. Manifest Schema
-The `forge.toml` manifest is extended with a new `[config]` table containing variable definitions:
+The `anvil.toml` manifest is extended with a new `[config]` table containing variable definitions:
 
 ```toml
 [config.definitions.<KEY>]
@@ -259,7 +259,7 @@ description = "<text>"
 secret = true | false
 ```
 
-And a local `forge.local.toml` (gitignored) for developers:
+And a local `anvil.local.toml` (gitignored) for developers:
 
 ```toml
 [env]
@@ -267,11 +267,11 @@ DEBUG = "true"
 PORT = 9000
 ```
 
-#### 3. Secrets Resolution Mapping (`forge.secrets`)
-The `forge.secrets` file maps secret variables to their respective providers:
+#### 3. Secrets Resolution Mapping (`anvil.secrets`)
+The `anvil.secrets` file maps secret variables to their respective providers:
 
 ```toml
-# forge.secrets
+# anvil.secrets
 [secrets]
 STRIPE_API_KEY = { provider = "keyring" }
 DATABASE_PASSWORD = { provider = "file", key = "db_pass_encrypted" }
@@ -309,7 +309,7 @@ pub enum ValueSource {
 
 ### Risks
 - **Dependency Bloat:** Adding cryptography (Argon2, AES-GCM) and OS-keyring integration increases compilation time and binary size. *Mitigation:* Gate cryptographic modules behind optional Cargo features if slim shims are needed.
-- **CI Keyring Failures:** Headless environments often lack DBus or credential stores, which will cause commands to fail if not handled gracefully. *Mitigation:* Detect headless states automatically and automatically fall back to `Argon2id+AES` decryption using `FORGE_MASTER_KEY`.
+- **CI Keyring Failures:** Headless environments often lack DBus or credential stores, which will cause commands to fail if not handled gracefully. *Mitigation:* Detect headless states automatically and automatically fall back to `Argon2id+AES` decryption using `ANVIL_MASTER_KEY`.
 - **Performance Lag:** Dynamic secret loading via external providers (1Password, AWS) can add startup delays. *Mitigation:* Implement strict timeouts and log warning indicators if secret retrieval exceeds 200ms.
 
 ### Ready for Proposal

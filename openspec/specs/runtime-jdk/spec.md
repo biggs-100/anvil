@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the JDK toolchain provider contract for downloading, verifying, and resolving JDK releases from the Adoptium API. Provides Java compilation tooling (`java`, `javac`, `jar`) for projects using `forge.toml`.
+Define the JDK toolchain provider contract for downloading, verifying, and resolving JDK releases from the Adoptium API. Provides Java compilation tooling (`java`, `javac`, `jar`) for projects using `anvil.toml`.
 
 ## Requirements
 
@@ -10,11 +10,11 @@ Define the JDK toolchain provider contract for downloading, verifying, and resol
 |---|---|---|
 | REQ-JDK-001 | Providers MUST download pre-built JDK binaries from `api.adoptium.net` | MUST |
 | REQ-JDK-002 | Providers MUST verify downloaded archives against the published SHA-256 checksum | MUST |
-| REQ-JDK-003 | Providers MUST expose the runtime name `jdk` for use in `forge.toml` `[runtimes]` | MUST |
+| REQ-JDK-003 | Providers MUST expose the runtime name `jdk` for use in `anvil.toml` `[runtimes]` | MUST |
 | REQ-JDK-004 | Providers MUST support LTS versions (e.g., 17, 21) and current feature releases | MUST |
 | REQ-JDK-005 | Providers MUST support Windows x86_64, MacOS x86_64 + aarch64, Linux x86_64 + aarch64 | MUST |
 | REQ-JDK-006 | Providers MUST resolve version strings like `"21.0.2"`, `"17.0.9"` against the Adoptium API | MUST |
-| REQ-JDK-007 | Providers MUST emit FRRS-compatible `RegistryEntry` metadata for registry persistence | MUST |
+| REQ-JDK-007 | Providers MUST emit ARRS-compatible `RegistryEntry` metadata for registry persistence | MUST |
 
 ### Requirement: JDK Version Resolution
 

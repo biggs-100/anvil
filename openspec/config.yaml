@@ -1,7 +1,7 @@
 schema: spec-driven
 
 context: |
-  Tech stack: Rust workspace (forge)
+  Tech stack: Rust workspace (anvil)
   Architecture: Platform for reproducible development environments (context platform)
   Core frozen at 1.0: Runtime Engine, Lifecycle, Operations, Configuration, Secrets, Diagnostics, Context Engine, Observability, Public API
   Testing: Standard Rust tests (cargo test)

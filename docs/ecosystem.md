@@ -1,6 +1,6 @@
-# Forge Ecosystem Vision
+# Anvil Ecosystem Vision
 
-Everything prior to this document was **internal** — building the core engine that makes Forge work. Everything from here is **external** — building the ecosystem that makes Forge *matter*.
+Everything prior to this document was **internal** — building the core engine that makes Anvil work. Everything from here is **external** — building the ecosystem that makes Anvil *matter*.
 
 The core is frozen at 1.0. It will not grow. What grows is the layer around it.
 
@@ -8,7 +8,7 @@ The core is frozen at 1.0. It will not grow. What grows is the layer around it.
 
 ## Phase 9 — Plugin System
 
-Not because Forge needs plugins today. Because it needs to grow *without modifying the core*.
+Not because Anvil needs plugins today. Because it needs to grow *without modifying the core*.
 
 ### Extension Types (all trait-based)
 
@@ -25,7 +25,7 @@ Not because Forge needs plugins today. Because it needs to grow *without modifyi
 ### Design Constraints
 
 - Plugins are **Rust trait objects loaded at compile time** (not WASM or dynamic linking — at least initially).
-- The plugin registry lives in `forge-core` and is populated at startup.
+- The plugin registry lives in `anvil-core` and is populated at startup.
 - Each plugin has a `name`, `version`, and `enabled` flag.
 - Ordering and dependency resolution between plugins is explicit.
 
@@ -33,7 +33,7 @@ Not because Forge needs plugins today. Because it needs to grow *without modifyi
 
 ## Phase 10 — Official SDK
 
-Not just Rust. Forge's public API is frozen, which means anyone can write a binding. But official SDKs ensure quality.
+Not just Rust. Anvil's public API is frozen, which means anyone can write a binding. But official SDKs ensure quality.
 
 ### Target Languages
 
@@ -48,8 +48,8 @@ Not just Rust. Forge's public API is frozen, which means anyone can write a bind
 
 Every SDK exposes the same operations:
 
-- `ForgeEngine` — load a project, query status, run operations
-- `ContextQuery` — fetch structured project context via FCP
+- `Engine` — load a project, query status, run operations
+- `ContextQuery` — fetch structured project context via ACP
 - `Diagnostics` — run health checks, get findings
 - `Environment` — resolve and manipulate environment variables
 - `Secrets` — manage encrypted credentials
@@ -62,43 +62,43 @@ All SDKs communicate through the **same JSON-RPC transport** (not FFI), keeping 
 
 Not a proof of concept. A product.
 
-The MCP (Model Context Protocol) server exposes Forge's entire context engine through the standard MCP interface:
+The MCP (Model Context Protocol) server exposes Anvil's entire context engine through the standard MCP interface:
 
 ### Resources
 
 | Resource | Description |
 |----------|-------------|
-| `forge://context` | Full project context (runtimes, config, diagnostics, workspace) |
-| `forge://status` | Current lifecycle state |
-| `forge://diagnostics` | Latest health report |
-| `forge://history` | Recent operation history |
+| `anvil://context` | Full project context (runtimes, config, diagnostics, workspace) |
+| `anvil://status` | Current lifecycle state |
+| `anvil://diagnostics` | Latest health report |
+| `anvil://history` | Recent operation history |
 
 ### Tools
 
 | Tool | Description |
 |------|-------------|
-| `forge_run` | Execute a command in the forge environment |
-| `forge_shell` | Spawn a subshell |
-| `forge_sync` | Sync runtimes |
-| `forge_plan` | Preview what would change |
-| `forge_explain` | Deep-dive into a specific runtime |
-| `forge_doctor` | Run diagnostics |
+| `anvil_run` | Execute a command in the anvil environment |
+| `anvil_shell` | Spawn a subshell |
+| `anvil_sync` | Sync runtimes |
+| `anvil_plan` | Preview what would change |
+| `anvil_explain` | Deep-dive into a specific runtime |
+| `anvil_doctor` | Run diagnostics |
 
 ### Prompts
 
 | Prompt | Description |
 |--------|-------------|
-| `forge:status` | "Summarize the current forge environment state" |
-| `forge:diagnose` | "Diagnose issues in this project" |
-| `forge:explain` | "Explain how {runtime} is configured" |
+| `anvil:status` | "Summarize the current anvil environment state" |
+| `anvil:diagnose` | "Diagnose issues in this project" |
+| `anvil:explain` | "Explain how {runtime} is configured" |
 
 ### Notifications
 
 | Notification | Description |
 |-------------|-------------|
-| `forge/state_changed` | Lifecycle state transition |
-| `forge/error` | Operation failure |
-| `forge/warning` | Health degradation detected |
+| `anvil/state_changed` | Lifecycle state transition |
+| `anvil/error` | Operation failure |
+| `anvil/warning` | Health degradation detected |
 
 ---
 
@@ -110,13 +110,13 @@ Every IDE gets access to the **same Context Engine** through the same protocol.
 |-----|-------------|-------------|
 | **Zed** | Extension | Status bar indicator, runtime switcher, inline diagnostics |
 | **VS Code** | Extension | Environment viewer, problem matcher, context panel |
-| **Neovim** | Plugin | `:ForgeStatus`, `:ForgeDoctor`, LSP-like diagnostics |
+| **Neovim** | Plugin | `:AnvilStatus`, `:AnvilDoctor`, LSP-like diagnostics |
 | **JetBrains** | Plugin | Tool window, run configuration integration, project settings |
 
 The integration pattern is always the same:
 
-1. IDE starts → MCP client connects to Forge
-2. Forge provides context via `forge://context`
+1. IDE starts → MCP client connects to Anvil
+2. Anvil provides context via `anvil://context`
 3. IDE renders environment state in its native UI
 4. Diagnostics appear as IDE-native problems
 5. User can switch runtimes, inspect config, and run commands without leaving the editor
@@ -132,13 +132,13 @@ Not to replace the CLI. To *visualize* what the CLI already surfaces.
 | View | Data Source |
 |------|-------------|
 | **Runtime** | Installed runtimes, versions, cache status, shim health |
-| **Configuration** | Active `forge.toml`, resolved profiles, env vars |
+| **Configuration** | Active `anvil.toml`, resolved profiles, env vars |
 | **Diagnostics** | Health score, findings timeline, repair history |
 | **History** | Operation timeline, durations, nested traces |
 | **Events** | Live event stream, filtered by severity |
 | **Secrets** | Keyring status, masked metadata, import/export |
 | **Profiles** | Active profile, available profiles, variable diff |
-| **Context** | Full FCP context rendered as structured data |
+| **Context** | Full ACP context rendered as structured data |
 
 ### Tech Stack
 
@@ -150,12 +150,12 @@ Not to replace the CLI. To *visualize* what the CLI already surfaces.
 
 ---
 
-## Forge Registry
+## Anvil Registry
 
 Not a package registry. A **toolchain registry**.
 
 ```text
-registry.forge.sh
+registry.anvil.dev
     └── python/
         └── 3.13.0/
             ├── linux-x86_64.tar.gz
@@ -180,51 +180,51 @@ registry.forge.sh
 | Distribution | Single source | Mirrors + CDN |
 | Metadata | Dependencies | Platforms, hashes, system reqs |
 
-The **Forge Runtime Registry Specification (FRRS)** defines an open format so anyone can host a compatible registry.
+The **Anvil Runtime Registry Specification (ARRS)** defines an open format so anyone can host a compatible registry.
 
 ---
 
-## Forge Bundle
+## Anvil Bundle
 
 A single-file distribution format:
 
 ```bash
 # Package an entire project
-forge bundle
-# -> project.forge (manifest + lock + context + metadata + checksums)
+anvil bundle
+# -> project.anvil (manifest + lock + context + metadata + checksums)
 
 # Restore anywhere
-forge restore project.forge
-# -> forge.toml, forge.lock, .forge/
+anvil restore project.anvil
+# -> anvil.toml, anvil.lock, .anvil/
 ```
 
-The `.forge` extension file is the **universal handoff artifact** — send it to a teammate, an agent, a CI pipeline, or deploy it as an immutable environment descriptor.
+The `.anvil` extension file is the **universal handoff artifact** — send it to a teammate, an agent, a CI pipeline, or deploy it as an immutable environment descriptor.
 
 ---
 
-## Forge Snapshot
+## Anvil Snapshot
 
 Save and restore full environment state:
 
 ```bash
 # Capture everything
-forge snapshot
-# -> .forge/snapshots/2026-07-01T12-00-00/
+anvil snapshot
+# -> .anvil/snapshots/2026-07-01T12-00-00/
 
 # Roll back to a known-good state
-forge restore snapshot 2026-07-01T12-00-00
+anvil restore snapshot 2026-07-01T12-00-00
 ```
 
 Snapshots include lockfile state, cache metadata, profile configuration, and journal history — not the binaries themselves (those are re-downloaded or pulled from cache).
 
 ---
 
-## Forge Benchmark
+## Anvil Benchmark
 
 Measure what matters:
 
 ```bash
-forge benchmark
+anvil benchmark
 
 # Results:
 #   Sync time      : 1.2s
@@ -238,23 +238,23 @@ Benchmarks are deterministic and comparable across machines — useful for CI ga
 
 ---
 
-## Forge Explain Everything
+## Anvil Explain Everything
 
-Forge already has `forge explain` for runtimes. Extend it to every domain:
+Anvil already has `anvil explain` for runtimes. Extend it to every domain:
 
 ```bash
-forge explain runtime     # Runtime configuration, path, version, state
-forge explain operation   # What an operation did, why, how long
-forge explain context     # What context was collected, what was masked
-forge explain config      # Resolved configuration with provenance
-forge explain profile     # Active profile, variables, precedence chain
+anvil explain runtime     # Runtime configuration, path, version, state
+anvil explain operation   # What an operation did, why, how long
+anvil explain context     # What context was collected, what was masked
+anvil explain config      # Resolved configuration with provenance
+anvil explain profile     # Active profile, variables, precedence chain
 ```
 
 Each explain command returns a structured, human-readable breakdown with traceability to the source of truth.
 
 ---
 
-## Forge Policy Engine
+## Anvil Policy Engine
 
 Declarative policies that gate operation execution:
 
@@ -267,36 +267,36 @@ minimum_health = 95
 require_profiles = ["production"]
 ```
 
-When a `forge run` or `forge up` is executed, the policy engine validates the request before any operation starts. Violations are reported with explanations and suggested remediations.
+When a `anvil run` or `anvil up` is executed, the policy engine validates the request before any operation starts. Violations are reported with explanations and suggested remediations.
 
 ---
 
 ## Open Specifications
 
-Forge defines three public specifications for interoperability:
+Anvil defines three public specifications for interoperability:
 
-### 1. Forge Context Protocol (FCP)
+### 1. Anvil Context Protocol (ACP)
 
 A versioned, schema-stable protocol for sharing development context.
 
 - **Transport:** JSON-RPC 2.0
-- **Core operation:** `forge.context.query` → `ForgeContext`
+- **Core operation:** `anvil.context.query` → `AnvilContext`
 - **Handshake:** Capability negotiation (`FcpHandshakeRequest`/`FcpHandshakeResponse`)
 - **Exporters:** JSON, Markdown, MCP
 - **Agent adapters:** Claude Code, Gemini CLI, Aider, Continue
 
-Anyone can implement an FCP client or server. The schema is versioned and frozen.
+Anyone can implement an ACP client or server. The schema is versioned and frozen.
 
-### 2. Forge Manifest Specification (FMS)
+### 2. Anvil Manifest Specification (AMS)
 
-The formal specification for `forge.toml`, `forge.lock`, profiles, and environment files.
+The formal specification for `anvil.toml`, `anvil.lock`, profiles, and environment files.
 
-- **`forge.toml`:** Runtime declarations, profile definitions, policy rules
-- **`forge.lock`:** Resolved runtime entries with checksums and platform bindings
-- **`forge.env`:** Declarative environment variable definitions with source annotations
+- **`anvil.toml`:** Runtime declarations, profile definitions, policy rules
+- **`anvil.lock`:** Resolved runtime entries with checksums and platform bindings
+- **`anvil.env`:** Declarative environment variable definitions with source annotations
 - **Profiles:** Named variable sets with precedence rules and inheritance
 
-### 3. Forge Runtime Registry Specification (FRRS)
+### 3. Anvil Runtime Registry Specification (ARRS)
 
 An open standard for describing and distributing runtimes.
 
@@ -317,8 +317,8 @@ Phase 10: Official SDK (Rust → Go → Py → TS) │  Q3-Q4 2026
 Phase 11: MCP Server                         │  Q4 2026
 Phase 12: IDE Integration                    │  Q1 2027
 Phase 13: GUI                                │  Q1 2027
-Forge Registry                               │  Ongoing
-Public Specifications (FCP, FMS, FRRS)       │  H2 2026
+Anvil Registry                               │  Ongoing
+Public Specifications (ACP, AMS, ARRS)       │  H2 2026
 ```
 
 These are not commitments — they are a map. The priority at any given time should reflect what best serves the project's adoption and ecosystem growth.

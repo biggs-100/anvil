@@ -1,4 +1,4 @@
-# Archive Report: Forge Runtimes Real
+# Archive Report: Anvil Runtimes Real
 
 - **Change Name:** forge-runtimes-real
 - **Archive Date:** 2026-07-01
@@ -22,11 +22,11 @@ All tasks in `tasks.md` have been verified as complete (`- [x]`):
   - Added unit tests to verify valid extraction and correct rejection/failure on malicious paths containing `../`.
 - **Phase 2: Provider Trait, 5 Runtime Providers & Registry (PR 2)**
   - Defined the `Provider` trait and implemented Node, Python, Bun, Go, and Rust language providers.
-  - Defined the `HybridRegistry` implementing offline version resolution with local semver range matching against `.forge/metadata_cache.toml`.
+  - Defined the `HybridRegistry` implementing offline version resolution with local semver range matching against `.anvil/metadata_cache.toml`.
   - Wrote unit tests confirming offline semver range matching (`^20`, `~1.8`) against mock registries.
 - **Phase 3: Lockfile Refactoring (PR 3)**
-  - Created `crates/forge-core/src/lock.rs` and refactored `RuntimeLock` to support the `EmulationLog` struct (recording `requested`, `installed`, and `reason`).
-  - Added unit tests checking the serialization/deserialization of emulation logs within `forge.lock`.
+  - Created `crates/anvil-core/src/lock.rs` and refactored `RuntimeLock` to support the `EmulationLog` struct (recording `requested`, `installed`, and `reason`).
+  - Added unit tests checking the serialization/deserialization of emulation logs within `anvil.lock`.
 - **Phase 4: Parallel Download Manager & CLI Updates (PR 4)**
   - Updated `install_runtimes` to orchestrate parallel downloads, validation, and extraction using `tokio::task::JoinSet`.
   - Implemented error abortion via `JoinSet::abort_all()` and cleanup of partial downloads on task failure.

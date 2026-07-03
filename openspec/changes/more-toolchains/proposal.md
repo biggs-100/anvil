@@ -8,8 +8,8 @@ Add LLVM/Clang and JDK as managed runtimes alongside existing Node/Python/Bun/Go
 
 ### In Scope
 - `LlvmProvider` and `JdkProvider` implementing `RuntimeProvider` trait
-- FRRS default registry entries for both (Windows/MacOS/Linux × x86_64/aarch64)
-- `forge.toml` validation — `llvm` and `jdk` accepted in `[runtimes]`
+- ARRS default registry entries for both (Windows/MacOS/Linux × x86_64/aarch64)
+- `anvil.toml` validation — `llvm` and `jdk` accepted in `[runtimes]`
 - Unit tests for both providers
 
 ### Out of Scope
@@ -28,21 +28,21 @@ Add LLVM/Clang and JDK as managed runtimes alongside existing Node/Python/Bun/Go
 
 ## Approach
 
-Follow the exact same pattern as existing providers (NodeProvider, PythonProvider, etc.) — each provider struct implements `RuntimeProvider` with `name()` and `resolve()` delegating to `resolve_from_registry()`. Registry entries follow the FRRS format with default URLs and placeholder hashes. No new external dependencies.
+Follow the exact same pattern as existing providers (NodeProvider, PythonProvider, etc.) — each provider struct implements `RuntimeProvider` with `name()` and `resolve()` delegating to `resolve_from_registry()`. Registry entries follow the ARRS format with default URLs and placeholder hashes. No new external dependencies.
 
 ## Affected Areas
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `crates/forge-core/src/resolver.rs` | Modified | Add `LlvmProvider`, `JdkProvider`, register in `Resolver::new()` |
-| `crates/forge-core/src/registry.rs` | Modified | Add default `RegistryEntry` rows for both runtimes |
-| `crates/forge-core/src/manifest.rs` | Modified | Add `llvm`, `jdk` to accepted runtime keys |
+| `crates/anvil-core/src/resolver.rs` | Modified | Add `LlvmProvider`, `JdkProvider`, register in `Resolver::new()` |
+| `crates/anvil-core/src/registry.rs` | Modified | Add default `RegistryEntry` rows for both runtimes |
+| `crates/anvil-core/src/manifest.rs` | Modified | Add `llvm`, `jdk` to accepted runtime keys |
 
 ## Risks
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| LLVM/JDK download URLs change | Medium | FRRS pattern — only registry URL updates, no code changes |
+| LLVM/JDK download URLs change | Medium | ARRS pattern — only registry URL updates, no code changes |
 | ARM64 builds missing for some versions | Low | Existing emulation fallback path handles this |
 
 ## Rollback Plan

@@ -12,14 +12,14 @@ The change comprises 11 distinct tasks mapped across 3 implementation phases. Al
 |---|---|---|---|
 | **Phase 1** | 1.1 | Create models: `HealthCheck` trait, `Finding`, `Severity`, `Explanation`, `QuickFixAction`, and `DiagnosticReport` | **Complete** (`- [x]`) |
 | | 1.2 | Implement tokio-based concurrent DAG scheduler resolving check dependencies and short-circuiting downstream checks if upstream fails with `CRITICAL` | **Complete** (`- [x]`) |
-| | 1.3 | Export `diagnostics` module in `crates/forge-core/src/lib.rs` | **Complete** (`- [x]`) |
+| | 1.3 | Export `diagnostics` module in `crates/anvil-core/src/lib.rs` | **Complete** (`- [x]`) |
 | | 1.4 | Write unit tests verifying HealthScore math rules and short-circuiting execution flow | **Complete** (`- [x]`) |
 | **Phase 2** | 2.1 | Implement 11 checks: `ManifestCheck`, `LockCheck`, `RuntimeCheck`, `HashCheck`, `SecretCheck`, `EnvironmentCheck`, `PathCheck`, `ShimCheck`, `CacheCheck`, `ProviderCheck`, and `ProfileCheck` | **Complete** (`- [x]`) |
 | | 2.2 | Configure checks to abort downstream dependants (e.g. lock, runtime, env depend on `ManifestCheck`) | **Complete** (`- [x]`) |
 | | 2.3 | Write unit tests verifying check operations against mocked files | **Complete** (`- [x]`) |
 | **Phase 3** | 3.1 | Implement `RepairPlanner` converting findings to `RepairPlan` | **Complete** (`- [x]`) |
 | | 3.2 | Implement custom `serde::Serialize` wrapper to dynamically mask sensitive environment values with `[MASKED]` | **Complete** (`- [x]`) |
-| | 3.3 | Map CLI subcommands `doctor` and `ai doctor` in `crates/forge-cli/src/main.rs` | **Complete** (`- [x]`) |
+| | 3.3 | Map CLI subcommands `doctor` and `ai doctor` in `crates/anvil-cli/src/main.rs` | **Complete** (`- [x]`) |
 | | 3.4 | Write integration tests verifying CLI outputs and AI doctor JSON schema compliance | **Complete** (`- [x]`) |
 
 ---
@@ -38,7 +38,7 @@ test tests::test_shim_args_and_exit_code_propagation ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
 
-     Running unittests src\lib.rs (target\debug\deps\forge_core-9183ac61c0de9f6f.exe)
+     Running unittests src\lib.rs (target\debug\deps\anvil_core-9183ac61c0de9f6f.exe)
 
 running 20 tests
 test diagnostics::tests::test_health_score_calculations ... ok
@@ -97,7 +97,7 @@ test tests::test_cache_invalidation_incorrect_header ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
-   Doc-tests forge_core
+   Doc-tests anvil_core
 
 running 0 tests
 
@@ -116,18 +116,18 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 | Spec Requirement | Scenario / Target | Source Code Location | Verification Evidence | Status |
 |---|---|---|---|---|
-| **diagnostic-engine/spec.md** | Concurrently Running Independent Checks | [crates/forge-core/src/diagnostics/mod.rs#L256-L341](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/diagnostics/mod.rs#L256-L341) | Concurrent execution orchestrated via tokio concurrent tasks & watch channels | **COMPLIANT** |
-| | Dependency Short-Circuiting | [crates/forge-core/src/diagnostics/mod.rs#L290-L328](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/diagnostics/mod.rs#L290-L328) | `test_dag_scheduler_short_circuit` unit test verifies that `MockDependentCheck` is skipped | **COMPLIANT** |
-| | HealthScore Computation | [crates/forge-core/src/diagnostics/mod.rs#L184-L207](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/diagnostics/mod.rs#L184-L207) | `test_health_score_calculations` unit test verifies the caps & math deductions | **COMPLIANT** |
-| **diagnostic-checks/spec.md** | Execution Mode Differentiation | [crates/forge-core/src/diagnostics/mod.rs#L578-L724](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/diagnostics/mod.rs#L578-L724), [#L758](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/diagnostics/mod.rs#L758) | `RuntimeCheck` (runs test command in Deep, skips in Fast), `HashCheck` (skips in Fast) | **COMPLIANT** |
-| | 11 Diagnostic Checks Matrix | [crates/forge-core/src/diagnostics/mod.rs#L416-L1298](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/diagnostics/mod.rs#L416-L1298) | Codes `FG001` through `FG014` implement all 11 required checks | **COMPLIANT** |
-| **diagnostic-repair-planner/spec.md** | QuickFixAction Mapping | [crates/forge-core/src/operations/mod.rs#L672-L732](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/operations/mod.rs#L672-L732) | `RepairPlanner::plan` extracts quick-fixes and maps them to CLI actions | **COMPLIANT** |
-| | Plan Consolidation and Deduplication | [crates/forge-core/src/operations/mod.rs#L683-L727](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/operations/mod.rs#L683-L727) | `RepairPlanner::plan` deduplicates actions using `.contains(...)` checks | **COMPLIANT** |
-| **diagnostic-cli-commands/spec.md** | CLI Commands and Flag Parameters | [crates/forge-cli/src/main.rs#L539-L541](file:///c:/Users/USER/Desktop/forge/crates/forge-cli/src/main.rs#L539-L541) | Subcommands `doctor [--deep] [--json]` and `ai doctor` are fully mapped | **COMPLIANT** |
-| | Structured Console Output Format | [crates/forge-cli/src/main.rs#L710-L755](file:///c:/Users/USER/Desktop/forge/crates/forge-cli/src/main.rs#L710-L755) | Table printed with columns `CODE`, `SEVERITY`, `CONF`, `MESSAGE` | **COMPLIANT** |
-| | Enforced Credential Masking | [crates/forge-core/src/diagnostics/mod.rs#L93-L182](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/diagnostics/mod.rs#L93-L182) | `serde::Serialize` wrapper dynamically masks plaintext sensitive values with `[MASKED]` | **COMPLIANT** |
-| | Deep execution for AI Doctor | [crates/forge-cli/src/main.rs#L576](file:///c:/Users/USER/Desktop/forge/crates/forge-cli/src/main.rs#L576) | Verified that `forge ai doctor` now correctly sets and executes in Deep mode | **COMPLIANT** |
-| **config-validation/spec.md** | Doctor Integration | [crates/forge-core/src/diagnostics/mod.rs#L943-L968](file:///c:/Users/USER/Desktop/forge/crates/forge-core/src/diagnostics/mod.rs#L943-L968) | `EnvironmentCheck` queries `validate_environment` and translates validation issues to `Finding` (FG009) | **COMPLIANT** |
+| **diagnostic-engine/spec.md** | Concurrently Running Independent Checks | [crates/anvil-core/src/diagnostics/mod.rs#L256-L341](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/diagnostics/mod.rs#L256-L341) | Concurrent execution orchestrated via tokio concurrent tasks & watch channels | **COMPLIANT** |
+| | Dependency Short-Circuiting | [crates/anvil-core/src/diagnostics/mod.rs#L290-L328](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/diagnostics/mod.rs#L290-L328) | `test_dag_scheduler_short_circuit` unit test verifies that `MockDependentCheck` is skipped | **COMPLIANT** |
+| | HealthScore Computation | [crates/anvil-core/src/diagnostics/mod.rs#L184-L207](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/diagnostics/mod.rs#L184-L207) | `test_health_score_calculations` unit test verifies the caps & math deductions | **COMPLIANT** |
+| **diagnostic-checks/spec.md** | Execution Mode Differentiation | [crates/anvil-core/src/diagnostics/mod.rs#L578-L724](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/diagnostics/mod.rs#L578-L724), [#L758](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/diagnostics/mod.rs#L758) | `RuntimeCheck` (runs test command in Deep, skips in Fast), `HashCheck` (skips in Fast) | **COMPLIANT** |
+| | 11 Diagnostic Checks Matrix | [crates/anvil-core/src/diagnostics/mod.rs#L416-L1298](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/diagnostics/mod.rs#L416-L1298) | Codes `FG001` through `FG014` implement all 11 required checks | **COMPLIANT** |
+| **diagnostic-repair-planner/spec.md** | QuickFixAction Mapping | [crates/anvil-core/src/operations/mod.rs#L672-L732](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/operations/mod.rs#L672-L732) | `RepairPlanner::plan` extracts quick-fixes and maps them to CLI actions | **COMPLIANT** |
+| | Plan Consolidation and Deduplication | [crates/anvil-core/src/operations/mod.rs#L683-L727](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/operations/mod.rs#L683-L727) | `RepairPlanner::plan` deduplicates actions using `.contains(...)` checks | **COMPLIANT** |
+| **diagnostic-cli-commands/spec.md** | CLI Commands and Flag Parameters | [crates/anvil-cli/src/main.rs#L539-L541](file:///c:/Users/USER/Desktop/forge/crates/anvil-cli/src/main.rs#L539-L541) | Subcommands `doctor [--deep] [--json]` and `ai doctor` are fully mapped | **COMPLIANT** |
+| | Structured Console Output Format | [crates/anvil-cli/src/main.rs#L710-L755](file:///c:/Users/USER/Desktop/forge/crates/anvil-cli/src/main.rs#L710-L755) | Table printed with columns `CODE`, `SEVERITY`, `CONF`, `MESSAGE` | **COMPLIANT** |
+| | Enforced Credential Masking | [crates/anvil-core/src/diagnostics/mod.rs#L93-L182](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/diagnostics/mod.rs#L93-L182) | `serde::Serialize` wrapper dynamically masks plaintext sensitive values with `[MASKED]` | **COMPLIANT** |
+| | Deep execution for AI Doctor | [crates/anvil-cli/src/main.rs#L576](file:///c:/Users/USER/Desktop/forge/crates/anvil-cli/src/main.rs#L576) | Verified that `anvil ai doctor` now correctly sets and executes in Deep mode | **COMPLIANT** |
+| **config-validation/spec.md** | Doctor Integration | [crates/anvil-core/src/diagnostics/mod.rs#L943-L968](file:///c:/Users/USER/Desktop/forge/crates/anvil-core/src/diagnostics/mod.rs#L943-L968) | `EnvironmentCheck` queries `validate_environment` and translates validation issues to `Finding` (FG009) | **COMPLIANT** |
 
 ---
 
@@ -135,8 +135,8 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 1. **Tokio DAG Concurrency**: The scheduler runs each health check in its own `tokio::spawn` and coordinates execution using `tokio::sync::watch` channels to represent dependency state transitions. If an upstream block has occurred (due to `CRITICAL` or `ERROR` findings), the downstream task is safely skipped.
 2. **Custom JSON Serialization for Masking**: Implemented a shadow type serialization to make sure `QuickFixAction` and `Finding` structures NEVER emit private variables in cleartext, mapping variables containing secrets dynamically to `[MASKED]`.
-3. **Validation Integration**: The `EnvironmentCheck` reads definitions from `forge.toml` config block and parses current resolved environment, generating a `Finding` representing `FG009` (error in env configuration) rather than raising panic or using the legacy `DoctorIssue` struct.
-4. **Deep Mode Execution**: Verified that `forge ai doctor` correctly initiates `DiagnosticContext` with `DiagnosticMode::Deep`, which runs deep-only checks (network pings to nodejs.org, checksum verifications) and outputs JSON structure.
+3. **Validation Integration**: The `EnvironmentCheck` reads definitions from `anvil.toml` config block and parses current resolved environment, generating a `Finding` representing `FG009` (error in env configuration) rather than raising panic or using the legacy `DoctorIssue` struct.
+4. **Deep Mode Execution**: Verified that `anvil ai doctor` correctly initiates `DiagnosticContext` with `DiagnosticMode::Deep`, which runs deep-only checks (network pings to nodejs.org, checksum verifications) and outputs JSON structure.
 
 ---
 
@@ -149,10 +149,10 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 - None.
 
 ### SUGGESTION
-- **Clap Command Help Text**: Add detailed description text for `forge ai doctor` highlighting that its primary purpose is LLM context consumption with masked environment secrets.
+- **Clap Command Help Text**: Add detailed description text for `anvil ai doctor` highlighting that its primary purpose is LLM context consumption with masked environment secrets.
 
 ---
 
 ## Final Verdict
 
-**Verdict**: **PASS** (all spec scenarios and verification requirements satisfied; `forge ai doctor` executes correctly in Deep mode).
+**Verdict**: **PASS** (all spec scenarios and verification requirements satisfied; `anvil ai doctor` executes correctly in Deep mode).

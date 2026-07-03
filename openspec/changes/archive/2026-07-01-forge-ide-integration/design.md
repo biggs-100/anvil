@@ -1,8 +1,8 @@
-# Design: Forge IDE Integration
+# Design: Anvil IDE Integration
 
 ## Technical Approach
 
-Thin MCP clients embedded in VS Code (TypeScript) and Neovim (Lua). Each IDE spawns `forge mcp` as a stdio subprocess on activation, sends JSON-RPC 2.0 line-delimited messages, and renders responses in native UI surfaces. Zero forge business logic runs inside the IDE layer — every capability comes from the forge engine through the MCP protocol defined in `crates/forge-cli/src/mcp.rs`.
+Thin MCP clients embedded in VS Code (TypeScript) and Neovim (Lua). Each IDE spawns `anvil mcp` as a stdio subprocess on activation, sends JSON-RPC 2.0 line-delimited messages, and renders responses in native UI surfaces. Zero anvil business logic runs inside the IDE layer — every capability comes from the anvil engine through the MCP protocol defined in `crates/anvil-cli/src/mcp.rs`.
 
 Commands map to two MCP mechanisms: **prompts/get** (markdown output → rich display) and **tools/call** (JSON output → structured panels/lists). Notifications (`forge/warning`, `forge/error`) push to native diagnostic collections.
 
@@ -13,13 +13,13 @@ Commands map to two MCP mechanisms: **prompts/get** (markdown output → rich di
 | **Shared MCP client lib** | Cross-language bridge for TS↔Lua; would need N-API or IPC helper. Gains: unified bug fixes. Cost: complexity exceeds benefit for 4 commands. | **Independent impls** — each IDE owns its ~80-line MCP client |
 | **VS Code: TreeView vs Webview** | TreeView: native feel, async tree updates. Webview: full HTML rendering for markdown from prompts. | **WebviewPanel** for status/explain (rich markdown from prompt results) |
 | **Neovim: Telescope vs custom float** | Telescope: built-in fuzzy find, less boilerplate. Custom float: no dependency on telescope.nvim. | **Both** — custom float for core commands (zero-dep), Telescope picker as optional extension |
-| **Neovim job lifecycle** | Single job (simpler state) vs multi-job pool | **Single job** — one `forge mcp` process, cached job ID, restart callback on crash |
+| **Neovim job lifecycle** | Single job (simpler state) vs multi-job pool | **Single job** — one `anvil mcp` process, cached job ID, restart callback on crash |
 | **Async MCP response routing** | Per-request callback map vs event-emitter pattern | **Pending requests map** (`Map<id, {resolve,reject}>`) — standard JSON-RPC pattern, matches `mcp.rs` dispatch |
 
 ## Data Flow
 
 ```
-IDE Extension                  forge mcp (subprocess)
+IDE Extension                  anvil mcp (subprocess)
     │                                │
     │  spawn child_process / jobstart│
     │════════════════════════════════>│
@@ -32,7 +32,7 @@ IDE Extension                  forge mcp (subprocess)
     │                                │
     │  ──── User executes command ── │
     │                                │
-    │  tools/call or prompts/get ───>│── dispatch → forge engine
+    │  tools/call or prompts/get ───>│── dispatch → anvil engine
     │< result (JSON/markdown) ───────│
     │                                │
     │  ──── Background ───────────── │
@@ -48,18 +48,18 @@ IDE Extension                  forge mcp (subprocess)
 
 | File | Action | Description |
 |------|--------|-------------|
-| `extensions/vscode/package.json` | Create | Extension manifest: 4 commands, activation on `forge.toml`, `@types/vscode` devDependency |
+| `extensions/vscode/package.json` | Create | Extension manifest: 4 commands, activation on `anvil.toml`, `@types/vscode` devDependency |
 | `extensions/vscode/tsconfig.json` | Create | Strict TS config targeting Node 18+ for extension host |
 | `extensions/vscode/.vscodeignore` | Create | VSIX packaging filter |
-| `extensions/vscode/src/extension.ts` | Create | Activation: spawn `forge mcp`, register commands, create status bar + panel + diagnostics |
+| `extensions/vscode/src/extension.ts` | Create | Activation: spawn `anvil mcp`, register commands, create status bar + panel + diagnostics |
 | `extensions/vscode/src/mcpClient.ts` | Create | MCP stdio client: spawn, line-buffered read, pending request map, notification dispatch |
 | `extensions/vscode/src/commands.ts` | Create | Command handlers mapping to `prompts/get` (status, diagnose) and `tools/call` (explain, run) |
 | `extensions/vscode/src/forgePanel.ts` | Create | WebviewPanel for status/explain markdown rendering |
 | `extensions/vscode/src/statusBar.ts` | Create | StatusBarItem: connected (health score), disconnected (red), not found |
-| `extensions/neovim/lua/forge/init.lua` | Create | Module entry: user commands, autocmd on forge.toml, cleanup on VimLeave |
+| `extensions/neovim/lua/forge/init.lua` | Create | Module entry: user commands, autocmd on anvil.toml, cleanup on VimLeave |
 | `extensions/neovim/lua/forge/mcp.lua` | Create | MCP client via `vim.fn.jobstart`: line-buffered stdout, pending request map, notification → vim.diagnostic |
 | `extensions/neovim/lua/forge/ui.lua` | Create | Floating windows (status, explain), quickfix list (doctor), terminal buffer (run), Telescope picker |
-| `extensions/neovim/lua/forge/health.lua` | Create | `:checkhealth forge` — verify forge binary, Neovim version, running state |
+| `extensions/neovim/lua/forge/health.lua` | Create | `:checkhealth forge` — verify anvil binary, Neovim version, running state |
 
 ## Interfaces / Contracts
 
@@ -89,11 +89,11 @@ interface McpClient {
 
 ```typescript
 // forge/warning
-{ method: "forge/warning", params: { finding: string, severity: "WARNING" } }
+{ method: "anvil/warning", params: { finding: string, severity: "WARNING" } }
 // forge/error
-{ method: "forge/error", params: { operation: string, error: string } }
+{ method: "anvil/error", params: { operation: string, error: string } }
 // forge/state_changed
-{ method: "forge/state_changed", params: { old_state: string, new_state: string } }
+{ method: "anvil/state_changed", params: { old_state: string, new_state: string } }
 ```
 
 ## Testing Strategy
@@ -101,8 +101,8 @@ interface McpClient {
 | Layer | What to Test | Approach |
 |-------|-------------|----------|
 | Unit | MCP client (line parsing, request routing) | Mock stdin/stdout, test with real JSON-RPC fixtures from `mcp.rs` tests |
-| Integration | Full command flow via `forge mcp` binary | Integration test spawns `forge mcp` from a tmpdir with `forge.toml`, sends initialize + prompt/tool, asserts response shape |
-| E2E | VS Code extension activation | Manual: F5 launch in VS Code with `forge.toml` workspace |
+| Integration | Full command flow via `anvil mcp` binary | Integration test spawns `anvil mcp` from a tmpdir with `anvil.toml`, sends initialize + prompt/tool, asserts response shape |
+| E2E | VS Code extension activation | Manual: F5 launch in VS Code with `anvil.toml` workspace |
 | E2E | Neovim plugin commands | Manual: `nvim +Lazy load forge` in project dir, run `:ForgeStatus` |
 | Health | `:checkhealth forge` | Automated via `checkhealth` framework — verifies binary, PATH, job state |
 

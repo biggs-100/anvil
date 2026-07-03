@@ -1,10 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/forge-core",
-    "crates/forge-drivers",
-    "crates/forge-cli",
-    "crates/forge-shim",
-    "crates/forge-sdk",
-    "crates/forge-tui",
+    "crates/anvil-core",
+    "crates/anvil-drivers",
+    "crates/anvil-cli",
+    "crates/anvil-shim",
+    "crates/anvil-sdk",
+    "crates/anvil-tui",
 ]

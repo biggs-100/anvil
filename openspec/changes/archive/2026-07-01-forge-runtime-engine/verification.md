@@ -1,4 +1,4 @@
-# Verification Report: Modularize Forge Core Runtime Engine
+# Verification Report: Modularize Anvil Core Runtime Engine
 
 **Change:** `forge-runtime-engine`  
 **Mode:** `openspec`  
@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-This report documents the verification of the `forge-runtime-engine` modularization. The monolithic `crates/forge-core/src/lib.rs` has been successfully decomposed into 8 domain-specific submodules to establish a clean and decoupled architecture. All 10 tasks defined in the change's task list are completed. The workspace compiles cleanly, and all unit and integration tests pass successfully without regression. A detailed evaluation shows full compliance with all 8 specifications under `openspec/specs/`, with a few minor warnings regarding sibling coupling design boundaries that do not affect the safety or correctness of the engine.
+This report documents the verification of the `forge-runtime-engine` modularization. The monolithic `crates/anvil-core/src/lib.rs` has been successfully decomposed into 8 domain-specific submodules to establish a clean and decoupled architecture. All 10 tasks defined in the change's task list are completed. The workspace compiles cleanly, and all unit and integration tests pass successfully without regression. A detailed evaluation shows full compliance with all 8 specifications under `openspec/specs/`, with a few minor warnings regarding sibling coupling design boundaries that do not affect the safety or correctness of the engine.
 
 ---
 
@@ -19,16 +19,16 @@ All 10 tasks in `openspec/changes/forge-runtime-engine/tasks.md` are completed a
 
 | Task ID | Description | Status |
 |---|---|---|
-| **1.1** | Create `crates/forge-core/src/types.rs` containing Primitive types. | Completed (`- [x]`) |
-| **1.2** | Create `crates/forge-core/src/manifest.rs` and move `ForgeConfig` loading logic. | Completed (`- [x]`) |
-| **1.3** | Update `crates/forge-core/src/lib.rs` and verify compiling and passing tests. | Completed (`- [x]`) |
-| **2.1** | Create `crates/forge-core/src/registry.rs` and relocate registry types/matching. | Completed (`- [x]`) |
-| **2.2** | Create `crates/forge-core/src/resolver.rs` defining `RuntimeProvider` trait & structs. | Completed (`- [x]`) |
-| **2.3** | Create `crates/forge-core/src/cache.rs` for cache and shim managers. | Completed (`- [x]`) |
-| **3.1** | Create `crates/forge-core/src/installer.rs` containing `Extractor` and download/install logic. | Completed (`- [x]`) |
-| **3.2** | Create `crates/forge-core/src/environment.rs` (PATH and env parsing/masking). | Completed (`- [x]`) |
-| **3.3** | Create `crates/forge-core/src/launcher.rs` (process spawning and shell forwarding). | Completed (`- [x]`) |
-| **3.4** | Relocate unit tests and create consolidated integration tests in `crates/forge-core/tests/integration.rs`. | Completed (`- [x]`) |
+| **1.1** | Create `crates/anvil-core/src/types.rs` containing Primitive types. | Completed (`- [x]`) |
+| **1.2** | Create `crates/anvil-core/src/manifest.rs` and move `ForgeConfig` loading logic. | Completed (`- [x]`) |
+| **1.3** | Update `crates/anvil-core/src/lib.rs` and verify compiling and passing tests. | Completed (`- [x]`) |
+| **2.1** | Create `crates/anvil-core/src/registry.rs` and relocate registry types/matching. | Completed (`- [x]`) |
+| **2.2** | Create `crates/anvil-core/src/resolver.rs` defining `RuntimeProvider` trait & structs. | Completed (`- [x]`) |
+| **2.3** | Create `crates/anvil-core/src/cache.rs` for cache and shim managers. | Completed (`- [x]`) |
+| **3.1** | Create `crates/anvil-core/src/installer.rs` containing `Extractor` and download/install logic. | Completed (`- [x]`) |
+| **3.2** | Create `crates/anvil-core/src/environment.rs` (PATH and env parsing/masking). | Completed (`- [x]`) |
+| **3.3** | Create `crates/anvil-core/src/launcher.rs` (process spawning and shell forwarding). | Completed (`- [x]`) |
+| **3.4** | Relocate unit tests and create consolidated integration tests in `crates/anvil-core/tests/integration.rs`. | Completed (`- [x]`) |
 
 ---
 
@@ -46,7 +46,7 @@ test tests::test_shim_args_and_exit_code_propagation ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
 
-     Running unittests src\lib.rs (target\debug\deps\forge_core-79ae310d16b364e7.exe)
+     Running unittests src\lib.rs (target\debug\deps\anvil_core-79ae310d16b364e7.exe)
 
 running 6 tests
 test environment::tests::test_is_secret ... ok
@@ -85,7 +85,7 @@ test tests::test_cache_invalidation_incorrect_header ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
 
-   Doc-tests forge_core
+   Doc-tests anvil_core
 
 running 0 tests
 
@@ -111,11 +111,11 @@ The following matrix maps the requirements defined in the 8 target specification
 | | REQ-TYP-003 | Normalize `Platform` values to standard representations | `registry.rs` | `normalize_platform` function and `test_offline_version_matching`. | **PASS** |
 | | REQ-TYP-004 | Normalize `Architecture` values to standard representations | `registry.rs` | `normalize_arch` function and `test_offline_version_matching`. | **PASS** |
 | | REQ-TYP-005 | Validate `Hash` values as 64-char hexadecimal strings | `types.rs`, `installer.rs` | Checked in `download_runtime` via `compute_sha256` hash match. | **PASS** |
-| **runtime-engine-manifest/spec.md** | REQ-MNF-001 | Search parent directories upward to locate `forge.toml` | `manifest.rs` | `find_forge_toml` implementation. Verified in end-to-end integration. | **PASS** |
-| | REQ-MNF-002 | Load and parse `forge.toml` into strongly-typed `ForgeConfig` | `manifest.rs` | `load_config` loads and parses file using `toml::from_str`. | **PASS** |
+| **runtime-engine-manifest/spec.md** | REQ-MNF-001 | Search parent directories upward to locate `anvil.toml` | `manifest.rs` | `find_forge_toml` implementation. Verified in end-to-end integration. | **PASS** |
+| | REQ-MNF-002 | Load and parse `anvil.toml` into strongly-typed `ForgeConfig` | `manifest.rs` | `load_config` loads and parses file using `toml::from_str`. | **PASS** |
 | | REQ-MNF-003 | Validate defined runtimes map names to version requirements | `manifest.rs` | `ForgeConfig::runtimes` holds a structured `HashMap<String, String>`. | **PASS** |
-| | REQ-MNF-004 | Resolve project root as parent of `forge.toml` | `lib.rs` | Root resolved via parent directory of the toml path in `update_lockfile`. | **PASS** |
-| | REQ-MNF-005 | Resolve default lockfile path as `{root}/forge.lock` | `lib.rs` | Handled at the entrypoint call in `update_lockfile` parameters. | **PASS** |
+| | REQ-MNF-004 | Resolve project root as parent of `anvil.toml` | `lib.rs` | Root resolved via parent directory of the toml path in `update_lockfile`. | **PASS** |
+| | REQ-MNF-005 | Resolve default lockfile path as `{root}/anvil.lock` | `lib.rs` | Handled at the entrypoint call in `update_lockfile` parameters. | **PASS** |
 | **runtime-engine-resolver/spec.md** | REQ-RES-001 | Define unified `RuntimeProvider` interface | `resolver.rs` | `RuntimeProvider` trait is implemented by Node, Python, Bun, Go, Rust. | **PASS** |
 | | REQ-RES-002 | Resolve compatibility and choose the highest matching SemVer | `registry.rs` | `HybridRegistry::resolve` filters and sorts candidates descending. | **PASS** |
 | | REQ-RES-003 | Offline resolution without triggering downloads | `resolver.rs` | Offline resolver reads cache/registry metadata without network calls. | **PASS** |
@@ -126,15 +126,15 @@ The following matrix maps the requirements defined in the 8 target specification
 | | REQ-INS-004 | Support extracting ZIP, TarGz, TarXz archive formats | `installer.rs` | Implemented in `ZipExtractor`, `TarGzExtractor`, `TarXzExtractor`. | **PASS** |
 | | REQ-INS-005 | Prevent path traversal (Zip Slip) security issues | `installer.rs` | `check_path_traversal` validates entry paths. Test `test_zip_slip_prevention`. | **PASS** |
 | **runtime-engine-registry/spec.md** | REQ-REG-001 | Coordinate metadata queries across internal/local registries | `lib.rs` | `update_lockfile` reads local registry file if it exists, else default. | **PASS** |
-| | REQ-REG-002 | Load registry metadata cache from `.forge/metadata_cache.toml` | `registry.rs` | `HybridRegistry::load_from_file` reads and parses cache. | **PASS** |
+| | REQ-REG-002 | Load registry metadata cache from `.anvil/metadata_cache.toml` | `registry.rs` | `HybridRegistry::load_from_file` reads and parses cache. | **PASS** |
 | | REQ-REG-003 | Match entries on name, normalized platform, and normalized arch | `registry.rs` | Matched candidates filtered in `resolve` using normalized platform/arch. | **PASS** |
 | | REQ-REG-004 | Sort matched entries by version descending | `registry.rs` | candidates sorted using `matching_candidates.sort_by`. | **PASS** |
-| **runtime-engine-cache/spec.md** | REQ-CCH-001 | Standardized cache path structure | `cache.rs` | Path `~/.forge/runtimes/{name}/{version}/extracted` is standardized. | **PASS** |
+| **runtime-engine-cache/spec.md** | REQ-CCH-001 | Standardized cache path structure | `cache.rs` | Path `~/.anvil/runtimes/{name}/{version}/extracted` is standardized. | **PASS** |
 | | REQ-CCH-002 | Skip download/extraction if target extracted directory exists | `installer.rs` | Checks if `extracted` exists and has entries in `install_runtimes`. | **PASS** |
 | | REQ-CCH-003 | Scan extracted directories for executable binaries | `cache.rs` | `find_bin_dirs` scans recursively and detects known executable names. | **PASS** |
-| | REQ-CCH-004 | Write signature-verified `.forge/shims.cache` file | `cache.rs` | `write_shims_cache_file` computes SHA-256 over key-value maps. | **PASS** |
-| **runtime-engine-environment/spec.md** | REQ-ENV-001 | Locate closest `forge.env` in parent directories | `environment.rs` | `find_forge_env` traverses parent directories upward. | **PASS** |
-| | REQ-ENV-002 | Parse `forge.env` entries with comments and quotes | `environment.rs` | `parse_env_file` parses lines, strips quotes, and skips comments. | **PASS** |
+| | REQ-CCH-004 | Write signature-verified `.anvil/shims.cache` file | `cache.rs` | `write_shims_cache_file` computes SHA-256 over key-value maps. | **PASS** |
+| **runtime-engine-environment/spec.md** | REQ-ENV-001 | Locate closest `anvil.env` in parent directories | `environment.rs` | `find_forge_env` traverses parent directories upward. | **PASS** |
+| | REQ-ENV-002 | Parse `anvil.env` entries with comments and quotes | `environment.rs` | `parse_env_file` parses lines, strips quotes, and skips comments. | **PASS** |
 | | REQ-ENV-003 | Construct PATH by prefixing binary directories to current PATH | `launcher.rs` | `run_command_in_env` constructs new PATH prepending `bin_dirs`. | **PASS** |
 | | REQ-ENV-004 | Detect sensitive environment variables and redact in logs | `environment.rs` | `mask_env_vars` replaces matching keys with `[REDACTED]`. | **PASS** |
 | **runtime-engine-launcher/spec.md** | REQ-LNC-001 | Spawn child processes inside the custom environment | `launcher.rs` | `run_command_in_env` spawns a process with customized environment maps. | **PASS** |
@@ -149,7 +149,7 @@ A review of the sibling coupling constraints outlined in the `design.md` was per
 * **Sibling Coupling Deviations (Minor):** 
   - The design specified that `installer` and `cache` only reference `types`. However, `installer.rs` imports `get_cache_dir` and `regenerate_shims_cache` from `cache.rs` to allow the installer to automatically rebuild the shims map upon runtime package installation. Additionally, `cache.rs` imports `find_forge_toml` from `manifest.rs`.
   - While these sibling dependencies slightly deviate from the strict architecture graph, they are pragmatic and necessary for coupling the installer with cache lifecycle events. Circular dependencies are avoided because `cache.rs` and `manifest.rs` do not import anything from `installer.rs`.
-* **Facade Integrity:** The facade module (`lib.rs`) properly exports all public interfaces, ensuring that downstream crates `forge-cli` and `forge-shim` compile and function correctly.
+* **Facade Integrity:** The facade module (`lib.rs`) properly exports all public interfaces, ensuring that downstream crates `anvil-cli` and `anvil-shim` compile and function correctly.
 
 ---
 

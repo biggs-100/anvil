@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provide a declarative pre-flight gate that validates forge operations against organizational policies before execution. Policies are configured via the optional `[policy]` section in `forge.toml` and enforced by `PolicyEngine` checks prior to each operation. Missing `[policy]` means no restrictions — full backward compatibility.
+Provide a declarative pre-flight gate that validates anvil operations against organizational policies before execution. Policies are configured via the optional `[policy]` section in `anvil.toml` and enforced by `PolicyEngine` checks prior to each operation. Missing `[policy]` means no restrictions — full backward compatibility.
 
 ---
 
@@ -10,7 +10,7 @@ Provide a declarative pre-flight gate that validates forge operations against or
 
 ### Requirement: Policy Configuration Parsing
 
-The system MUST parse a `[policy]` section from `forge.toml` using the following rules and defaults:
+The system MUST parse a `[policy]` section from `anvil.toml` using the following rules and defaults:
 
 | Rule | Type | Default | Description |
 |------|------|---------|-------------|
@@ -25,25 +25,25 @@ The system MUST apply all defaults when the `[policy]` section is absent or empt
 
 #### Scenario: Full Policy Section Parsed Correctly
 
-- GIVEN `forge.toml` contains a `[policy]` section with `allow_network = false`, `minimum_health = 80`, and `forbid_runtimes = ["nodejs"]`
+- GIVEN `anvil.toml` contains a `[policy]` section with `allow_network = false`, `minimum_health = 80`, and `forbid_runtimes = ["nodejs"]`
 - WHEN the configuration is loaded
 - THEN all 6 rules MUST be parsed with the specified values overriding defaults for `allow_network`, `minimum_health`, and `forbid_runtimes`, and defaults for unspecified rules
 
 #### Scenario: Missing Policy Section Uses Defaults
 
-- GIVEN `forge.toml` exists without a `[policy]` section
+- GIVEN `anvil.toml` exists without a `[policy]` section
 - WHEN the configuration is loaded
 - THEN all 6 policy rules MUST have their default values (`allow_network = true`, `minimum_health = 0`, etc.)
 
 #### Scenario: Invalid Value Clamped with Warning
 
-- GIVEN `forge.toml` has `[policy]` with `minimum_health = 150`
+- GIVEN `anvil.toml` has `[policy]` with `minimum_health = 150`
 - WHEN the configuration is loaded
 - THEN the system MUST emit a warning and clamp the value to `100`
 
 #### Scenario: Unknown Keys Ignored
 
-- GIVEN `forge.toml` has `[policy]` with `unknown_key = "foo"`
+- GIVEN `anvil.toml` has `[policy]` with `unknown_key = "foo"`
 - WHEN the configuration is loaded
 - THEN the system MUST ignore `unknown_key` without error
 
@@ -67,56 +67,56 @@ The system MUST apply all defaults when the `[policy]` section is absent or empt
 
 ---
 
-### Requirement: Check Before `forge up`
+### Requirement: Check Before `anvil up`
 
 `PolicyEngine::check_before_up()` MUST validate `allow_network`, `require_hashes`, and `minimum_health`.
 
 #### Scenario: Network Policy Blocks Up
 
 - GIVEN `allow_network = false`
-- WHEN `forge up` is invoked
+- WHEN `anvil up` is invoked
 - THEN the operation MUST be aborted with a violation printed to stderr
 
 ---
 
-### Requirement: Check Before `forge run` / `forge shell`
+### Requirement: Check Before `anvil run` / `anvil shell`
 
 `PolicyEngine::check_before_run()` MUST validate `minimum_health`, `required_profiles`, and `forbid_runtimes`.
 
 #### Scenario: Forbidden Runtime Blocks Run
 
 - GIVEN `forbid_runtimes = ["nodejs"]` and the active runtime is `nodejs`
-- WHEN `forge run` is invoked
+- WHEN `anvil run` is invoked
 - THEN the operation MUST be aborted with a violation showing the forbidden runtime name
 
 #### Scenario: Required Profile Not Active
 
 - GIVEN `required_profiles = ["production"]` and the active profile is `development`
-- WHEN `forge shell` is invoked
+- WHEN `anvil shell` is invoked
 - THEN the operation MUST be aborted with a violation showing the missing profile
 
 ---
 
-### Requirement: Check Before `forge sync`
+### Requirement: Check Before `anvil sync`
 
 `PolicyEngine::check_before_sync()` MUST validate `allow_network` and `require_hashes`.
 
 #### Scenario: Network Policy Blocks Sync
 
 - GIVEN `allow_network = false`
-- WHEN `forge sync` is invoked
+- WHEN `anvil sync` is invoked
 - THEN the operation MUST be aborted with a network policy violation
 
 ---
 
-### Requirement: Missing `forge.toml` Skips Policy Checks
+### Requirement: Missing `anvil.toml` Skips Policy Checks
 
-If no `forge.toml` file exists, the system MUST skip all policy checks and allow the operation to proceed.
+If no `anvil.toml` file exists, the system MUST skip all policy checks and allow the operation to proceed.
 
-#### Scenario: Missing forge.toml Passes Through
+#### Scenario: Missing anvil.toml Passes Through
 
-- GIVEN no `forge.toml` exists in the project directory
-- WHEN any forge command is invoked
+- GIVEN no `anvil.toml` exists in the project directory
+- WHEN any anvil command is invoked
 - THEN the system MUST NOT perform any policy checks and MUST proceed with the operation
 
 ---

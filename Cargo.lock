@@ -109,6 +109,73 @@ dependencies = [
 ]
 
 [[package]]
+name = "anvil"
+version = "0.1.0"
+dependencies = [
+ "anvil-core",
+ "anvil-drivers",
+ "anvil-tui",
+ "clap",
+ "dirs",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "anvil-core"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+ "argon2",
+ "dirs",
+ "flate2",
+ "futures-util",
+ "hex",
+ "keyring",
+ "rand",
+ "regex",
+ "reqwest",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "tokio",
+ "toml",
+ "xz2",
+ "zip",
+]
+
+[[package]]
+name = "anvil-drivers"
+version = "0.1.0"
+
+[[package]]
+name = "anvil-sdk"
+version = "0.1.0"
+dependencies = [
+ "anvil-core",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "anvil-shim"
+version = "0.1.0"
+
+[[package]]
+name = "anvil-tui"
+version = "0.1.0"
+dependencies = [
+ "anvil-core",
+ "crossterm",
+ "ratatui",
+ "tokio",
+]
+
+[[package]]
 name = "argon2"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -876,73 +943,6 @@ name = "foreign-types-shared"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
-
-[[package]]
-name = "forge-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "dirs",
- "forge-core",
- "forge-drivers",
- "forge-tui",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "forge-core"
-version = "0.1.0"
-dependencies = [
- "aes-gcm",
- "argon2",
- "dirs",
- "flate2",
- "futures-util",
- "hex",
- "keyring",
- "rand",
- "regex",
- "reqwest",
- "semver",
- "serde",
- "serde_json",
- "sha2",
- "tar",
- "tokio",
- "toml",
- "xz2",
- "zip",
-]
-
-[[package]]
-name = "forge-drivers"
-version = "0.1.0"
-
-[[package]]
-name = "forge-sdk"
-version = "0.1.0"
-dependencies = [
- "forge-core",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "forge-shim"
-version = "0.1.0"
-
-[[package]]
-name = "forge-tui"
-version = "0.1.0"
-dependencies = [
- "crossterm",
- "forge-core",
- "ratatui",
- "tokio",
-]
 
 [[package]]
 name = "form_urlencoded"

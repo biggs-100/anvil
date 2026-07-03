@@ -1,23 +1,23 @@
 ## Exploration: forge-environment-lifecycle
 
 ### Current State
-Currently, the `forge` CLI manages runtimes using direct command flows (like `Lock`, `Run`, `Shell`, `Setup`, `Doctor`, `Which`, `Init`). While functional, these commands are tightly coupled in `forge-cli` and `forge-core`. The lifecycle of the environment is implicit and lacks a defined state machine, event reporting, transaction rollback, and a clean separation between CLI rendering and core orchestration business logic. This makes it difficult for AI agents to precisely inspect the lifecycle state, catch partial failures, or trace installation progress.
+Currently, the `forge` CLI manages runtimes using direct command flows (like `Lock`, `Run`, `Shell`, `Setup`, `Doctor`, `Which`, `Init`). While functional, these commands are tightly coupled in `anvil-cli` and `anvil-core`. The lifecycle of the environment is implicit and lacks a defined state machine, event reporting, transaction rollback, and a clean separation between CLI rendering and core orchestration business logic. This makes it difficult for AI agents to precisely inspect the lifecycle state, catch partial failures, or trace installation progress.
 
 ---
 
 ### Affected Areas
 - `openspec/changes/forge-environment-lifecycle/exploration.md` — This exploration file documenting the design decisions.
-- `crates/forge-core/src/lib.rs` — Re-exporting the new operations, event system, and lifecycle status interfaces.
-- `crates/forge-core/src/types.rs` — Defining the new `LifecycleState` enum, `Event` enum, and operation-related metadata.
-- `crates/forge-core/src/environment.rs` — Adding lifecycle inspection and validation helper functions.
-- `crates/forge-cli/src/main.rs` — Redesigning the CLI commands to utilize the operation traits and the decoupled event bus.
+- `crates/anvil-core/src/lib.rs` — Re-exporting the new operations, event system, and lifecycle status interfaces.
+- `crates/anvil-core/src/types.rs` — Defining the new `LifecycleState` enum, `Event` enum, and operation-related metadata.
+- `crates/anvil-core/src/environment.rs` — Adding lifecycle inspection and validation helper functions.
+- `crates/anvil-cli/src/main.rs` — Redesigning the CLI commands to utilize the operation traits and the decoupled event bus.
 
 ---
 
 ### Approaches
 
 #### Approach 1: Command-centric Execution with In-Place File Operations
-Keep commands as independent functions inside `forge-core` and implement the lifecycle state checks dynamically on every invocation. Runtimes are downloaded and extracted directly into their final destination paths, using cleanup guards to delete folders in case of failures.
+Keep commands as independent functions inside `anvil-core` and implement the lifecycle state checks dynamically on every invocation. Runtimes are downloaded and extracted directly into their final destination paths, using cleanup guards to delete folders in case of failures.
 - **Pros:**
   - Simpler code structure.
   - Less refactoring of the current installer structure.
@@ -28,7 +28,7 @@ Keep commands as independent functions inside `forge-core` and implement the lif
 - **Effort:** Medium
 
 #### Approach 2: Operations Layer with Transactional Staging, Event Bus, and State Machine (Recommended)
-Refactor `forge-core` to introduce an `Operation` trait pattern separating orchestration logic from CLI. Implement a formal state machine (RFC-0011), a lightweight event bus, and a transactional installation runner using staging directories to ensure atomic rollbacks.
+Refactor `anvil-core` to introduce an `Operation` trait pattern separating orchestration logic from CLI. Implement a formal state machine (RFC-0011), a lightweight event bus, and a transactional installation runner using staging directories to ensure atomic rollbacks.
 - **Pros:**
   - 100% atomic installations: environment remains clean and stable even under network or disk failures.
   - Telemetry-friendly: event bus allows the CLI to draw progress bars while an agent traces progress via JSON streams.
@@ -43,49 +43,49 @@ Refactor `forge-core` to introduce an `Operation` trait pattern separating orche
 ### Detailed Design Exploration
 
 #### 1. Environment Lifecycle (RFC-0011) Machine States
-RFC-0011 defines ten machine states for a `forge` workspace. The system determines the current state dynamically by inspecting the manifest (`forge.toml`), lockfile (`forge.lock`), shims cache (`.forge/shims.cache`), and the local runtime installations in the cache directory (`~/.forge/runtimes`).
+RFC-0011 defines ten machine states for a `forge` workspace. The system determines the current state dynamically by inspecting the manifest (`anvil.toml`), lockfile (`anvil.lock`), shims cache (`.anvil/shims.cache`), and the local runtime installations in the cache directory (`~/.anvil/runtimes`).
 
 ```mermaid
 stateDiagram-v2
     [*] --> UNINITIALIZED
-    UNINITIALIZED --> INITIALIZED : forge init
-    INITIALIZED --> RESOLVED : forge resolve
-    INITIALIZED --> LOCKED : forge lock
-    RESOLVED --> LOCKED : forge lock
-    LOCKED --> SYNCED : forge sync
+    UNINITIALIZED --> INITIALIZED : anvil init
+    INITIALIZED --> RESOLVED : anvil resolve
+    INITIALIZED --> LOCKED : anvil lock
+    RESOLVED --> LOCKED : anvil lock
+    LOCKED --> SYNCED : anvil sync
     SYNCED --> READY : generate shims
-    READY --> ACTIVE : forge run / shell
+    READY --> ACTIVE : anvil run / shell
     ACTIVE --> READY : command exit
     
     %% File mutation flows
-    READY --> DIRTY : forge.toml modified / lockfile deleted
-    SYNCED --> DIRTY : forge.toml modified / lockfile deleted
-    LOCKED --> DIRTY : forge.toml modified
-    DIRTY --> RESOLVED : forge resolve
+    READY --> DIRTY : anvil.toml modified / lockfile deleted
+    SYNCED --> DIRTY : anvil.toml modified / lockfile deleted
+    LOCKED --> DIRTY : anvil.toml modified
+    DIRTY --> RESOLVED : anvil resolve
     
     %% Broken / Corruption state
     READY --> BROKEN : binary missing / validation fail
     SYNCED --> BROKEN : binary missing / validation fail
-    BROKEN --> SYNCED : forge repair / sync
+    BROKEN --> SYNCED : anvil repair / sync
 ```
 
 | Lifecycle State | Description / State Invariants | Transition Guards / File Mutation Triggers |
 | :--- | :--- | :--- |
-| **UNINITIALIZED** | `forge.toml` is not present in the current workspace directory or any parent. | **Guard:** Exits when `forge init` creates `forge.toml`. |
-| **INITIALIZED** | `forge.toml` is present, but `forge.lock` does not exist in the workspace. | **Guard:** Transitions to `RESOLVED` on resolution, or `LOCKED` when `forge.lock` is written. |
-| **RESOLVED** | Runtimes resolved to matching registry releases (in-memory or local metadata cache). | **Guard:** Transitions to `LOCKED` once the resolved configurations are written to `forge.lock`. |
-| **LOCKED** | `forge.lock` exists and is structurally valid, but required runtimes are not fully installed. | **Guard:** Transitions to `SYNCED` once all locks match hashes and extract targets. **Mutation:** Moves to `DIRTY` if `forge.toml` is edited. |
-| **SYNCED** | All runtimes in `forge.lock` are downloaded, verified (SHA-256), and extracted to the cache. | **Guard:** Transitions to `READY` when `.forge/shims.cache` is generated. **Mutation:** Moves to `DIRTY` if `forge.lock` is deleted. |
-| **READY** | `.forge/shims.cache` is valid and matches the installed runtimes. Shims are set up. | **Guard:** Transitions to `ACTIVE` when `run` or `shell` executes. **Mutation:** Moves to `BROKEN` if target binaries are deleted. |
+| **UNINITIALIZED** | `anvil.toml` is not present in the current workspace directory or any parent. | **Guard:** Exits when `anvil init` creates `anvil.toml`. |
+| **INITIALIZED** | `anvil.toml` is present, but `anvil.lock` does not exist in the workspace. | **Guard:** Transitions to `RESOLVED` on resolution, or `LOCKED` when `anvil.lock` is written. |
+| **RESOLVED** | Runtimes resolved to matching registry releases (in-memory or local metadata cache). | **Guard:** Transitions to `LOCKED` once the resolved configurations are written to `anvil.lock`. |
+| **LOCKED** | `anvil.lock` exists and is structurally valid, but required runtimes are not fully installed. | **Guard:** Transitions to `SYNCED` once all locks match hashes and extract targets. **Mutation:** Moves to `DIRTY` if `anvil.toml` is edited. |
+| **SYNCED** | All runtimes in `anvil.lock` are downloaded, verified (SHA-256), and extracted to the cache. | **Guard:** Transitions to `READY` when `.anvil/shims.cache` is generated. **Mutation:** Moves to `DIRTY` if `anvil.lock` is deleted. |
+| **READY** | `.anvil/shims.cache` is valid and matches the installed runtimes. Shims are set up. | **Guard:** Transitions to `ACTIVE` when `run` or `shell` executes. **Mutation:** Moves to `BROKEN` if target binaries are deleted. |
 | **ACTIVE** | A subprocess (command or shell) is executing inside the isolated env container. | **Guard:** Transitions back to `READY` when the subprocess exits. |
-| **DIRTY** | The declared runtimes in `forge.toml` no longer match the entries in `forge.lock`. | **Guard:** Transitions to `RESOLVED`/`LOCKED` via `forge lock` or `forge up`. |
-| **OUTDATED** | The local files match `forge.lock`, but registry has newer releases matching `forge.toml`. | **Guard:** Transitions to `RESOLVED` via checking update registry. |
-| **BROKEN** | A target directory exists but is corrupted (missing main executable, failing checksums). | **Guard:** Transitions to `SYNCED` or `READY` via `forge repair` or `forge sync`. |
+| **DIRTY** | The declared runtimes in `anvil.toml` no longer match the entries in `anvil.lock`. | **Guard:** Transitions to `RESOLVED`/`LOCKED` via `anvil lock` or `anvil up`. |
+| **OUTDATED** | The local files match `anvil.lock`, but registry has newer releases matching `anvil.toml`. | **Guard:** Transitions to `RESOLVED` via checking update registry. |
+| **BROKEN** | A target directory exists but is corrupted (missing main executable, failing checksums). | **Guard:** Transitions to `SYNCED` or `READY` via `anvil repair` or `anvil sync`. |
 
 ---
 
 #### 2. Operations Layer Architecture
-To separate the execution logic from the CLI rendering and interface, all core logic is encapsulated inside `Operation` structs within `forge-core`. The CLI or external agents configure the operation and call `execute`.
+To separate the execution logic from the CLI rendering and interface, all core logic is encapsulated inside `Operation` structs within `anvil-core`. The CLI or external agents configure the operation and call `execute`.
 
 ```rust
 use async_trait::async_trait;
@@ -110,9 +110,9 @@ pub trait Operation {
 ```
 
 ##### Core Operations Mapping:
-1. **`ResolveOperation`**: Parses `forge.toml`, queries registries, and builds a list of `RuntimeLock` definitions.
-2. **`LockOperation`**: Executes `ResolveOperation` and writes the resulting lock definitions to `forge.lock`.
-3. **`SyncOperation`**: Iterates through `forge.lock`, stage-downloads, stage-extracts, verifies, promotes runtimes, and regenerates `.forge/shims.cache`.
+1. **`ResolveOperation`**: Parses `anvil.toml`, queries registries, and builds a list of `RuntimeLock` definitions.
+2. **`LockOperation`**: Executes `ResolveOperation` and writes the resulting lock definitions to `anvil.lock`.
+3. **`SyncOperation`**: Iterates through `anvil.lock`, stage-downloads, stage-extracts, verifies, promotes runtimes, and regenerates `.anvil/shims.cache`.
 4. **`CleanOperation`**: Removes specified local cached runtimes or completely wipes cache files and shims.
 5. **`GcOperation`**: Cleans orphaned runtimes in the cache that are no longer referenced in the locks of registered local workspaces.
 6. **`RunOperation`**: Checks if state is `READY` (syncing if not), sets up process environment maps, and executes a command.
@@ -122,7 +122,7 @@ pub trait Operation {
 ---
 
 #### 3. Event Bus Design
-A decoupled, lightweight Event Bus provides progress notifications to UI indicators (like progress bars) and tracing tools without coupling `forge-core` to terminal rendering libraries.
+A decoupled, lightweight Event Bus provides progress notifications to UI indicators (like progress bars) and tracing tools without coupling `anvil-core` to terminal rendering libraries.
 
 ```rust
 #[derive(Debug, Clone, serde::Serialize)]
@@ -161,7 +161,7 @@ pub struct BroadcastEventBus {
     tx: tokio::sync::broadcast::Sender<Event>,
 }
 ```
-Consumers can subscribe to this bus. For example, `forge-cli` will listen to progress events to update concurrent `indicatif` progress bars, while AI tracing configurations will serialize events directly into a JSON line stream for real-time observability.
+Consumers can subscribe to this bus. For example, `anvil-cli` will listen to progress events to update concurrent `indicatif` progress bars, while AI tracing configurations will serialize events directly into a JSON line stream for real-time observability.
 
 ---
 
@@ -184,7 +184,7 @@ Rename staged   -> cache/runtimes/{runtime}/{version}
 ```
 
 ##### Rollback Rules:
-1. **Download & Extract**: Runtimes are downloaded and extracted to `~/.forge/runtimes/.staging/{runtime}/{version}`.
+1. **Download & Extract**: Runtimes are downloaded and extracted to `~/.anvil/runtimes/.staging/{runtime}/{version}`.
 2. **Checksum & Executable Verification**: We verify the extracted contents. If any runtime fails verification or fails during download, we trigger the rollback.
 3. **Rollback Execution**:
    - Terminate all other concurrent downloads and extractions in the batch.
@@ -199,36 +199,36 @@ Rename staged   -> cache/runtimes/{runtime}/{version}
 
 Every command will support `--json` for machine readability.
 
-*   `forge init`
-    *   **Behavior**: Creates `forge.toml` if missing, appends `.forge/shims.cache` and `.forge/state.json` to `.gitignore`.
+*   `anvil init`
+    *   **Behavior**: Creates `anvil.toml` if missing, appends `.anvil/shims.cache` and `.anvil/state.json` to `.gitignore`.
     *   **Exit Code**: `0` on success, `1` on write error.
-*   `forge resolve`
-    *   **Behavior**: Performs dry-run resolution of `forge.toml` runtimes against hybrid registry. Prints version details.
+*   `anvil resolve`
+    *   **Behavior**: Performs dry-run resolution of `anvil.toml` runtimes against hybrid registry. Prints version details.
     *   **Exit Code**: `0` on successful resolution, `1` if version reqs are unsatisfied.
-*   `forge lock`
-    *   **Behavior**: Executes `ResolveOperation` and writes `forge.lock` to workspace.
+*   `anvil lock`
+    *   **Behavior**: Executes `ResolveOperation` and writes `anvil.lock` to workspace.
     *   **Exit Code**: `0` on success, `1` on resolution/write failure.
-*   `forge sync`
-    *   **Behavior**: Reads `forge.lock` and executes transactional installation of all missing runtimes in parallel.
+*   `anvil sync`
+    *   **Behavior**: Reads `anvil.lock` and executes transactional installation of all missing runtimes in parallel.
     *   **Exit Code**: `0` on success, `1` on atomic failure (rollback is executed).
-*   `forge up`
+*   `anvil up`
     *   **Behavior**: Chains `resolve` -> `lock` -> `sync` in a single command.
-*   `forge run <cmd> [args]...`
-    *   **Behavior**: Verifies environment state. Spawns child command with local path prepended to `PATH` and `forge.env` variables injected.
-*   `forge shell`
+*   `anvil run <cmd> [args]...`
+    *   **Behavior**: Verifies environment state. Spawns child command with local path prepended to `PATH` and `anvil.env` variables injected.
+*   `anvil shell`
     *   **Behavior**: Spawns system's default shell (bash/zsh/powershell/cmd) inside the activated runtime context.
-*   `forge clean [--runtime <name>] [--all]`
+*   `anvil clean [--runtime <name>] [--all]`
     *   **Behavior**: Deletes cached binaries and shims. If `--all`, clears the entire runtimes cache.
-*   `forge gc`
-    *   **Behavior**: Scans local workspaces register (stored in `~/.forge/workspaces.json`) and garbage collects unused versions.
-*   `forge status`
+*   `anvil gc`
+    *   **Behavior**: Scans local workspaces register (stored in `~/.anvil/workspaces.json`) and garbage collects unused versions.
+*   `anvil status`
     *   **Behavior**: Evaluates workspace against state machine invariants. Prints active state (READY, DIRTY, BROKEN) and details.
-*   `forge inspect`
+*   `anvil inspect`
     *   **Behavior**: Prints JSON describing active environment paths, environment variables (masked), registry source, and shim mappings.
-*   `forge repair`
+*   `anvil repair`
     *   **Behavior**: Forces SHA-256 validation of all locked runtimes, re-installing any corrupted files via transactional sync.
-*   `forge plan`
-    *   **Behavior**: Calculates diff between `forge.toml`, `forge.lock`, and current cache, outputting planned installs/removals.
+*   `anvil plan`
+    *   **Behavior**: Calculates diff between `anvil.toml`, `anvil.lock`, and current cache, outputting planned installs/removals.
 
 ---
 
@@ -241,18 +241,18 @@ We will draft the RFC-0011 design skeleton here to be included in the change doc
 
 ## Status: Draft
 ## Date: 2026-07-01
-## Author: Forge Team
+## Author: Anvil Team
 
 ### 1. Motivation
 Currently, environment management in `forge` is command-driven rather than state-driven. This leads to partial failure states (e.g. half-extracted runtimes) and lack of coordination between configuration changes and shell executions. We need a formal state machine and transactional layer to guarantee consistency.
 
 ### 2. State Machine Specification
-The active workspace state is determined dynamically by evaluating the existence and checksum matches of `forge.toml`, `forge.lock`, `.forge/shims.cache`, and cached binary runtimes.
+The active workspace state is determined dynamically by evaluating the existence and checksum matches of `anvil.toml`, `anvil.lock`, `.anvil/shims.cache`, and cached binary runtimes.
 - States: `UNINITIALIZED`, `INITIALIZED`, `RESOLVED`, `LOCKED`, `SYNCED`, `READY`, `ACTIVE`, `DIRTY`, `OUTDATED`, `BROKEN`.
-- Evaluated on every `forge status` and before executing `forge run`/`shell`.
+- Evaluated on every `anvil status` and before executing `anvil run`/`shell`.
 
 ### 3. Operations Layer
-To allow scripting, testing, and AI-agent automation, core business logic is moved into `crates/forge-core/src/operations/` and exposed via the `Operation` trait. Terminal UI (progress bars, colors) lives entirely in the CLI crate, listening to the core engine via the `EventBus`.
+To allow scripting, testing, and AI-agent automation, core business logic is moved into `crates/anvil-core/src/operations/` and exposed via the `Operation` trait. Terminal UI (progress bars, colors) lives entirely in the CLI crate, listening to the core engine via the `EventBus`.
 
 ### 4. Transactional Installations
 To prevent corrupted workspaces:
@@ -261,8 +261,8 @@ To prevent corrupted workspaces:
 - Existing directory overrides must back up to `.backup/` first, allowing automatic rollbacks in case of any runtime install failure.
 
 ### 5. Backward Compatibility & Migrations
-- The structure of `forge.toml` remains unchanged.
-- Existing `.forge/shims.cache` files will be automatically regenerated during the first `forge status` or `forge run` run.
+- The structure of `anvil.toml` remains unchanged.
+- Existing `.anvil/shims.cache` files will be automatically regenerated during the first `anvil status` or `anvil run` run.
 ```
 
 ---
@@ -274,7 +274,7 @@ To prevent corrupted workspaces:
 ---
 
 ### Risks
-- **Atomic Rename Support**: Moving files across different drives is not atomic in standard filesystems. We must ensure staging directories are created within the same cache partition (`~/.forge/runtimes/`) to guarantee simple, sub-millisecond directory renames.
+- **Atomic Rename Support**: Moving files across different drives is not atomic in standard filesystems. We must ensure staging directories are created within the same cache partition (`~/.anvil/runtimes/`) to guarantee simple, sub-millisecond directory renames.
 - **FS Locking on Windows**: Windows aggressively locks open files, which can cause atomic renames to fail if a shim or terminal is active. We need retry policies and file-lock checks in the promotion phase.
 
 ---

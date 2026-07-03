@@ -20,9 +20,9 @@ The multicall shim binary MUST determine its execution context and select the ta
 The system MUST search the directory tree from the current working directory upwards for the project shim cache.
 
 #### Scenario: Search Project Root
-- GIVEN the current working directory is a deeply nested project subdirectory containing `.forge/shims.cache` at the root
+- GIVEN the current working directory is a deeply nested project subdirectory containing `.anvil/shims.cache` at the root
 - WHEN the shim is executed
-- THEN the system MUST traverse upwards and locate `.forge/shims.cache`
+- THEN the system MUST traverse upwards and locate `.anvil/shims.cache`
 
 ### Requirement: Unix Process Replacement
 

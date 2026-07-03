@@ -1,8 +1,8 @@
-# Design: Forge Plugin System
+# Design: Anvil Plugin System
 
 ## Technical Approach
 
-New `plugin/` module in forge-core with a `Plugin` trait, `PluginRegistry`, and `CliCommand` trait. Plugins are Rust trait objects registered at compile time — either as workspace members or programmatically via `Engine::register_plugin()`. The registry performs API version gating, DAG dependency resolution, and topological init. Each plugin's `register()` hook injects its extension types (RuntimeProvider, ContextProvider, HealthCheck, etc.) into the registry. The Engine collects these at startup alongside built-in implementations, which always take precedence. All 7 extension types share a single loading path through PluginRegistry.
+New `plugin/` module in anvil-core with a `Plugin` trait, `PluginRegistry`, and `CliCommand` trait. Plugins are Rust trait objects registered at compile time — either as workspace members or programmatically via `Engine::register_plugin()`. The registry performs API version gating, DAG dependency resolution, and topological init. Each plugin's `register()` hook injects its extension types (RuntimeProvider, ContextProvider, HealthCheck, etc.) into the registry. The Engine collects these at startup alongside built-in implementations, which always take precedence. All 7 extension types share a single loading path through PluginRegistry.
 
 > **Future path**: `scan_directory()` is designed to later support dynamic loading via `libloading` when third-party plugins are needed. The trait, registry, and lifecycle remain unchanged — only the loading mechanism swaps.
 
@@ -43,27 +43,27 @@ Context command: built-in providers (6) + plugin providers via registry
 
 | File | Action | Description |
 |------|--------|-------------|
-| `crates/forge-core/src/plugin/mod.rs` | Create | Plugin trait, CliCommand trait, FORGE_PLUGIN_API_VERSION, re-exports |
-| `crates/forge-core/src/plugin/registry.rs` | Create | PluginRegistry: register, scan, resolve_dag, init, query-by-type |
-| `crates/forge-core/Cargo.toml` | Modify | Add no new deps — pure trait objects only |
-| `crates/forge-core/src/lib.rs` | Modify | Add `pub mod plugin`, re-exports |
-| `crates/forge-core/src/api/v1.rs` | Modify | Engine gains `register_plugin()`, plugin-aware constructors |
-| `crates/forge-core/src/resolver.rs` | Modify | Resolver accepts plugin RuntimeProviders from registry |
-| `crates/forge-core/src/context/mod.rs` | Modify | ContextEngine accepts plugin providers/exporters |
-| `crates/forge-core/src/diagnostics/mod.rs` | Modify | DiagnosticEngine accepts plugin HealthChecks via `with_checks()` |
-| `crates/forge-core/src/secrets/mod.rs` | Modify | Config resolution adds plugin ConfigurationProvider at level 2.5 |
-| `crates/forge-core/src/operations/mod.rs` | Modify | Operation dispatch checks plugin ops as fallback |
-| `crates/forge-cli/src/main.rs` | Modify | Plugin loading at startup, CliCommand merge, built-in precedence |
+| `crates/anvil-core/src/plugin/mod.rs` | Create | Plugin trait, CliCommand trait, ANVIL_PLUGIN_API_VERSION, re-exports |
+| `crates/anvil-core/src/plugin/registry.rs` | Create | PluginRegistry: register, scan, resolve_dag, init, query-by-type |
+| `crates/anvil-core/Cargo.toml` | Modify | Add no new deps — pure trait objects only |
+| `crates/anvil-core/src/lib.rs` | Modify | Add `pub mod plugin`, re-exports |
+| `crates/anvil-core/src/api/v1.rs` | Modify | Engine gains `register_plugin()`, plugin-aware constructors |
+| `crates/anvil-core/src/resolver.rs` | Modify | Resolver accepts plugin RuntimeProviders from registry |
+| `crates/anvil-core/src/context/mod.rs` | Modify | ContextEngine accepts plugin providers/exporters |
+| `crates/anvil-core/src/diagnostics/mod.rs` | Modify | DiagnosticEngine accepts plugin HealthChecks via `with_checks()` |
+| `crates/anvil-core/src/secrets/mod.rs` | Modify | Config resolution adds plugin ConfigurationProvider at level 2.5 |
+| `crates/anvil-core/src/operations/mod.rs` | Modify | Operation dispatch checks plugin ops as fallback |
+| `crates/anvil-cli/src/main.rs` | Modify | Plugin loading at startup, CliCommand merge, built-in precedence |
 
 ## Interfaces / Contracts
 
 ```rust
-pub const FORGE_PLUGIN_API_VERSION: &str = "1.0.0";
+pub const ANVIL_PLUGIN_API_VERSION: &str = "1.0.0";
 
 pub trait Plugin: Send + Sync {
     fn name(&self) -> &str;
     fn version(&self) -> &str;
-    fn api_version(&self) -> &str { FORGE_PLUGIN_API_VERSION }
+    fn api_version(&self) -> &str { ANVIL_PLUGIN_API_VERSION }
     fn depends_on(&self) -> &[&str] { &[] }
     fn register(&self, registry: &mut PluginRegistry) -> Result<(), String>;
 }

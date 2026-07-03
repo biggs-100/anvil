@@ -1,19 +1,19 @@
-# Proposal: Publish FCP and FMS as Open Specifications
+# Proposal: Publish ACP and AMS as Open Specifications
 
 ## Intent
 
-Forge has shipped all core protocols and formats (frozen in Core 1.0). External tools cannot interoperate without reverse-engineering the wire format. Publish FCP (Forge Context Protocol) and FMS (Forge Manifest Specification) as formal, versioned, open spec documents so other tools can integrate without reimplementing the core.
+Forge has shipped all core protocols and formats (frozen in Core 1.0). External tools cannot interoperate without reverse-engineering the wire format. Publish ACP (Forge Context Protocol) and AMS (Forge Manifest Specification) as formal, versioned, open spec documents so other tools can integrate without reimplementing the core.
 
 ## Scope
 
 ### In Scope
-- **FCP spec**: handshake flow, wire format, schema, provider/exporter interface, security rules, capability negotiation
-- **FMS spec**: `forge.toml` schema, `forge.lock` schema, `forge.env` format, profile resolution, variable interpolation, precedence rules
+- **ACP spec**: handshake flow, wire format, schema, provider/exporter interface, security rules, capability negotiation
+- **AMS spec**: `anvil.toml` schema, `anvil.lock` schema, `anvil.env` format, profile resolution, variable interpolation, precedence rules
 - Both published as Markdown in `docs/specs/`
 
 ### Out of Scope
 - New protocol features, version bumps, or implementation changes
-- FRRS specification (already documented separately)
+- ARRS specification (already documented separately)
 - Publishing process (website, registry) — document only
 
 ## Capabilities
@@ -21,8 +21,8 @@ Forge has shipped all core protocols and formats (frozen in Core 1.0). External 
 > Contract between proposal and specs phases.
 
 ### New Capabilities
-- `fcp-spec`: Forge Context Protocol — versioned open specification covering handshake, schema, providers, exporters, adapters, and security
-- `fms-spec`: Forge Manifest Specification — versioned open specification covering forge.toml, forge.lock, forge.env, resolution stack, and interpolation
+- `acp-spec`: Anvil Context Protocol — versioned open specification covering handshake, schema, providers, exporters, adapters, and security
+- `ams-spec`: Anvil Manifest Specification — versioned open specification covering anvil.toml, anvil.lock, anvil.env, resolution stack, and interpolation
 
 ### Modified Capabilities
 - None (pure documentation — existing implementation specs in `openspec/specs/` are unchanged)
@@ -30,7 +30,7 @@ Forge has shipped all core protocols and formats (frozen in Core 1.0). External 
 ## Approach
 
 Write two specification documents in `docs/specs/`:
-1. `docs/specs/fcp-v1.md` — extracted from `crates/forge-core/src/context/` and existing openspec/ context specs. Covers protocol version 1.0.0.
+1. `docs/specs/fcp-v1.md` — extracted from `crates/anvil-core/src/context/` and existing openspec/ context specs. Covers protocol version 1.0.0.
 2. `docs/specs/fms-v1.md` — extracted from `manifest.rs`, `types.rs`, `environment.rs`, `resolver.rs`. Covers the full manifest format, lockfile schema, env file parsing, 8-level resolution stack, and `${...}` interpolation.
 
 Documents codify existing frozen behavior — no new design decisions.
@@ -39,8 +39,8 @@ Documents codify existing frozen behavior — no new design decisions.
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `docs/specs/fcp-v1.md` | New | FCP specification document |
-| `docs/specs/fms-v1.md` | New | FMS specification document |
+| `docs/specs/fcp-v1.md` | New | ACP specification document |
+| `docs/specs/fms-v1.md` | New | AMS specification document |
 
 ## Risks
 

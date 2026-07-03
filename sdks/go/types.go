@@ -1,4 +1,4 @@
-package forgesdk
+package anvilsdk
 
 // ── Response types ──────────────────────────────────────────────────────────
 
@@ -81,12 +81,12 @@ type ContextData struct {
 	Data string `json:"data"`
 }
 
-// ForgeError carries an optional JSON-RPC error code.
-type ForgeError struct {
+// AnvilError carries an optional JSON-RPC error code.
+type AnvilError struct {
 	Code    int    `json:"code,omitempty"`
 	Message string `json:"message"`
 }
 
-func (e *ForgeError) Error() string {
+func (e *AnvilError) Error() string {
 	return e.Message
 }

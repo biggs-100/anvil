@@ -23,7 +23,7 @@ The system MUST produce plan variants corresponding to different operations:
 - THEN the plan MUST include a download task for Python 3.11, skip Node 18 download, and require shim cache regeneration.
 
 #### Scenario: Repair Plan Generation
-- GIVEN an active environment where the Python binary is missing from `.forge/runtimes/python`
+- GIVEN an active environment where the Python binary is missing from `.anvil/runtimes/python`
 - WHEN a `RepairPlan` is computed
 - THEN the plan MUST mark the Python runtime for complete re-installation and specify shim repair.
 

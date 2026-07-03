@@ -2,16 +2,16 @@
 
 ## Intent
 
-Unified, secure, and declarative environment resolution framework. Solves fragmented config management and plaintext secrets storage by implementing a 5-level configuration hierarchy (forge.toml, forge.lock, forge.env, forge.secrets, forge.local.toml) with profile overlays, strict precedence, and secure OS keyring integration or Argon2id/AES-256-GCM fallback encryption.
+Unified, secure, and declarative environment resolution framework. Solves fragmented config management and plaintext secrets storage by implementing a 5-level configuration hierarchy (anvil.toml, anvil.lock, anvil.env, anvil.secrets, anvil.local.toml) with profile overlays, strict precedence, and secure OS keyring integration or Argon2id/AES-256-GCM fallback encryption.
 
 ## Scope
 
 ### In Scope
-- Config schema validation in `forge.toml` with profile mapping (development, production, ci).
+- Config schema validation in `anvil.toml` with profile mapping (development, production, ci).
 - Variables interpolation supporting derived keys (e.g., `${runtime.python.path}`, `${workspace.root}`).
 - Public Engine API facade endpoints for configuration and secret access.
-- Fallback cryptography using Argon2id + AES-256-GCM for `forge.secrets`.
-- CLI Commands: `forge secret <set|get|list|remove|export|import|doctor>` and `forge env <list|get|set|unset|resolve>`.
+- Fallback cryptography using Argon2id + AES-256-GCM for `anvil.secrets`.
+- CLI Commands: `anvil secret <set|get|list|remove|export|import|doctor>` and `anvil env <list|get|set|unset|resolve>`.
 - Extensible `SecretProvider` and `ConfigurationProvider` traits.
 
 ### Out of Scope
@@ -37,8 +37,8 @@ Rust implementation using standard cryptography (`argon2`, `aes-gcm`) and `keyri
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `crates/forge-core` | Modified | Core config resolving logic, traits, crypto engine, and engine facade. |
-| `crates/forge-cli` | Modified | Addition of `env` and `secret` CLI subcommands. |
+| `crates/anvil-core` | Modified | Core config resolving logic, traits, crypto engine, and engine facade. |
+| `crates/anvil-cli` | Modified | Addition of `env` and `secret` CLI subcommands. |
 | `openspec/specs` | New | Creation of new capability specs. |
 
 ## Risks
@@ -50,7 +50,7 @@ Rust implementation using standard cryptography (`argon2`, `aes-gcm`) and `keyri
 
 ## Rollback Plan
 
-Revert git commits back to the previous stable release tag. The schema of `forge.toml` remains backwards-compatible, and any generated `forge.secrets` files can be decrypted via the backup export command or deleted.
+Revert git commits back to the previous stable release tag. The schema of `anvil.toml` remains backwards-compatible, and any generated `anvil.secrets` files can be decrypted via the backup export command or deleted.
 
 ## Dependencies
 

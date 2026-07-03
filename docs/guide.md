@@ -1,6 +1,6 @@
-# Forge Guide
+# Anvil Guide
 
-Practical examples for using Forge in real projects.
+Practical examples for using Anvil in real projects.
 
 ---
 
@@ -8,14 +8,14 @@ Practical examples for using Forge in real projects.
 
 ```bash
 # Install
-curl -fsSL https://forge.sh/install | sh
+curl -fsSL https://anvil.dev/install | sh
 
 # Initialize a project
 cd my-project
-forge init
+anvil init
 
 # Configure runtimes
-cat >> forge.toml <<EOF
+cat >> anvil.toml <<EOF
 [runtimes]
 node = "20.11.0"
 python = "3.12.0"
@@ -24,24 +24,24 @@ jdk = "21.0.2"
 EOF
 
 # Resolve, lock, and download everything
-forge up
+anvil up
 
 # Use it
-forge run node --version
-forge run python --version
-forge run clang --version
-forge run java --version
+anvil run node --version
+anvil run python --version
+anvil run clang --version
+anvil run java --version
 ```
 
 ---
 
 ## Everyday Workflows
 
-### Developing with Forge
+### Developing with Anvil
 
 ```bash
 # Start a subshell with all runtimes configured
-forge shell
+anvil shell
 
 # Inside the subshell:
 node app.js
@@ -54,24 +54,24 @@ javac Main.java && java Main
 
 ```bash
 # No subshell needed
-forge run npx create-react-app my-app
-forge run pip install -r requirements.txt
+anvil run npx create-react-app my-app
+anvil run pip install -r requirements.txt
 ```
 
 ### Checking environment health
 
 ```bash
 # Quick check
-forge status
+anvil status
 
 # Full diagnostics
-forge doctor
+anvil doctor
 
 # Deep diagnostics
-forge doctor --deep
+anvil doctor --deep
 
 # Machine-readable diagnostics
-forge doctor --json
+anvil doctor --json
 ```
 
 ---
@@ -81,7 +81,7 @@ forge doctor --json
 ### Environment variables
 
 ```toml
-# forge.toml
+# anvil.toml
 [config.definitions.DATABASE_URL]
 type = "string"
 required = true
@@ -93,30 +93,30 @@ default = 10
 
 ```bash
 # Set environment variables
-forge env set DATABASE_URL postgres://localhost/mydb
-forge env set MAX_CONNECTIONS 20
+anvil env set DATABASE_URL postgres://localhost/mydb
+anvil env set MAX_CONNECTIONS 20
 
 # List all variables with their sources
-forge explain config
+anvil explain config
 ```
 
 ### Secrets (encrypted)
 
 ```bash
 # Store a secret (uses OS keyring, falls back to encrypted file)
-forge secret set API_KEY sk-abc123
+anvil secret set API_KEY sk-abc123
 
 # Retrieve
-forge secret get API_KEY
+anvil secret get API_KEY
 
 # Check keyring health
-forge secret doctor
+anvil secret doctor
 ```
 
 ### Profiles
 
 ```toml
-# forge.toml
+# anvil.toml
 [profile.production.env]
 DATABASE_URL = "postgres://prod-db:5432/mydb"
 NODE_ENV = "production"
@@ -128,10 +128,10 @@ NODE_ENV = "development"
 
 ```bash
 # Use a specific profile
-FORGE_PROFILE=production forge run node app.js
+ANVIL_PROFILE=production anvil run node app.js
 
 # See which profile is active
-forge explain profile
+anvil explain profile
 ```
 
 ---
@@ -141,28 +141,28 @@ forge explain profile
 ### Bundle — share a project without the repo
 
 ```bash
-# Create a portable .forge archive
+# Create a portable .anvil archive
 cd my-project
-forge bundle
+anvil bundle
 
-# Send project.forge to a teammate
+# Send project.anvil to a teammate
 # They can restore it anywhere:
-forge restore project.forge
-forge up
+anvil restore project.anvil
+anvil up
 ```
 
 ### Snapshot — save and restore state
 
 ```bash
 # Before a risky upgrade
-forge snapshot --name before-node-upgrade
+anvil snapshot --name before-node-upgrade
 
 # Try the upgrade
 # If something breaks:
-forge snapshot restore before-node-upgrade
+anvil snapshot restore before-node-upgrade
 
 # List all snapshots
-forge snapshot list
+anvil snapshot list
 ```
 
 ---
@@ -170,7 +170,7 @@ forge snapshot list
 ## Policies
 
 ```toml
-# forge.toml
+# anvil.toml
 [policy]
 allow_network = false      # Block network during builds
 require_hashes = true       # Reject unverified downloads
@@ -191,17 +191,17 @@ forbid_runtimes = ["node"]  # Block node in this project
 ### Rust
 
 ```rust
-use forge_sdk::Forge;
+use anvil_sdk::Anvil;
 
-let forge = Forge::new()?;
-let status = forge.status().await?;
+let anvil = Anvil::new()?;
+let status = anvil.status().await?;
 println!("{}", status);
 ```
 
 ### Go
 
 ```go
-import "github.com/user/forge/sdk-go"
+import "github.com/user/anvil/sdk-go"
 
 client := sdkgo.New()
 defer client.Close()
@@ -212,9 +212,9 @@ fmt.Println(status)
 ### Python
 
 ```python
-from forge_sdk import Forge
+from anvil_sdk import Anvil
 
-client = Forge()
+client = Anvil()
 print(client.status())
 client.close()
 ```
@@ -222,9 +222,9 @@ client.close()
 ### TypeScript
 
 ```typescript
-import { Forge } from "@forge/sdk";
+import { Anvil } from "@anvil/sdk";
 
-const client = new Forge();
+const client = new Anvil();
 const status = await client.status();
 console.log(status);
 await client.disconnect();
@@ -238,22 +238,22 @@ await client.disconnect();
 
 ```bash
 # Start MCP server
-forge mcp
+anvil mcp
 ```
 
-Any MCP-compatible client (Claude Code, Continue.dev, etc.) connects to Forge via:
-- **Resources**: `forge://context/active` — full project context
-- **Tools**: `forge_run`, `forge_shell`, `forge_sync`, `forge_plan`, `forge_explain`, `forge_doctor`
-- **Prompts**: `forge:status`, `forge:diagnose`, `forge:explain`
+Any MCP-compatible client (Claude Code, Continue.dev, etc.) connects to Anvil via:
+- **Resources**: `anvil://context/active` — full project context
+- **Tools**: `anvil_run`, `anvil_shell`, `anvil_sync`, `anvil_plan`, `anvil_explain`, `anvil_doctor`
+- **Prompts**: `anvil:status`, `anvil:diagnose`, `anvil:explain`
 
 ### AI Agent Context
 
 ```bash
 # Get structured context for AI agents
-forge ai context
+anvil ai context
 
 # AI-specific diagnostics
-forge ai doctor
+anvil ai doctor
 ```
 
 ---
@@ -261,7 +261,7 @@ forge ai doctor
 ## TUI Dashboard
 
 ```bash
-forge tui
+anvil tui
 
 # Navigation:
 #   1 — Dashboard (health, runtimes, status)
@@ -279,10 +279,10 @@ forge tui
 
 ```bash
 # Measure performance
-forge benchmark
+anvil benchmark
 
 # Machine-readable output
-forge benchmark --json
+anvil benchmark --json
 ```
 
 ---
@@ -291,19 +291,19 @@ forge benchmark --json
 
 ```bash
 # Runtime details
-forge explain node
+anvil explain node
 
 # Operation history
-forge explain operation op-1234567890
+anvil explain operation op-1234567890
 
 # Context extraction details
-forge explain context
+anvil explain context
 
 # Resolved configuration with sources
-forge explain config
+anvil explain config
 
 # Active profile
-forge explain profile
+anvil explain profile
 ```
 
 ---
@@ -313,9 +313,9 @@ forge explain profile
 ### VS Code
 
 1. Install the extension from VSIX or marketplace
-2. Open a project with `forge.toml`
-3. Click the Forge icon in the sidebar
-4. Use commands: `Forge: Status`, `Forge: Diagnose`, `Forge: Explain Runtime`, `Forge: Run`
+2. Open a project with `anvil.toml`
+3. Click the Anvil icon in the sidebar
+4. Use commands: `Anvil: Status`, `Anvil: Diagnose`, `Anvil: Explain Runtime`, `Anvil: Run`
 
 ### Neovim
 
@@ -327,16 +327,16 @@ forge explain profile
 }
 ```
 
-`:ForgeStatus` — floating window  
-`:ForgeDoctor` — quickfix list  
-`:ForgeExplain node` — runtime details  
-`:ForgeRun node app.js` — terminal output  
+`:AnvilStatus` — floating window  
+`:AnvilDoctor` — quickfix list  
+`:AnvilExplain node` — runtime details  
+`:AnvilRun node app.js` — terminal output  
 
 ---
 
 ## Toolchains Reference
 
-| Runtime   | forge.toml                     | Providers           |
+| Runtime   | anvil.toml                     | Providers           |
 |-----------|--------------------------------|---------------------|
 | Node.js   | `node = "20.11.0"`             | NodeProvider        |
 | Python    | `python = "3.12.0"`            | PythonProvider      |
@@ -351,21 +351,21 @@ forge explain profile
 ## Troubleshooting
 
 ```bash
-# Forge not found
-forge doctor
+# Anvil not found
+anvil doctor
 
 # Runtimes not syncing
-forge repair
+anvil repair
 
-# Check what forge would do without executing
-forge plan
+# Check what anvil would do without executing
+anvil plan
 
 # View operation history
-forge history
+anvil history
 
 # Trace a specific operation
-forge trace op-1234567890
+anvil trace op-1234567890
 
 # Stream live events
-forge events --live
+anvil events --live
 ```

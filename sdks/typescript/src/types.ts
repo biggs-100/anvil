@@ -1,4 +1,4 @@
-/** Type definitions for @forge/sdk responses. */
+/** Type definitions for @anvil/sdk responses. */
 
 export interface StatusInfo {
   state: string;
@@ -59,12 +59,12 @@ export interface ResolvedEnvironment {
   vars: Record<string, string>;
 }
 
-export class ForgeError extends Error {
+export class AnvilError extends Error {
   public code?: number;
 
   constructor(message: string, code?: number) {
     super(message);
-    this.name = 'ForgeError';
+    this.name = 'AnvilError';
     this.code = code;
   }
 }

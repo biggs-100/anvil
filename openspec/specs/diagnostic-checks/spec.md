@@ -30,9 +30,9 @@ The system MUST implement 11 checks matching the following codes, categories, se
 
 | Code | Check Name | Category | Severity | Detection Logic |
 |---|---|---|---|---|
-| **FG001** | ManifestCheck | manifest | CRITICAL | Missing `forge.toml` manifest file |
-| **FG002** | ManifestCheck | manifest | ERROR | Syntax/deserialization errors in `forge.toml` |
-| **FG003** | LockCheck | lock | ERROR | Missing `forge.lock` lockfile |
+| **FG001** | ManifestCheck | manifest | CRITICAL | Missing `anvil.toml` manifest file |
+| **FG002** | ManifestCheck | manifest | ERROR | Syntax/deserialization errors in `anvil.toml` |
+| **FG003** | LockCheck | lock | ERROR | Missing `anvil.lock` lockfile |
 | **FG004** | LockCheck | lock | WARNING | Manifest and lockfile dependencies are out of sync |
 | **FG005** | RuntimeCheck | runtime | ERROR | Target extraction folder for runtime is missing or empty |
 | **FG006** | RuntimeCheck | runtime | CRITICAL | Runtime binary execution fails or crashes on test command |

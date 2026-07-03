@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the `CliCommand` trait for third-party CLI commands and the mechanism for registering, loading at startup, and routing plugin commands through the Forge CLI.
+Define the `CliCommand` trait for third-party CLI commands and the mechanism for registering, loading at startup, and routing plugin commands through the Anvil CLI.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ Define the `CliCommand` trait for third-party CLI commands and the mechanism for
 |---|---|---|
 | REQ-CLI-001 | Plugins MUST implement `CliCommand` with `name`, `description`, and `execute` to expose subcommands. | MUST |
 | REQ-CLI-002 | The CLI startup MUST load registered CliCommand instances from PluginRegistry before arg parsing. | MUST |
-| REQ-CLI-003 | Plugin commands MUST be dispatched via `forge <plugin-command>` with existing built-in precedence. | MUST |
+| REQ-CLI-003 | Plugin commands MUST be dispatched via `anvil <plugin-command>` with existing built-in precedence. | MUST |
 
 ### Requirement: CliCommand Trait
 
@@ -19,7 +19,7 @@ Plugins exposing CLI commands MUST implement `CliCommand` providing: `name() -> 
 #### Scenario: Plugin Command Registration
 - GIVEN a plugin implementing `CliCommand` with `name = "mycmd"`
 - WHEN the plugin's `register` method is called
-- THEN the command MUST be stored in the registry accessible at `forge mycmd --help`
+- THEN the command MUST be stored in the registry accessible at `anvil mycmd --help`
 
 ### Requirement: CLI Startup Loading
 
@@ -27,7 +27,7 @@ The CLI entry point MUST query `PluginRegistry` for registered `CliCommand` inst
 
 #### Scenario: Plugin Command Dispatch
 - GIVEN the CLI has built-in commands `init` and `sync`, and a registered plugin command `mycmd`
-- WHEN a user runs `forge mycmd --flag value`
+- WHEN a user runs `anvil mycmd --flag value`
 - THEN the CLI MUST route to the plugin's `execute` with `["--flag", "value"]` and not treat `mycmd` as unknown
 
 ### Requirement: Built-in Command Precedence

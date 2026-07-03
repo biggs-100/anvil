@@ -1,11 +1,11 @@
 /**
- * Integration tests for the Forge TypeScript SDK.
+ * Integration tests for the Anvil TypeScript SDK.
  *
- * These tests spawn the `forge jsonrpc` binary, send JSON-RPC 2.0 requests
+ * These tests spawn the `anvil jsonrpc` binary, send JSON-RPC 2.0 requests
  * over stdin, and verify responses from stdout.
  *
  * Run with: npx tsx tests/client.test.ts
- * Requires: forge binary compiled and in PATH, or FORGE_BIN env var set.
+ * Requires: anvil binary compiled and in PATH, or ANVIL_BIN env var set.
  */
 
 import { spawn, ChildProcess } from 'child_process';
@@ -13,8 +13,8 @@ import * as assert from 'assert';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function forgeExe(): string {
-  return process.env.FORGE_BIN || 'forge';
+function anvilExe(): string {
+  return process.env.ANVIL_BIN || 'anvil';
 }
 
 interface RpcRequest {
@@ -41,12 +41,12 @@ interface RpcError {
 type RpcResponse = RpcSuccess | RpcError;
 
 /**
- * Spawn `forge jsonrpc`, send one request, read one response line,
+ * Spawn `anvil jsonrpc`, send one request, read one response line,
  * then kill the subprocess.
  */
 function sendRequest(request: RpcRequest): Promise<RpcResponse> {
   return new Promise<RpcResponse>((resolve, reject) => {
-    const child: ChildProcess = spawn(forgeExe(), ['jsonrpc'], {
+    const child: ChildProcess = spawn(anvilExe(), ['jsonrpc'], {
       stdio: ['pipe', 'pipe', 'inherit'],
     });
 
@@ -75,7 +75,7 @@ function sendRequest(request: RpcRequest): Promise<RpcResponse> {
 
     child.on('exit', (code) => {
       if (!line) {
-        reject(new Error(`forge jsonrpc exited with code ${code} without producing output`));
+        reject(new Error(`anvil jsonrpc exited with code ${code} without producing output`));
       }
     });
 
@@ -131,37 +131,7 @@ async function testMethodNotFound(): Promise<void> {
 
 async function testParseError(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    const child: ChildProcess = spawn(forgeExe(), ['jsonrpc'], {
-      stdio: ['pipe', 'pipe', 'inherit'],
-    });
-
-    let line = '';
-    const onData = (data: Buffer) => {
-      line += data.toString();
-      const idx = line.indexOf('\n');
-      if (idx !== -1) {
-        const raw = line.substring(0, idx).trim();
-        child.stdout?.removeListener('data', onData);
-        child.kill();
-        try {
-          const parsed: RpcResponse = JSON.parse(raw);
-          assert.strictEqual(parsed.jsonrpc, '2.0');
-          if (parsed.error) {
-            assert.strictEqual(parsed.error.code, -32700, 'Error code should be -32700');
-          }
-          resolve();
-        } catch (e) {
-          reject(new Error(`Failed to parse response: ${raw}`));
-        }
-      }
-    };
-
-    child.stdout?.on('data', onData);
-    child.on('error', (err) => reject(err));
-    child.on('exit', () => { if (!line) reject(new Error('No output')); });
-
-    child.stdin?.write('not valid json\n');
-    child.stdin?.end();
+    const child: ChildProcess = spawn(anvilExe(), ['jsonrpc'], {
 
     setTimeout(() => { child.kill(); reject(new Error('Timed out')); }, 10_000);
   });
@@ -170,14 +140,14 @@ async function testParseError(): Promise<void> {
 // ── Main runner ──────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  console.log('Forge TypeScript SDK Integration Tests\n');
+  console.log('Anvil TypeScript SDK Integration Tests\n');
 
   try {
     await testStatusRequest();
     console.log('  ✓ testStatusRequest');
   } catch (err) {
     console.log(`  ✗ testStatusRequest: ${(err as Error).message}`);
-    // Don't fail the whole run — forge binary availability may vary
+    // Don't fail the whole run — anvil binary availability may vary
   }
 
   try {

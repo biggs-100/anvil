@@ -1,9 +1,9 @@
 {
-  "name": "forge-vscode",
-  "displayName": "Forge",
+  "name": "anvil-vscode",
+  "displayName": "Anvil",
   "description": "Reproducible development environments — manage runtimes, diagnostics, and context from VS Code",
   "version": "0.1.0",
-  "publisher": "forge",
+  "publisher": "anvil",
   "license": "MIT",
   "engines": {
     "vscode": "^1.82.0"
@@ -13,59 +13,59 @@
   ],
   "icon": "icon.png",
   "activationEvents": [
-    "onCommand:forge.status",
-    "onCommand:forge.diagnose",
-    "onCommand:forge.explain",
-    "onCommand:forge.run",
-    "onWorkspaceContains:forge.toml"
+    "onCommand:anvil.status",
+    "onCommand:anvil.diagnose",
+    "onCommand:anvil.explain",
+    "onCommand:anvil.run",
+    "onWorkspaceContains:anvil.toml"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "forge.status",
-        "title": "Forge: Show Status"
+        "command": "anvil.status",
+        "title": "Anvil: Show Status"
       },
       {
-        "command": "forge.diagnose",
-        "title": "Forge: Diagnose"
+        "command": "anvil.diagnose",
+        "title": "Anvil: Diagnose"
       },
       {
-        "command": "forge.explain",
-        "title": "Forge: Explain Runtime"
+        "command": "anvil.explain",
+        "title": "Anvil: Explain Runtime"
       },
       {
-        "command": "forge.run",
-        "title": "Forge: Run Command"
+        "command": "anvil.run",
+        "title": "Anvil: Run Command"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "forge",
-          "title": "Forge",
+          "id": "anvil",
+          "title": "Anvil",
           "icon": "icon.svg"
         }
       ]
     },
     "views": {
-      "forge": [
+      "anvil": [
         {
           "type": "tree",
-          "id": "forge.explorer",
-          "name": "Forge Explorer"
+          "id": "anvil.explorer",
+          "name": "Anvil Explorer"
         }
       ]
     },
     "configuration": {
-      "title": "Forge",
+      "title": "Anvil",
       "properties": {
-        "forge.binaryPath": {
+        "anvil.binaryPath": {
           "type": "string",
-          "default": "forge",
-          "description": "Path or name of the forge binary on PATH"
+          "default": "anvil",
+          "description": "Path or name of the anvil binary on PATH"
         },
-        "forge.healthPollInterval": {
+        "anvil.healthPollInterval": {
           "type": "number",
           "default": 30000,
           "description": "Interval in milliseconds for health status polling (0 to disable)"

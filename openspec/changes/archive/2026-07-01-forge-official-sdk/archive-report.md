@@ -6,7 +6,7 @@
 
 ## Summary
 
-Change `forge-official-sdk` has been fully planned, implemented, verified, and archived. This change introduced 5 new SDK capabilities with zero modifications to existing forge-core surface.
+Change `forge-official-sdk` has been fully planned, implemented, verified, and archived. This change introduced 5 new SDK capabilities with zero modifications to existing anvil-core surface.
 
 ## Task Completion
 

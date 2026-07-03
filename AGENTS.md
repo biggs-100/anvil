@@ -1,4 +1,4 @@
-# Forge
+# Anvil
 
 **Create, run, inspect, and share reproducible development environments — for humans, tools, and AI agents.**
 
@@ -10,7 +10,7 @@ This file configures how AI agents work on this project. The orchestrator agent 
 
 - All substantial changes MUST follow SDD (Spec-Driven Development): proposal → specs → design → tasks → apply → verify → archive.
 - Delegate ALL complex work to sub-agents. Do not implement, explore, or write specs inline for tasks involving 2+ files or 4+ file reads.
-- The core is frozen at 1.0. Do NOT modify `crates/forge-core/src/api/v1.rs` or frozen types in `crates/forge-core/src/types.rs`.
+- The core is frozen at 1.0. Do NOT modify `crates/anvil-core/src/api/v1.rs` or frozen types in `crates/anvil-core/src/types.rs`.
 - Generated technical artifacts default to English regardless of persona.
 
 ## Skills

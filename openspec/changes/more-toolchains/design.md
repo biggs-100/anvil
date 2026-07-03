@@ -2,7 +2,7 @@
 
 ## Technical Approach
 
-Follow the exact `RuntimeProvider` trait pattern from existing providers (Node, Python, Bun, Go, Rust). Each new provider is a unit struct that delegates `resolve()` to `resolve_from_registry()`, which resolves against the 4-tier registry chain (flat entries → FRRS cache → ARM64 fallback → embedded defaults). All artifact metadata — download URLs, SHA-256 hashes, sizes — lives in registry entries, not in provider code. Providers are registered in `Resolver::new()` by name and re-exported from `crate::lib`.
+Follow the exact `RuntimeProvider` trait pattern from existing providers (Node, Python, Bun, Go, Rust). Each new provider is a unit struct that delegates `resolve()` to `resolve_from_registry()`, which resolves against the 4-tier registry chain (flat entries → ARRS cache → ARM64 fallback → embedded defaults). All artifact metadata — download URLs, SHA-256 hashes, sizes — lives in registry entries, not in provider code. Providers are registered in `Resolver::new()` by name and re-exported from `crate::lib`.
 
 ## Architecture Decisions
 
@@ -11,10 +11,10 @@ Follow the exact `RuntimeProvider` trait pattern from existing providers (Node, 
 | Option | Tradeoff | Decision |
 |--------|----------|----------|
 | Provider constructs URLs itself | Ties code to source layout; URL changes require code change | REJECTED |
-| Registry entries carry all URL/size/hash metadata | URL changes are registry-only (no code change); works with remote FRRS | SELECTED |
+| Registry entries carry all URL/size/hash metadata | URL changes are registry-only (no code change); works with remote ARRS | SELECTED |
 | Provider fetches checksum from release API | Adds HTTP retry logic per provider; fragile | REJECTED |
 
-**Rationale**: The existing `resolve_from_registry()` + `HybridRegistry::resolve()` chain already handles the 4-tier fallback (flat → FRRS cache → ARM64 fallback → embedded defaults). This means LLVM and JDK work identically to existing runtimes: the provider just names itself, and the registry does all URL matching, emulation fallback, and checksum bookkeeping. No new dependencies, no HTTP in providers.
+**Rationale**: The existing `resolve_from_registry()` + `HybridRegistry::resolve()` chain already handles the 4-tier fallback (flat → ARRS cache → ARM64 fallback → embedded defaults). This means LLVM and JDK work identically to existing runtimes: the provider just names itself, and the registry does all URL matching, emulation fallback, and checksum bookkeeping. No new dependencies, no HTTP in providers.
 
 ### Decision: LLVM download source — GitHub releases
 
@@ -35,7 +35,7 @@ Follow the exact `RuntimeProvider` trait pattern from existing providers (Node, 
 ## Data Flow
 
 ```
-forge.toml                     Resolver::new()                HybridRegistry
+anvil.toml                     Resolver::new()                HybridRegistry
 ┌──────────────┐              ┌────────────────────┐        ┌──────────────────┐
 │ [runtimes]    │  key lookup │ providers["llvm"]  │  call  │ resolve("llvm",  │
 │ llvm = 18.1.0 │──────────→  │   → LlvmProvider   │───────→│   "18.1.0",      │
@@ -53,9 +53,9 @@ forge.toml                     Resolver::new()                HybridRegistry
 
 | File | Action | Description |
 |------|--------|-------------|
-| `crates/forge-core/src/resolver.rs` | Modify | Add `LlvmProvider`, `JdkProvider` structs with `RuntimeProvider` impl; register in `Resolver::new()` |
-| `crates/forge-core/src/registry.rs` | Modify | Add `llvm` and `jdk` default `RegistryEntry` rows to `default_with_internal()` (all 5 platform/arch combos each) |
-| `crates/forge-core/src/lib.rs` | Modify | Add `LlvmProvider`, `JdkProvider` to re-exports |
+| `crates/anvil-core/src/resolver.rs` | Modify | Add `LlvmProvider`, `JdkProvider` structs with `RuntimeProvider` impl; register in `Resolver::new()` |
+| `crates/anvil-core/src/registry.rs` | Modify | Add `llvm` and `jdk` default `RegistryEntry` rows to `default_with_internal()` (all 5 platform/arch combos each) |
+| `crates/anvil-core/src/lib.rs` | Modify | Add `LlvmProvider`, `JdkProvider` to re-exports |
 
 ## Interfaces / Contracts
 
@@ -128,7 +128,7 @@ Shim generation follows the existing generic path (scan bin dirs, no per-provide
 
 ## Migration / Rollout
 
-No migration required. New providers are additive — existing runtimes are unaffected. Users with `[runtimes] llvm = "..."` or `jdk = "..."` in their `forge.toml` will automatically resolve on the next `forge install` / `forge update`.
+No migration required. New providers are additive — existing runtimes are unaffected. Users with `[runtimes] llvm = "..."` or `jdk = "..."` in their `anvil.toml` will automatically resolve on the next `anvil install` / `anvil update`.
 
 ## Open Questions
 

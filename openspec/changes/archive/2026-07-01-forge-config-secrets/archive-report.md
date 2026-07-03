@@ -14,20 +14,20 @@ The `forge-config-secrets` change has been successfully implemented, verified, a
 All tasks in `tasks.md` have been verified as complete (`- [x]`):
 
 - **Phase 1: Traits & Cryptography (PR 1)**
-  - Added traits `SecretProvider` and `ConfigurationProvider` in `crates/forge-core/src/secrets/mod.rs` and exported them.
+  - Added traits `SecretProvider` and `ConfigurationProvider` in `crates/anvil-core/src/secrets/mod.rs` and exported them.
   - Implemented mock `SecretProvider` and OS keyring integration using the `keyring` crate.
-  - Implemented fallback encryption module using `argon2` and `aes-gcm` bound to workspace ID as AAD (bypassing passphrase prompt in CI via `FORGE_MASTER_KEY`).
+  - Implemented fallback encryption module using `argon2` and `aes-gcm` bound to workspace ID as AAD (bypassing passphrase prompt in CI via `ANVIL_MASTER_KEY`).
   - Added unit tests verifying KDF, AES-256-GCM encryption/decryption, AAD validation, and CI bypass.
 - **Phase 2: 7-Layer Resolver & Schema (PR 2)**
-  - Defined `RuntimeContextProvider` trait in `crates/forge-core/src/environment.rs` and exported it.
-  - Implemented the 7-layered precedence resolver in `crates/forge-core/src/resolver.rs` (Level 1 down to Level 7).
+  - Defined `RuntimeContextProvider` trait in `crates/anvil-core/src/environment.rs` and exported it.
+  - Implemented the 7-layered precedence resolver in `crates/anvil-core/src/resolver.rs` (Level 1 down to Level 7).
   - Implemented variable interpolation matching `${workspace.root}`, `${runtime.<name>.path}`, and `${env.KEY}`.
   - Implemented configuration schema validation checking types, required fields, and pattern regex.
   - Added unit tests for resolver precedence, variable interpolation, and validation checks.
 - **Phase 3: CLI & Materialization (PR 3)**
   - Routed environment materialization through the new resolver.
   - Added CLI subcommands `env` and `secret` mapping all options.
-  - Integrated config validation issues into `forge doctor` reports.
+  - Integrated config validation issues into `anvil doctor` reports.
   - Added integration tests verifying CLI env/secret behavior.
 
 ## Archived Artifacts

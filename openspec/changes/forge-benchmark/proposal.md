@@ -2,13 +2,13 @@
 
 ## Intent
 
-Measure real forge engine performance in a deterministic, non-destructive way. Engineers need concrete numbers on sync, diagnostics, context extraction, and launch times to detect regressions and validate optimizations — currently all performance assessment is anecdotal.
+Measure real anvil engine performance in a deterministic, non-destructive way. Engineers need concrete numbers on sync, diagnostics, context extraction, and launch times to detect regressions and validate optimizations — currently all performance assessment is anecdotal.
 
 ## Scope
 
 ### In Scope
-- 5 real benchmarks: sync time (`forge up` path), diagnostic time (`forge doctor --deep`), context extraction time, launch time (start + status), health score (DiagnosticEngine score)
-- CLI command `forge benchmark` with table output to stdout
+- 5 real benchmarks: sync time (`anvil up` path), diagnostic time (`anvil doctor --deep`), context extraction time, launch time (start + status), health score (DiagnosticEngine score)
+- CLI command `anvil benchmark` with table output to stdout
 - `--json` flag for machine-readable output
 - Optional `--compare` flag to diff against last cached result
 
@@ -28,14 +28,14 @@ Measure real forge engine performance in a deterministic, non-destructive way. E
 
 ## Approach
 
-Add `forge benchmark` subcommand via clap. Each benchmark runs the actual engine operation wrapped in `std::time::Instant` — no simulations. Results printed as a formatted table; `--json` switches to JSON. Optional `--compare` loads last result from a cache file in `.forge/benchmark-cache.json`. Non-destructive: all operations are read-only (sync is measured via `forge up` but does not commit destructive mutations — the resolve+lock+sync pipeline is already idempotent).
+Add `anvil benchmark` subcommand via clap. Each benchmark runs the actual engine operation wrapped in `std::time::Instant` — no simulations. Results printed as a formatted table; `--json` switches to JSON. Optional `--compare` loads last result from a cache file in `.anvil/benchmark-cache.json`. Non-destructive: all operations are read-only (sync is measured via `anvil up` but does not commit destructive mutations — the resolve+lock+sync pipeline is already idempotent).
 
 ## Affected Areas
 
 | Area | Impact | Description |
 |------|--------|-------------|
-| `crates/forge-cli/src/commands/benchmark.rs` | New | Benchmark subcommand impl |
-| `crates/forge-cli/src/main.rs` | Modified | Register benchmark route |
+| `crates/anvil-cli/src/commands/benchmark.rs` | New | Benchmark subcommand impl |
+| `crates/anvil-cli/src/main.rs` | Modified | Register benchmark route |
 | `crates/diagnostic-engine/src/lib.rs` | Read | Expose health score via public method |
 
 ## Risks
@@ -47,7 +47,7 @@ Add `forge benchmark` subcommand via clap. Each benchmark runs the actual engine
 
 ## Rollback Plan
 
-Remove the benchmark subcommand registration and delete `benchmark.rs`. Cache file in `.forge/` is isolated — no other code reads it.
+Remove the benchmark subcommand registration and delete `benchmark.rs`. Cache file in `.anvil/` is isolated — no other code reads it.
 
 ## Dependencies
 
@@ -55,7 +55,7 @@ Remove the benchmark subcommand registration and delete `benchmark.rs`. Cache fi
 
 ## Success Criteria
 
-- [ ] `forge benchmark` prints 5 metrics with measured values (not zero/placeholder)
-- [ ] `forge benchmark --json` emits valid JSON
-- [ ] `forge benchmark --compare` works with cached prior run
-- [ ] No state is modified (confirmed by `git status` and forge state checks)
+- [ ] `anvil benchmark` prints 5 metrics with measured values (not zero/placeholder)
+- [ ] `anvil benchmark --json` emits valid JSON
+- [ ] `anvil benchmark --compare` works with cached prior run
+- [ ] No state is modified (confirmed by `git status` and anvil state checks)
