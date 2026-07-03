@@ -64,6 +64,12 @@ impl RuntimeEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PackagesConfig {
+    #[serde(default)]
+    pub pip: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ForgeConfig {
     #[serde(default)]
     pub runtimes: HashMap<String, RuntimeEntry>,
@@ -75,6 +81,8 @@ pub struct ForgeConfig {
     pub profile: Option<HashMap<String, ProfileSection>>,
     #[serde(default)]
     pub policy: Option<PolicyConfig>,
+    #[serde(default)]
+    pub packages: Option<PackagesConfig>,
 }
 
 

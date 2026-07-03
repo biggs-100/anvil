@@ -17,6 +17,7 @@ pub mod api;
 pub mod secrets;
 pub mod diagnostics;
 pub mod policy;
+pub mod packages;
 pub mod context;
 pub mod plugin;
 pub mod state;
@@ -63,7 +64,7 @@ pub use plugin::{
 pub use operations::{Plan, Operation, Context, SimplePlan, SyncPlan, RepairPlan};
 
 // Re-export stable types/functions from manifest.rs
-pub use manifest::{ForgeConfig, RuntimeEntry, find_forge_toml, load_config};
+pub use manifest::{ForgeConfig, RuntimeEntry, PackagesConfig, find_forge_toml, load_config};
 
 // Re-export policy types
 pub use policy::{PolicyConfig, PolicyEngine, PolicyViolation};
@@ -105,6 +106,9 @@ pub use environment::{find_forge_env, parse_env_file, is_secret, mask_env_vars, 
 
 // Re-export stable types/functions from launcher.rs
 pub use launcher::{run_command_in_env, spawn_shell_in_env};
+
+// Re-export packages module
+pub use packages::install_pip_deps;
 
 // Re-export stable types/functions from lock.rs
 pub use lock::{load_lockfile, save_lockfile};

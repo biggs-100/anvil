@@ -709,6 +709,8 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
             }
             let engine = forge_core::Engine::new(current_dir.clone())?;
             engine.sync().await?;
+            // ── Post-sync package install ──────────────────────
+            install_packages_if_configured(&current_dir)?;
         }
         Commands::Up => {
             // ── Policy pre-flight check ────────────────────────
@@ -723,6 +725,8 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
             println!("Syncing runtimes...");
             let engine = forge_core::Engine::new(current_dir.clone())?;
             engine.sync().await?;
+            // ── Post-sync package install ──────────────────────
+            install_packages_if_configured(&current_dir)?;
         }
         Commands::Run { cmd, args } => {
             // ── Policy pre-flight check ────────────────────────
@@ -1284,6 +1288,53 @@ async fn run_cli(cli: Cli) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+// ── Package install helper ─────────────────────────────────────────────
+
+/// If `forge.toml` has a `[packages]` section with pip configured, run
+/// `pip install -r <requirements>` using the forge-managed python binary.
+///
+/// Error handling:
+/// - Missing python runtime → skip with warning (non-fatal)
+/// - Missing requirements file → fatal error
+/// - Pip install failure → warning (non-fatal)
+fn install_packages_if_configured(current_dir: &Path) -> Result<(), String> {
+    let toml_path = match forge_core::find_forge_toml(current_dir) {
+        Some(p) => p,
+        None => return Ok(()),
+    };
+
+    let config = match forge_core::load_config(&toml_path) {
+        Ok(c) => c,
+        Err(_) => return Ok(()),
+    };
+
+    let packages_config = match config.packages {
+        Some(ref p) => p,
+        None => return Ok(()),
+    };
+
+    let workspace_root = forge_core::find_forge_toml(current_dir)
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| current_dir.to_path_buf());
+
+    let cache_dir = forge_core::get_cache_dir()?;
+
+    match forge_core::install_pip_deps(packages_config, &workspace_root, &cache_dir) {
+        Ok(()) => Ok(()),
+        Err(e) if e.contains("No python runtime found") => {
+            eprintln!("Warning: pip install skipped — no python runtime available. Run 'forge up' to sync runtimes first.");
+            Ok(())
+        }
+        Err(e) if e.contains("Requirements file not found") => {
+            Err(e)
+        }
+        Err(e) => {
+            eprintln!("Warning: pip install failed: {}", e);
+            Ok(())
+        }
+    }
 }
 
 // ── Policy helpers ─────────────────────────────────────────────────────
@@ -2052,6 +2103,7 @@ mod tests {
             config: None,
             profile: None, // profile is None for this smoke test
             policy: None,
+            packages: None,
         };
 
         let mut vars: HashMap<String, String> = HashMap::new();
